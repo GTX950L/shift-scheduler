@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技术员排班助手</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗓️</text></svg>">
+<style>
+  :root{
+    --brand:#2f6db5; --brand-dark:#1e4d8c;
+    --bg:#eef2f7; --card:#ffffff; --border:#e2e8f0; --text:#1f2937; --muted:#64748b;
+    --c-day:#fde68a;  --c-day-t:#78350f;  --c-day-dot:#d97706;   /* 白班 */
+    --c-night:#e0e7ff; --c-night-t:#312e81; --c-night-dot:#6366f1;/* 夜班 */
+    --c-rest:#ecfdf5; --c-rest-t:#065f46;  --c-rest-dot:#10b981;  /* 休 */
+    --c-ot:#fee2e2;   --c-ot-t:#991b1b;    --c-ot-dot:#ef4444;    /* 加班 */
+    --c-duty:#e0f2fe; --c-duty-t:#0c4a6e;  --c-duty-dot:#0ea5e9;  /* 留守 */
+    --c-weekend:#f8fafc; --c-busy:#ffe4e6; --c-low:#e0f2fe;
+    --shadow-sm:0 1px 3px rgba(16,32,64,.06);
+    --shadow-md:0 6px 18px rgba(16,32,64,.10);
+  }
+  *{box-sizing:border-box}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#c6d0dc;border-radius:5px;border:2px solid transparent;background-clip:content-box}
+  ::-webkit-scrollbar-thumb:hover{background:#a9b6c6}
+  ::-webkit-scrollbar-track{background:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Helvetica,Arial,sans-serif;
+    background:radial-gradient(1100px 520px at 88% -8%, rgba(47,109,181,.09), transparent 62%),
+               radial-gradient(760px 400px at -8% 12%, rgba(228,87,46,.05), transparent 55%),
+               linear-gradient(180deg,#f7fafc 0%,var(--bg) 100%);
+    background-attachment:fixed;color:var(--text);line-height:1.55;font-size:14px}
+  header{position:relative;overflow:hidden;padding:18px 30px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
+    background:linear-gradient(120deg,#16273d 0%,#1e3a5f 46%,#24507e 100%);color:#fff;box-shadow:0 2px 14px rgba(16,32,64,.28)}
+  header::before{content:'';position:absolute;right:-70px;top:-80px;width:260px;height:260px;
+    background:radial-gradient(circle,rgba(255,255,255,.13),transparent 70%);border-radius:50%}
+  header::after{content:'';position:absolute;left:46%;bottom:-90px;width:320px;height:320px;
+    background:radial-gradient(circle,rgba(47,109,181,.38),transparent 70%);border-radius:50%}
+  header>*{position:relative;z-index:1}
+  header h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.25)}
+  header p{margin:4px 0 0;font-size:12px;color:#c3d3e4}
+  .hd-right{display:flex;align-items:center;gap:8px}
+  .month-nav{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
+    padding:6px 8px;border-radius:12px}
+  .month-nav .m-label{font-size:16px;font-weight:700;min-width:118px;text-align:center;cursor:pointer;user-select:none}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 30px;background:#fff;
+    border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;box-shadow:0 1px 6px rgba(16,32,64,.05)}
+  .toolbar .sep{width:1px;height:24px;background:var(--border);margin:0 4px}
+  .toolbar .grp{display:flex;gap:6px;align-items:center}
+  .toolbar label{font-size:12px;color:var(--muted);white-space:nowrap}
+  button{font-family:inherit;font-size:13px;font-weight:600;border:none;border-radius:9px;cursor:pointer;
+    background:linear-gradient(135deg,#3d83c9,#24507e);color:#fff;padding:7px 14px;transition:transform .12s,box-shadow .12s,filter .12s}
+  button:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(42,95,157,.38);filter:brightness(1.06)}
+  button:active{transform:translateY(0)}
+  button.sec{background:#fff;color:#374151;border:1px solid var(--border);box-shadow:none}
+  button.sec:hover{background:#f1f5f9;transform:none;box-shadow:0 2px 8px rgba(16,32,64,.10)}
+  button.sm{padding:4px 10px;font-size:12px;border-radius:7px}
+  button.on{box-shadow:0 0 0 2px rgba(61,131,201,.45);filter:brightness(1.05)}
+  button.danger{background:linear-gradient(135deg,#e05252,#a82424)}
+  select{font-family:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text)}
+  select:focus,input:focus{outline:none;border-color:#3d83c9;box-shadow:0 0 0 3px rgba(61,131,201,.15)}
+  input[type=text],input[type=month]{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text)}
+  .wrap{display:flex;flex-wrap:wrap;gap:18px;padding:18px 30px;align-items:flex-start;max-width:1500px;margin:0 auto}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow-sm)}
+  .panel h2{margin:0 0 12px;font-size:15px;font-weight:700;color:#24344d;display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .panel h2 .t{display:flex;align-items:center;gap:7px}
+  .sheet-panel{flex:1 1 860px;min-width:0}
+  .side{flex:0 0 320px;display:flex;flex-direction:column;gap:18px}
+  /* ===== 排班表 ===== */
+  .sheet-scroll{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:10px}
+  table.sheet{border-collapse:separate;border-spacing:0;font-size:12px;width:max-content;min-width:100%}
+  table.sheet th,table.sheet td{border-right:1px solid #eef1f5;border-bottom:1px solid #eef1f5;padding:0;text-align:center;vertical-align:middle}
+  table.sheet thead th{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,#f6f9fc,#eef3f8);
+    font-weight:650;color:#374151;font-size:11px;padding:5px 2px;line-height:1.25}
+  table.sheet thead th.dow{font-size:10px;color:var(--muted)}
+  table.sheet th.corner{position:sticky;left:0;top:0;z-index:10;min-width:118px}
+  table.sheet tbody th{position:sticky;left:0;z-index:4;background:#fbfdff;font-weight:600;font-size:12px;padding:3px 6px;text-align:left;white-space:nowrap}
+  table.sheet tbody th .nm{display:flex;align-items:center;gap:5px}
+  table.sheet tbody th .dept-tag{font-size:9px;padding:1px 5px;border-radius:8px;font-weight:700;flex:0 0 auto}
+  .tag-除气{background:#e8f1fe;color:#1d4ed8}
+  .tag-转码{background:#fef3c7;color:#92400e}
+  .cell{width:33px;height:33px;cursor:pointer;position:relative;user-select:none;transition:box-shadow .1s}
+  .cell:hover{box-shadow:inset 0 0 0 1.5px rgba(47,109,181,.55);z-index:1}
+  .cell .c-txt{font-weight:700;font-size:12px;line-height:33px}
+  .cell .c-badge{position:absolute;top:1px;right:2px;font-size:8px;font-weight:800;line-height:1;padding:1px 2px;border-radius:4px;color:#fff}
+  .cell.day{background:var(--c-day);color:var(--c-day-t)}
+  .cell.night{background:var(--c-night);color:var(--c-night-t)}
+  .cell.rest{background:var(--c-rest);color:var(--c-rest-t)}
+  .cell.ot{background:var(--c-ot);color:var(--c-ot-t)}
+  .cell.ot .c-badge{background:var(--c-ot-dot)}
+  .cell.duty{background:var(--c-duty);color:var(--c-duty-t)}
+  .cell.duty .c-badge{background:var(--c-duty-dot)}
+  .cell.man::after{content:'';position:absolute;left:1px;top:1px;width:4px;height:4px;border-radius:50%;background:var(--brand)}
+  .cell.today{box-shadow:inset 0 0 0 2px var(--brand)}
+  th.col-sat,th.col-sun{background:linear-gradient(180deg,#fdf6f6,#f8ecec)!important}
+  th.col-busy{background:linear-gradient(180deg,#ffecee,#fbdadd)!important;color:#9f1239!important}
+  th.col-low{background:linear-gradient(180deg,#eef7fe,#dceefe)!important;color:#075985!important}
+  th.col-now{outline:2px solid var(--brand);outline-offset:-2px;z-index:6}
+  td.dow-sat,td.dow-sun{background:var(--c-weekend)}
+  td.dow-busy{background:rgba(255,228,230,.45)}
+  td.dow-low{background:rgba(224,242,254,.4)}
+  tr.tot-row th{font-weight:700;color:#24344d}
+  tr.tot-row td{font-size:10px;padding:2px 0;line-height:1.4}
+  tr.tot-row .t-num{font-weight:800}
+  .t-day{color:var(--c-day-t)} .t-night{color:var(--c-night-t)} .t-rest{color:var(--c-rest-t)}
+  .t-ot{color:var(--c-ot-t)} .t-duty{color:var(--c-duty-t)}
+  /* ===== 图例 ===== */
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;font-size:12px;color:var(--muted)}
+  .legend .lg{display:inline-flex;align-items:center;gap:5px}
+  .legend .sw{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid rgba(0,0,0,.06)}
+  /* ===== 人员面板 ===== */
+  .people-list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto;padding-right:2px}
+  .p-card{border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:#fbfdff}
+  .p-card .row1{display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .p-card .pname{font-weight:700;font-size:13px}
+  .p-card .pmeta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap}
+  .p-card .ops{display:flex;gap:4px;opacity:.55;transition:opacity .15s}
+  .p-card:hover .ops{opacity:1}
+  .p-card .ops button{background:none;color:#4b5563;padding:2px 5px;font-size:11px;border-radius:6px}
+  .p-card .ops button:hover{background:#eef2f7;color:#1e4d8c}
+  .p-empty{text-align:center;padding:26px 12px;color:var(--muted);font-size:13px}
+  .p-empty .big{font-size:15px;color:#374151;font-weight:700;margin-bottom:6px}
+  .mini-stat{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:8px}
+  /* ===== 统计 ===== */
+  .stats-panel{max-width:1500px;margin:0 auto 26px}
+  .stats-grid{display:flex;flex-wrap:wrap;gap:18px}
+  .stats-grid .chart-box{flex:1 1 520px;min-width:0}
+  .stats-grid .tbl-box{flex:1 1 380px;min-width:0}
+  .chart-scroll{overflow:auto}
+  table.stats{border-collapse:collapse;font-size:12px;width:100%}
+  table.stats th,table.stats td{border-bottom:1px solid var(--border);padding:6px 8px;text-align:center}
+  table.stats th{background:linear-gradient(180deg,#f6f9fc,#eef3f8);font-weight:650;color:#374151;position:sticky;top:0}
+  table.stats td:first-child,table.stats th:first-child{text-align:left}
+  table.stats tr:hover td{background:#f8fafc}
+  .badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:5px}
+  .b-white{background:#fef3c7;color:#92400e}.b-night{background:#e0e7ff;color:#312e81}.b-rot{background:#ede9fe;color:#5b21b6}
+  /* ===== 弹窗 ===== */
+  .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow:auto}
+  .modal-mask.show{display:flex}
+  .modal{background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(16,32,64,.35);max-width:560px;width:100%;padding:22px 24px;animation:pop .18s ease}
+  @keyframes pop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal h3{margin:0 0 14px;font-size:17px;color:#16273d}
+  .f-row{display:flex;gap:12px;margin-bottom:12px;align-items:center}
+  .f-row label{flex:0 0 88px;font-size:13px;color:#374151;font-weight:600}
+  .f-row input[type=text],.f-row select{flex:1}
+  .f-hint{font-size:11px;color:var(--muted);margin:-6px 0 10px 100px}
+  .modal-ops{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+  .radio-line{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+  .radio-line label{flex:0 0 auto;font-weight:400;font-size:12px;display:flex;gap:4px;align-items:center;cursor:pointer}
+  /* ===== 引导 ===== */
+  .welcome{text-align:center;padding:34px 30px}
+  .welcome .w-ico{font-size:40px}
+  .welcome h3{margin:8px 0 6px;font-size:18px}
+  .welcome p{color:var(--muted);font-size:13px;max-width:440px;margin:0 auto 6px}
+  .welcome .steps{display:flex;gap:10px;justify-content:center;margin:16px 0;flex-wrap:wrap}
+  .welcome .step{background:#f6f9fc;border:1px solid var(--border);border-radius:12px;padding:12px 14px;width:170px;text-align:left}
+  .welcome .step .n{font-size:20px;font-weight:800;color:var(--brand)}
+  .welcome .step .s{font-size:12px;color:#374151;margin-top:2px}
+  .welcome .step .d{font-size:11px;color:var(--muted);margin-top:3px}
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#16273d;color:#fff;font-size:13px;
+    padding:10px 20px;border-radius:10px;box-shadow:0 8px 24px rgba(16,32,64,.35);opacity:0;transition:opacity .25s,transform .25s;z-index:200;pointer-events:none}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+  .help-sec{margin-bottom:14px}
+  .help-sec h4{margin:0 0 6px;font-size:14px;color:#16273d}
+  .help-sec ul{margin:0;padding-left:18px;font-size:12.5px;color:#374151}
+  .help-sec li{margin-bottom:4px}
+  kbd{background:#eef2f7;border:1px solid #d6dee8;border-bottom-width:2px;border-radius:5px;padding:1px 5px;font-size:11px;font-family:inherit}
+  .kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .kpi{flex:1 1 130px;background:linear-gradient(180deg,#fbfdff,#f4f8fc);border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-align:center}
+  .kpi .v{font-size:20px;font-weight:800;color:#1e4d8c}
+  .kpi .k{font-size:11px;color:var(--muted)}
+  @media (max-width:980px){.side{flex:1 1 100%}}
+  @media print{
+    header,.toolbar,.side,.legend,.stats-panel,.modal-mask{display:none!important}
+    body{background:#fff}
+    .wrap{padding:0;max-width:none}
+    .sheet-panel{flex:1 1 100%}
+    .sheet-scroll{max-height:none;border:none;overflow:visible}
+    @page{size:A4 landscape;margin:8mm}
+    table.sheet{font-size:9px}
+    .cell{width:22px;height:22px}
+    .cell .c-txt{font-size:9px;line-height:22px}
+    table.sheet tbody th{min-width:90px}
+    .cell:hover{box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🗓️ 技术员排班助手</h1>
+    <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 月度轮转 · 周末负荷调节 · 留守模式</p>
+  </div>
+  <div class="hd-right">
+    <div class="month-nav">
+      <button class="sec sm" id="prevMonth" title="上一月">◀</button>
+      <span class="m-label" id="monthLabel" title="点击选择月份"></span>
+      <button class="sec sm" id="nextMonth" title="下一月">▶</button>
+      <button class="sec sm" id="todayBtn" title="回到本月">今天</button>
+    </div>
+  </div>
+</header>
+
+<nav class="toolbar" id="toolbar">
+  <div class="grp">
+    <label>画笔</label>
+    <select id="brush" title="选择后点击/拖拽排班表单元格进行填充；循环模式=点击依次切换 休→白→夜">
+      <option value="cycle">🔁 循环切换</option>
+      <option value="day">☀️ 白班</option>
+      <option value="night">🌙 夜班</option>
+      <option value="rest">🟢 休</option>
+      <option value="ot">🔺 加班</option>
+      <option value="duty">🟦 留守</option>
+    </select>
+  </div>
+  <div class="sep"></div>
+  <div class="grp">
+    <label>周六</label>
+    <select id="satLoad" title="周六任务量：繁忙时自动把双休人员叫回上班（标记加班）">
+      <option value="normal">正常</option>
+      <option value="busy">繁忙 🔥</option>
+      <option value="low">低负荷 💤</option>
+    </select>
+    <label>周日</label>
+    <select id="sunLoad" title="周日任务量：繁忙时自动把双休人员叫回上班（标记加班）">
+      <option value="normal">正常</option>
+      <option value="busy">繁忙 🔥</option>
+      <option value="low">低负荷 💤</option>
+    </select>
+  </div>
+  <div class="sep"></div>
+  <div class="grp">
+    <button id="genBtn" title="按人员规则 + 周末负荷自动生成本月排班（保留手工修改）">⚡ 自动排班</button>
+    <button id="rotateBtn" class="sec" title="把本月所有“月轮转”人员的班次强制取反（手动控制转班时机）">🔁 本月转班</button>
+  </div>
+  <div class="sep"></div>
+  <div class="grp">
+    <button id="idleBtn" class="sec" title="低负荷时只保留每班最低人数（白班2人/夜班1人，名单轮换），其余休息">💤 留守模式</button>
+    <button id="clearManBtn" class="sec" title="清除本月所有手工修改，恢复自动排班结果">🧹 清手动</button>
+  </div>
+  <div class="sep"></div>
+  <div class="grp">
+    <button id="exportBtn" class="sec" title="导出本月排班为 CSV（可用 Excel 打开）">⬇ CSV</button>
+    <button id="printBtn" class="sec" title="打印 / 存为 PDF（横向 A4）">🖨 打印</button>
+    <button id="helpBtn" class="sec" title="使用说明">❓ 帮助</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <section class="panel sheet-panel">
+    <h2><span class="t">📋 排班表 <span id="sheetTitle" style="font-size:12px;color:var(--muted);font-weight:600"></span></span>
+      <span id="kpis" class="mini-stat"></span></h2>
+    <div class="sheet-scroll" id="sheetScroll">
+      <table class="sheet" id="sheet"></table>
+    </div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <aside class="side">
+    <section class="panel">
+      <h2><span class="t">👷 技术员</span><button class="sm" id="addPersonBtn">＋ 添加</button></h2>
+      <div class="people-list" id="peopleList"></div>
+    </section>
+    <section class="panel">
+      <h2><span class="t">💡 操作指引</span></h2>
+      <div style="font-size:12.5px;color:#374151;line-height:1.7">
+        <b>① 添加技术员</b>：设置部门、班次规则（固定白班 / 固定夜班 / 月轮转）、休息规则。<br>
+        <b>② 点「⚡ 自动排班」</b>生成当月排班基线。<br>
+        <b>③ 微调</b>：点击格子循环切换 休→白→夜；<kbd>Shift</kbd>+点击 加班；<kbd>Alt</kbd>+点击 留守；按住拖拽批量填充。<br>
+        <b>④ 周末繁忙</b>：把周六/周日设为「繁忙」，自动排班时双休人员会被叫回并标记加班。<br>
+        <b>⑤ 低负荷</b>：开启「留守模式」，每天仅保留白班2人/夜班1人。<br>
+        <b>⑥ 转班</b>：轮转人员每月自动白夜互换，也可用「本月转班」手动控制。
+      </div>
+    </section>
+  </aside>
+</main>
+
+<section class="panel stats-panel">
+  <h2><span class="t">📊 月度统计</span></h2>
+  <div class="kpi-row" id="kpiRow"></div>
+  <div class="stats-grid">
+    <div class="chart-box">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">每日人力分布（白班 / 夜班，浅色叠加为加班）</div>
+      <div class="chart-scroll" id="chartBox"></div>
+    </div>
+    <div class="tbl-box">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">人员月度汇总</div>
+      <div style="max-height:260px;overflow:auto"><table class="stats" id="statsTable"></table></div>
+    </div>
+  </div>
+</section>
+
+<div id="toast"></div>
+
+<div class="modal-mask" id="personModal">
+  <div class="modal">
+    <h3 id="pmTitle">添加技术员</h3>
+    <div class="f-row"><label>姓名 *</label><input type="text" id="pmName" placeholder="如：陈师傅" maxlength="12"></div>
+    <div class="f-row"><label>所属部门</label>
+      <div class="radio-line" id="pmDept">
+        <label><input type="radio" name="pmDept" value="除气" checked> 除气</label>
+        <label><input type="radio" name="pmDept" value="转码"> 转码</label>
+      </div>
+    </div>
+    <div class="f-row"><label>班次规则</label>
+      <div class="radio-line" id="pmShift">
+        <label><input type="radio" name="pmShift" value="fixed-day" checked> 固定白班</label>
+        <label><input type="radio" name="pmShift" value="fixed-night"> 固定夜班</label>
+        <label><input type="radio" name="pmShift" value="rotate"> 月轮转</label>
+      </div>
+    </div>
+    <div class="f-hint" id="pmRotHint">月轮转：本月按「起始班次」，此后每月自动白/夜互换。</div>
+    <div class="f-row" id="pmInitRow"><label>本月起始班次</label>
+      <div class="radio-line">
+        <label><input type="radio" name="pmInit" value="day" checked> 白班</label>
+        <label><input type="radio" name="pmInit" value="night"> 夜班</label>
+      </div>
+    </div>
+    <div class="f-row"><label>休息规则</label>
+      <div class="radio-line" id="pmRest">
+        <label><input type="radio" name="pmRest" value="none" checked> 无休</label>
+        <label><input type="radio" name="pmRest" value="sixOne"> 上六休一</label>
+        <label><input type="radio" name="pmRest" value="weekend"> 双休</label>
+      </div>
+    </div>
+    <div class="f-hint">上六休一：工作6天休1天（从每月1号起滚动）；双休：周六、周日休息，周末繁忙时会被叫回加班。</div>
+    <div class="f-row"><label>备注</label><input type="text" id="pmNote" placeholder="选填，如：组长 / 产线A" maxlength="30"></div>
+    <div class="modal-ops">
+      <button class="sec" id="pmCancel">取消</button>
+      <button id="pmSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="helpModal">
+  <div class="modal" style="max-width:640px">
+    <h3>❓ 使用说明</h3>
+    <div class="help-sec">
+      <h4>📌 排班流程</h4>
+      <ul>
+        <li>先「＋ 添加」技术员：姓名、部门（除气/转码）、班次规则、休息规则。</li>
+        <li>点「⚡ 自动排班」生成当月基线；之后随时可再点，<b>手工改过的格子不会被覆盖</b>（格子左上角蓝点 = 手动修改）。</li>
+        <li>每格左侧小点含义：<kbd>🔴</kbd>加班 <kbd>🔵</kbd>留守。</li>
+      </ul>
+    </div>
+    <div class="help-sec">
+      <h4>✍️ 手工微调</h4>
+      <ul>
+        <li>选择「画笔」后点击 / 按住拖拽批量填充：白班 / 夜班 / 休 / 加班 / 留守。</li>
+        <li>「🔁 循环切换」画笔：点击依次 休 → 白班 → 夜班 → 休。</li>
+        <li>快捷键：<kbd>Shift</kbd>+点击=加班，<kbd>Alt</kbd>+点击=留守，<kbd>右键</kbd>=休。</li>
+        <li>拖动表头边框可调整列宽（若支持）。</li>
+      </ul>
+    </div>
+    <div class="help-sec">
+      <h4>⚖️ 周末与人力</h4>
+      <ul>
+        <li>周六 / 周日负荷设为「繁忙」：自动排班时双休人员该日改为上班并标记<b>加班</b>。</li>
+        <li>设为「低负荷」：仅提示，不影响排班；建议配合「留守模式」使用。</li>
+        <li>「留守模式」：每天只保留白班2人 + 夜班1人（名单轮换），其余休息，适合无任务时线上留守。</li>
+      </ul>
+    </div>
+    <div class="help-sec">
+      <h4>🔁 转班</h4>
+      <ul>
+        <li>班次规则选「月轮转」的技术员，切到新月份时自动与上月班次互换；固定班次者不变。</li>
+        <li>若某月不按规律转班，可用「🔁 本月转班」强制取反，再手动微调。</li>
+      </ul>
+    </div>
+    <div class="help-sec">
+      <h4>💾 数据</h4>
+      <ul>
+        <li>所有数据自动保存在本机浏览器（localStorage），关闭页面不丢失。</li>
+        <li>「⬇ CSV」导出当月排班表，可用 Excel 打开；「🖨 打印」可横向打印或另存 PDF。</li>
+        <li>同一浏览器换电脑不互通，如需迁移请用导入导出 JSON（后续版本支持）。</li>
+      </ul>
+    </div>
+    <div class="modal-ops"><button id="helpClose">知道了</button></div>
+  </div>
+</div>
+
+<div class="modal-mask" id="welcomeModal">
+  <div class="modal" style="max-width:640px">
+    <div class="welcome">
+      <div class="w-ico">🗓️</div>
+      <h3>欢迎使用技术员排班助手</h3>
+      <p>为除气 / 转码两部门的两班倒排班而设计，三步即可完成一个月排班：</p>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><div class="s">添加技术员</div><div class="d">姓名、部门、班次规则、休息规则</div></div>
+        <div class="step"><div class="n">2</div><div class="s">设置周末负荷</div><div class="d">周六/周日任务多就选「繁忙」</div></div>
+        <div class="step"><div class="n">3</div><div class="s">一键自动排班</div><div class="d">生成基线后再手工微调</div></div>
+      </div>
+      <p style="margin-top:10px">可以先填入示例数据体验一下：</p>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button id="wSample" class="sec">🧪 填入示例数据</button>
+        <button id="wStart">开始使用（暂无人员）</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================= 工具 ================= */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ym = (y,m) => y + '-' + String(m).padStart(2,'0');
+const daysInMonth = (y,m) => new Date(y, m, 0).getDate();
+const dowOf = (y,m,d) => new Date(y, m-1, d).getDay(); // 0=周日
+const WEEK = ['日','一','二','三','四','五','六'];
+let toastTimer;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+/* ================= 状态 ================= */
+const LS_KEY = 'shift-scheduler-v1';
+const defaultState = () => ({
+  people: [],            // {id,name,dept,shiftRule:'fixed-day'|'fixed-night'|'rotate',initialShift:'day'|'night',restRule:'none'|'sixOne'|'weekend',note}
+  monthShift: {},        // {'2026-08': {pid:'day'|'night'}} 各月实际班次
+  manual: {},            // {'2026-08': {pid:'...'}} 手动覆盖字符串
+  satLoad: 'normal', sunLoad: 'normal',
+  idleMode: false,
+  idleDay: 2, idleNight: 1,
+  curYear: null, curMonth: null
+});
+let state;
+function loadState(){
+  try{ const raw = localStorage.getItem(LS_KEY); if(raw){ state = Object.assign(defaultState(), JSON.parse(raw)); return; } }catch(e){}
+  state = defaultState();
+}
+function saveState(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){ toast('⚠️ 保存失败：浏览器存储不可用'); }
+}
+
+/* ================= 日历 ================= */
+function today(){ const d = new Date(); return {y:d.getFullYear(), m:d.getMonth()+1, day:d.getDate()}; }
+function initMonth(){
+  const t = today();
+  if(!state.curYear){ state.curYear = t.y; state.curMonth = t.m; }
+}
+function prevKey(key){ // '2026-08' -> '2026-07'
+  const [y,m] = key.split('-').map(Number);
+  return m===1 ? ym(y-1,12) : ym(y,m-1);
+}
+function ensureMonthShift(pid, key){
+  const p = state.people.find(x=>x.id===pid); if(!p) return 'day';
+  if(state.monthShift[key] && state.monthShift[key][pid]) return state.monthShift[key][pid];
+  const prev = state.monthShift[prevKey(key)] && state.monthShift[prevKey(key)][pid];
+  let sh;
+  if(p.shiftRule === 'fixed-night') sh = 'night';
+  else if(p.shiftRule === 'fixed-day') sh = 'day';
+  else if(p.shiftRule === 'rotate') sh = prev ? (prev==='day'?'night':'day') : (p.initialShift||'day');
+  else sh = p.initialShift || 'day';
+  state.monthShift[key] = state.monthShift[key] || {}; state.monthShift[key][pid] = sh;
+  return sh;
+}
+/* 计算某人是某天是否按规则休息 */
+function isRuleRest(p, y, m, d){
+  if(p.restRule === 'none') return false;
+  const dow = dowOf(y,m,d);
+  if(p.restRule === 'weekend') return (dow===0 || dow===6);
+  if(p.restRule === 'sixOne') return (d % 7 === 0); // 1~6工作,7休;8~13工作,14休...
+  return false;
+}
+
+/* ================= 自动排班核心 ================= */
+const CHAR = { '.':'rest', 'd':'day', 'n':'night', 'D':'ot', 'N':'ot', 'x':'duty', 'y':'duty' };
+function dayLoad(y,m,d){
+  const dow = dowOf(y,m,d);
+  if(dow===6) return state.satLoad;
+  if(dow===0) return state.sunLoad;
+  return 'normal';
+}
+/* 生成某月自动排班（不覆盖 manual） */
+function genMonth(y, m){
+  const key = ym(y,m), dim = daysInMonth(y,m);
+  const people = state.people.slice();
+  // 每人当月班次（含轮转继承）
+  people.forEach(p => ensureMonthShift(p.id, key));
+  // 1) 基线：按班次 + 休息规则
+  const grid = {}; // pid -> arr[day]，单元使用单字符：.=休 d=白 n=夜 D=白加 N=夜加 x=白留 y=夜留
+  for(const p of people){
+    const sh = state.monthShift[key][p.id];
+    const base = sh==='night' ? 'n' : 'd';
+    grid[p.id] = [];
+    for(let d=1; d<=dim; d++) grid[p.id][d-1] = isRuleRest(p,y,m,d) ? '.' : base;
+  }
+  // 2) 周末繁忙 → 双休人员叫回（加班）
+  for(let d=1; d<=dim; d++){
+    if(dayLoad(y,m,d) !== 'busy') continue;
+    for(const p of people){
+      if(p.restRule==='weekend' && grid[p.id][d-1]==='.'){
+        grid[p.id][d-1] = state.monthShift[key][p.id]==='night' ? 'N' : 'D';
+      }
+    }
+  }
+  // 3) 留守模式：每班只保留最低人数，轮换
+  if(state.idleMode){
+    const dayPool = people.filter(p=>state.monthShift[key][p.id]==='day');
+    const nightPool = people.filter(p=>state.monthShift[key][p.id]==='night');
+    for(let d=1; d<=dim; d++){
+      const keepD = {}, keepN = {};
+      for(let i=0;i<Math.min(state.idleDay, dayPool.length);i++){
+        const p = dayPool[(d-1+i) % dayPool.length]; keepD[p.id]=1;
+      }
+      for(let i=0;i<Math.min(state.idleNight, nightPool.length);i++){
+        const p = nightPool[(d-1+i) % nightPool.length]; keepN[p.id]=1;
+      }
+      for(const p of people){
+        const sh = state.monthShift[key][p.id];
+        grid[p.id][d-1] = keepD[p.id] ? 'x' : (keepN[p.id] ? 'y' : '.');
+        void sh;
+      }
+    }
+  }
+  // 4) 合并手动覆盖
+  const man = state.manual[key] || {};
+  for(const pid in man){
+    const s = man[pid];
+    if(grid[pid] && s && s.length>=dim){
+      for(let d=1; d<=dim; d++){
+        const c = s[d-1];
+        if(c !== '.' && c !== undefined) grid[pid][d-1] = c;
+      }
+    }
+  }
+  return grid;
+}
+/* ================= 渲染 ================= */
+let CUR = {}; // {y,m,key,dim,grid}
+let scrollToKey = '';
+function renderAll(){
+  const t = today();
+  CUR.y = state.curYear; CUR.m = state.curMonth;
+  CUR.key = ym(CUR.y, CUR.m); CUR.dim = daysInMonth(CUR.y, CUR.m);
+  CUR.grid = genMonth(CUR.y, CUR.m);
+  $('#monthLabel').textContent = CUR.y + '年' + CUR.m + '月';
+  $('#sheetTitle').textContent = CUR.y + '-' + String(CUR.m).padStart(2,'0') + ' · ' + CUR.dim + '天 · 双击列头复制上月该列';
+  $('#satLoad').value = state.satLoad; $('#sunLoad').value = state.sunLoad;
+  $('#idleBtn').classList.toggle('on', !!state.idleMode);
+  $('#idleBtn').textContent = state.idleMode ? '💤 留守模式：开' : '💤 留守模式';
+  renderSheet(); renderPeople(); renderStats(); renderChart(); renderKpis(); renderLegend();
+}
+function cellInfo(c){
+  const map = { '.':['rest',''], 'd':['day','白'], 'n':['night','夜'],
+    'D':['ot','白'], 'N':['ot','夜'], 'x':['duty','白'], 'y':['duty','夜'] };
+  return map[c] || ['rest',''];
+}
+function cellHTML(c, pid, d, manual, isToday, extra){
+  const [cls,txt] = cellInfo(c);
+  const p = state.people.find(x=>x.id===pid);
+  const desc = c==='d'?'白班 08:00–20:00':c==='n'?'夜班 20:00–08:00':c==='D'?'白班·加班':c==='N'?'夜班·加班':c==='x'?'白班·留守':c==='y'?'夜班·留守':'休息';
+  const badge = (c==='D'||c==='N') ? '<span class="c-badge">加</span>' :
+                (c==='x'||c==='y') ? '<span class="c-badge">留</span>' : '';
+  return '<td class="cell ' + cls + (extra?' '+extra:'') + (manual?' man':'') + (isToday?' today':'') + '" data-p="' + pid + '" data-d="' + d + '" title="' + esc(p?p.name:'') + ' · ' + CUR.m + '月' + d + '日 · ' + desc + '">'
+    + '<span class="c-txt">' + txt + '</span>' + badge + '</td>';
+}
+function loadClass(dow, load){
+  if(dow===0||dow===6) return load==='busy' ? 'col-busy' : (load==='low' ? 'col-low' : 'col-sat');
+  return '';
+}
+function renderSheet(){
+  const tb = $('#sheet'); const dim = CUR.dim; const grid = CUR.grid;
+  const man = state.manual[CUR.key] || {};
+  const tt = today();
+  // 表头
+  let h = '<thead><tr><th class="corner">技术员 / 日期</th>';
+  for(let d=1; d<=dim; d++){
+    const dow = dowOf(CUR.y,CUR.m,d), load = dayLoad(CUR.y,CUR.m,d);
+    const isT = (tt.y===CUR.y && tt.m===CUR.m && tt.day===d);
+    h += '<th class="' + loadClass(dow,load) + (isT?' col-now':'') + '"><div>' + d + '</div><div class="dow">周' + WEEK[dow] + (load==='busy'?'🔥':load==='low'?'💤':'') + '</div></th>';
+  }
+  h += '</tr></thead><tbody>';
+  // 每人一行
+  for(const p of state.people){
+    const arr = grid[p.id] || []; const ms = man[p.id] || '';
+    h += '<tr><th><span class="nm"><span class="dept-tag tag-' + p.dept + '">' + p.dept + '</span><span>' + esc(p.name) + '</span></span></th>';
+    for(let d=1; d<=dim; d++){
+      const c = arr[d-1] || '.';
+      const isT = (tt.y===CUR.y && tt.m===CUR.m && tt.day===d);
+      const isMan = !!(ms[d-1] && ms[d-1] !== '.');
+      const dow = dowOf(CUR.y,CUR.m,d), load = dayLoad(CUR.y,CUR.m,d);
+      const extra = (dow===0||dow===6) ? (load==='busy'?'dow-busy':load==='low'?'dow-low':'dow-sat') : '';
+      h += cellHTML(c, p.id, d, isMan, isT, extra);
+    }
+    h += '</tr>';
+  }
+  // 每日合计行
+  h += '<tr class="tot-row"><th>合计</th>';
+  for(let d=1; d<=dim; d++){
+    let day=0,night=0,rest=0,ot=0,duty=0;
+    for(const p of state.people){
+      const c = (grid[p.id]||[])[d-1] || '.';
+      if(c==='d') day++; else if(c==='n') night++; else if(c==='.') rest++;
+      else if(c==='D'||c==='N') ot++; else if(c==='x'||c==='y') duty++;
+    }
+    const parts = [];
+    if(day) parts.push('<span class="t-day">白' + day + '</span>');
+    if(night) parts.push('<span class="t-night">夜' + night + '</span>');
+    if(ot) parts.push('<span class="t-ot">加' + ot + '</span>');
+    if(duty) parts.push('<span class="t-duty">留' + duty + '</span>');
+    if(rest) parts.push('<span class="t-rest">休' + rest + '</span>');
+    h += '<td class="t-num">' + parts.join(' ') + '</td>';
+  }
+  h += '</tr></tbody>';
+  tb.innerHTML = h;
+  // 仅在切换月份时自动滚动到今日列，避免打断用户滚动位置
+  if(scrollToKey !== CUR.key){
+    scrollToKey = CUR.key;
+    const t2 = today();
+    if(t2.y===CUR.y && t2.m===CUR.m){
+      const el = tb.querySelector('th.col-now');
+      if(el && el.scrollIntoView) el.scrollIntoView({block:'nearest', inline:'center'});
+    }
+  }
+}
+function renderPeople(){
+  const box = $('#peopleList');
+  if(!state.people.length){
+    box.innerHTML = '<div class="p-empty"><div class="big">还没有技术员</div>点击「＋ 添加」或先填入示例数据体验</div>';
+    return;
+  }
+  const depts = ['除气','转码'];
+  let html = '';
+  for(const dept of depts){
+    const ps = state.people.filter(p=>p.dept===dept);
+    if(!ps.length) continue;
+    html += '<div style="font-size:11px;color:var(--muted);font-weight:700;margin:4px 0 2px">🏭 ' + dept + '（' + ps.length + '人）</div>';
+    for(const p of ps){
+      const sh = state.monthShift[CUR.key] && state.monthShift[CUR.key][p.id] || ensureMonthShift(p.id, CUR.key);
+      const shTxt = p.shiftRule==='fixed-day' ? '固定白班' : (p.shiftRule==='fixed-night' ? '固定夜班' : '月轮转');
+      const shNow = sh==='day' ? '☀️白' : '🌙夜';
+      const restTxt = p.restRule==='none' ? '无休' : (p.restRule==='sixOne' ? '上六休一' : '双休');
+      html += '<div class="p-card"><div class="row1"><span class="pname">' + esc(p.name)
+        + (p.note ? '<span class="badge b-white">' + esc(p.note) + '</span>' : '') + '</span>'
+        + '<span class="ops"><button class="op-edit" data-id="' + p.id + '" title="编辑">✏️</button>'
+        + '<button class="op-del" data-id="' + p.id + '" title="删除">🗑</button></span></div>'
+        + '<div class="pmeta"><span class="badge ' + (p.shiftRule==='rotate'?'b-rot':p.shiftRule==='fixed-night'?'b-night':'b-white') + '">' + shTxt + '</span>'
+        + '<span>本月 ' + shNow + '</span><span class="badge b-white">' + restTxt + '</span></div></div>';
+    }
+  }
+  box.innerHTML = html;
+  box.querySelectorAll('.op-edit').forEach(b=>b.onclick = ()=>openPersonModal(b.dataset.id));
+  box.querySelectorAll('.op-del').forEach(b=>b.onclick = ()=>delPerson(b.dataset.id));
+}
+function renderStats(){
+  const box = $('#statsTable'); const grid = CUR.grid; const dim = CUR.dim;
+  let html = '<thead><tr><th>技术员</th><th>白班</th><th>夜班</th><th>加班</th><th>留守</th><th>休息</th><th>出勤</th></tr></thead><tbody>';
+  const depts = ['除气','转码'];
+  for(const dept of depts){
+    const ps = state.people.filter(p=>p.dept===dept);
+    if(!ps.length) continue;
+    html += '<tr><td style="font-weight:700;color:#1e4d8c">🏭 ' + dept + '</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+    let dsum=0,nsum=0,osum=0,xsum=0,rsum=0;
+    for(const p of ps){
+      let day=0,night=0,ot=0,duty=0,rest=0;
+      const arr = grid[p.id]||[];
+      for(let d=1; d<=dim; d++){
+        const c = arr[d-1]||'.';
+        if(c==='d') day++; else if(c==='n') night++;
+        else if(c==='D'||c==='N') ot++; else if(c==='x'||c==='y') duty++; else rest++;
+      }
+      dsum+=day; nsum+=night; osum+=ot; xsum+=duty; rsum+=rest;
+      const work = day+night+ot+duty;
+      html += '<tr><td>' + esc(p.name) + '</td><td>' + day + '</td><td>' + night + '</td><td style="color:var(--c-ot-t)">' + (ot||'') + '</td><td style="color:var(--c-duty-t)">' + (duty||'') + '</td><td style="color:var(--c-rest-t)">' + rest + '</td><td><b>' + work + '</b></td></tr>';
+    }
+    html += '<tr style="background:#f6f9fc;font-weight:700"><td>' + dept + ' 合计</td><td>' + dsum + '</td><td>' + nsum + '</td><td style="color:var(--c-ot-t)">' + osum + '</td><td style="color:var(--c-duty-t)">' + xsum + '</td><td style="color:var(--c-rest-t)">' + rsum + '</td><td><b>' + (dsum+nsum+osum+xsum) + '</b></td></tr>';
+  }
+  html += '</tbody>';
+  box.innerHTML = html;
+}
+function renderChart(){
+  const box = $('#chartBox'); const dim = CUR.dim; const grid = CUR.grid;
+  const cw = 16, ch = 150, padB = 18, padT = 4;
+  let max = 1;
+  const daily = [];
+  for(let d=1; d<=dim; d++){
+    let day=0,night=0,dayOt=0,nightOt=0;
+    for(const p of state.people){
+      const c = (grid[p.id]||[])[d-1]||'.';
+      if(c==='d') day++; else if(c==='n') night++;
+      else if(c==='D') dayOt++; else if(c==='N') nightOt++;
+      else if(c==='x') day++; else if(c==='y') night++;
+    }
+    daily.push({day,night,dayOt,nightOt});
+    max = Math.max(max, day+dayOt, night+nightOt);
+  }
+  const W = Math.max(dim*cw, 480);
+  const H = ch + padB;
+  let svg = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" style="min-width:100%">';
+  svg += '<line x1="0" y1="' + (ch+4) + '" x2="' + W + '" y2="' + (ch+4) + '" stroke="#c6d0dc"/>';
+  // 网格线
+  for(let g=1; g<=max; g++){
+    const yy = ch - g*(ch-padT)/max;
+    svg += '<line x1="0" y1="' + yy + '" x2="' + W + '" y2="' + yy + '" stroke="#eef1f5" stroke-dasharray="3 3"/>';
+    svg += '<text x="3" y="' + (yy-2) + '" font-size="8" fill="#8a949e">' + g + '</text>';
+  }
+  const bw = 5.5, gap = 3;
+  for(let d=1; d<=dim; d++){
+    const x = (d-1)*cw + 1;
+    const dow = dowOf(CUR.y,CUR.m,d), load = dayLoad(CUR.y,CUR.m,d);
+    if(dow===0||dow===6){
+      const col = load==='busy' ? '#fecdd3' : (load==='low' ? '#bae6fd' : '#e2e8f0');
+      svg += '<rect x="' + (x-1) + '" y="0" width="' + (cw-1) + '" height="' + ch + '" fill="' + col + '" opacity=".5"/>';
+    }
+    const di = daily[d-1];
+    const hD = di.day*(ch-padT)/max, hN = di.night*(ch-padT)/max;
+    const hO = di.dayOt*(ch-padT)/max, hNO = di.nightOt*(ch-padT)/max;
+    const yD = ch - hD, yN = ch - hN;
+    svg += '<rect x="' + x + '" y="' + yD + '" width="' + bw + '" height="' + Math.max(hD,1) + '" rx="1.5" fill="#f5b40e"/>';
+    svg += '<rect x="' + (x+bw+gap) + '" y="' + yN + '" width="' + bw + '" height="' + Math.max(hN,1) + '" rx="1.5" fill="#6366f1"/>';
+    if(hO>0){ svg += '<rect x="' + x + '" y="' + (yD-hO) + '" width="' + bw + '" height="' + hO + '" rx="1.5" fill="#ef4444" opacity=".85"/>'; }
+    if(hNO>0){ svg += '<rect x="' + (x+bw+gap) + '" y="' + (yN-hNO) + '" width="' + bw + '" height="' + hNO + '" rx="1.5" fill="#ef4444" opacity=".85"/>'; }
+    const isT = today().y===CUR.y && today().m===CUR.m && today().day===d;
+    svg += '<text x="' + (x+2) + '" y="' + (ch+13) + '" font-size="8" fill="' + (isT?'#1e4d8c':'#8a949e') + '" font-weight="' + (isT?800:400) + '">' + d + '</text>';
+    if(dow===0) svg += '<text x="' + (x+2) + '" y="' + (ch+16) + '" font-size="7" fill="#f43f5e">日</text>';
+    if(dow===6) svg += '<text x="' + (x+2) + '" y="' + (ch+16) + '" font-size="7" fill="#f59e0b">六</text>';
+  }
+  svg += '</svg>';
+  box.innerHTML = svg;
+}
+function renderKpis(){
+  const ps = state.people;
+  const rot = ps.filter(p=>p.shiftRule==='rotate').length;
+  const fd = ps.filter(p=>p.shiftRule==='fixed-day').length;
+  const fn = ps.filter(p=>p.shiftRule==='fixed-night').length;
+  const dim = CUR.dim; let otN=0, dutyN=0;
+  for(const p of ps){ for(let d=1; d<=dim; d++){ const c=(CUR.grid[p.id]||[])[d-1]||'.';
+    if(c==='D'||c==='N') otN++; else if(c==='x'||c==='y') dutyN++; } }
+  const html = '<div class="kpi"><div class="v">' + ps.length + '</div><div class="k">技术员</div></div>'
+    + '<div class="kpi"><div class="v">' + rot + '</div><div class="k">月轮转</div></div>'
+    + '<div class="kpi"><div class="v">' + fd + '/' + fn + '</div><div class="k">固定白/夜</div></div>'
+    + '<div class="kpi"><div class="v">' + otN + '</div><div class="k">加班格数</div></div>'
+    + '<div class="kpi"><div class="v">' + dutyN + '</div><div class="k">留守格数</div></div>';
+  $('#kpiRow').innerHTML = html;
+}
+function renderLegend(){
+  const items = [
+    ['day','白班 08:00–20:00'],['night','夜班 20:00–08:00'],['rest','休'],
+    ['ot','加班'],['duty','留守'],['','手动修改(蓝点)']
+  ];
+  const map = {day:'var(--c-day)',night:'var(--c-night)',rest:'var(--c-rest)',ot:'var(--c-ot)',duty:'var(--c-duty)','':''};
+  let html = '';
+  for(const [k,t] of items){
+    html += '<span class="lg">' + (map[k] ? '<span class="sw" style="background:' + map[k] + '"></span>' : '<span class="sw" style="background:#fff;border:1px dashed #94a3b8"></span>') + ' ' + t + '</span>';
+  }
+  $('#legend').innerHTML = html;
+}
+/* ================= 交互：排班表 ================= */
+let painting = null; // 正在拖拽填充的值
+function setManual(pid, day, ch){
+  const key = CUR.key, dim = CUR.dim;
+  state.manual[key] = state.manual[key] || {};
+  let s = state.manual[key][pid] || '';
+  if(s.length !== dim) s = '.'.repeat(dim);
+  const arr = s.split('');
+  arr[day-1] = ch;
+  state.manual[key][pid] = arr.join('');
+  saveState();
+}
+function paintCell(pid, day, ch){
+  if(!ch){ // cycle
+    const cur = (CUR.grid[pid]||[])[day-1] || '.';
+    const next = cur==='.' ? 'd' : (cur==='d' ? 'n' : '.');
+    setManual(pid, day, next);
+  } else if(ch==='ot' || ch==='duty'){
+    const cur = (CUR.grid[pid]||[])[day-1] || '.';
+    const base = (state.monthShift[CUR.key]&&state.monthShift[CUR.key][pid]) || 'day';
+    const target = ch==='ot' ? (base==='night'?'N':'D') : (base==='night'?'y':'x');
+    setManual(pid, day, cur===target ? base : target); // 再点一次取消
+  } else {
+    setManual(pid, day, ch);
+  }
+}
+function brushValue(){
+  const b = $('#brush').value;
+  if(b==='day') return 'd'; if(b==='night') return 'n'; if(b==='rest') return '.';
+  if(b==='ot') return 'ot'; if(b==='duty') return 'duty';
+  return null; // cycle
+}
+$('#sheet').addEventListener('mousedown', e=>{
+  const td = e.target.closest('td.cell'); if(!td || e.button===2) return;
+  e.preventDefault();
+  const pid = td.dataset.p, d = +td.dataset.d;
+  if(e.shiftKey){ paintCell(pid, d, 'ot'); }
+  else if(e.altKey){ paintCell(pid, d, 'duty'); }
+  else { const bv = brushValue(); paintCell(pid, d, bv); painting = bv; }
+  renderSheet();
+});
+$('#sheet').addEventListener('mouseover', e=>{
+  if(painting===null) return;
+  const td = e.target.closest('td.cell'); if(!td) return;
+  const pid = td.dataset.p, d = +td.dataset.d;
+  paintCell(pid, d, painting === 'ot' ? 'ot' : painting === 'duty' ? 'duty' : painting);
+});
+document.addEventListener('mouseup', ()=>{ painting = null; });
+$('#sheet').addEventListener('contextmenu', e=>{
+  const td = e.target.closest('td.cell'); if(!td) return;
+  e.preventDefault();
+  setManual(td.dataset.p, +td.dataset.d, '.');
+  renderSheet();
+});
+/* 双击列头：复制上月同日排班到本列 */
+$('#sheet').addEventListener('dblclick', e=>{
+  const th = e.target.closest('thead th'); if(!th || th.classList.contains('corner')) return;
+  const d = +th.querySelector('div').textContent;
+  const py = CUR.m===1 ? CUR.y-1 : CUR.y, pm = CUR.m===1 ? 12 : CUR.m-1;
+  if(daysInMonth(py,pm) < d){ toast('上月只有 ' + daysInMonth(py,pm) + ' 天，无法复制'); return; }
+  const pgrid = genMonth(py, pm);
+  let n = 0;
+  for(const p of state.people){
+    const c = (pgrid[p.id]||[])[d-1] || '.';
+    if(c !== '.'){ setManual(p.id, d, c); n++; }
+  }
+  renderSheet(); toast('已从 ' + py + '年' + pm + '月' + d + '日 复制到本月' + d + '日（' + n + '人）');
+});
+
+/* ================= 交互：人员管理 ================= */
+let editingId = null;
+function openPersonModal(id){
+  editingId = id || null;
+  const p = id ? state.people.find(x=>x.id===id) : null;
+  $('#pmTitle').textContent = p ? '编辑技术员' : '添加技术员';
+  $('#pmName').value = p ? p.name : '';
+  $('#pmNote').value = p ? (p.note||'') : '';
+  if(p){ setRadio('pmDept', p.dept); setRadio('pmShift', p.shiftRule); setRadio('pmRest', p.restRule); setRadio('pmInit', p.initialShift||'day'); }
+  else { setRadio('pmDept','除气'); setRadio('pmShift','fixed-day'); setRadio('pmRest','none'); setRadio('pmInit','day'); }
+  updateRotHint();
+  $('#personModal').classList.add('show');
+  $('#pmName').focus();
+}
+function setRadio(group, val){ $$('#'+group+' input').forEach(r=>r.checked = (r.value===val)); }
+function updateRotHint(){
+  const isRot = $$('#pmShift input').find(r=>r.checked).value === 'rotate';
+  $('#pmRotHint').style.display = isRot ? '' : 'none';
+  $('#pmInitRow').style.display = isRot ? '' : 'none';
+}
+$('#pmShift').addEventListener('change', updateRotHint);
+$('#pmCancel').onclick = ()=> $('#personModal').classList.remove('show');
+$('#pmSave').onclick = ()=>{
+  const name = $('#pmName').value.trim();
+  if(!name){ toast('请输入姓名'); return; }
+  const dept = $$('#pmDept input').find(r=>r.checked).value;
+  const shiftRule = $$('#pmShift input').find(r=>r.checked).value;
+  const initialShift = $$('#pmInit input').find(r=>r.checked).value;
+  const restRule = $$('#pmRest input').find(r=>r.checked).value;
+  const note = $('#pmNote').value.trim();
+  if(editingId){
+    const p = state.people.find(x=>x.id===editingId);
+    Object.assign(p, {name,dept,shiftRule,initialShift,restRule,note});
+    toast('已保存修改');
+  } else {
+    const p = {id:'p'+Date.now()+Math.random().toString(36).slice(2,6), name,dept,shiftRule,initialShift,restRule,note};
+    state.people.push(p);
+    ensureMonthShift(p.id, CUR.key);
+    toast('已添加 ' + name);
+  }
+  $('#personModal').classList.remove('show');
+  saveState(); renderAll();
+};
+function delPerson(id){
+  const p = state.people.find(x=>x.id===id); if(!p) return;
+  if(!confirm('确定删除技术员「' + p.name + '」？其排班记录将保留但不再显示。')) return;
+  state.people = state.people.filter(x=>x.id!==id);
+  delete state.monthShift[CUR.key][id];
+  saveState(); renderAll(); toast('已删除 ' + p.name);
+}
+$('#addPersonBtn').onclick = ()=> openPersonModal(null);
+
+/* ================= 交互：工具栏 ================= */
+$('#prevMonth').onclick = ()=>{ shiftMonth(-1); };
+$('#nextMonth').onclick = ()=>{ shiftMonth(1); };
+$('#todayBtn').onclick = ()=>{ const t=today(); setMonth(t.y,t.m); };
+function shiftMonth(delta){
+  let m = CUR.m + delta, y = CUR.y;
+  if(m<1){m=12;y--;} if(m>12){m=1;y++;}
+  setMonth(y,m);
+}
+function setMonth(y,m){
+  const prev = CUR.key;
+  state.curYear = y; state.curMonth = m;
+  const key = ym(y,m);
+  let rot = 0;
+  for(const p of state.people){
+    if(p.shiftRule!=='rotate') continue;
+    const prevSh = state.monthShift[prev] && state.monthShift[prev][p.id];
+    const curSh = ensureMonthShift(p.id, key);
+    if(prevSh && curSh && prevSh!==curSh) rot++;
+  }
+  saveState(); renderAll();
+  if(prev !== key) toast('已切换到 ' + y + '年' + m + '月' + (rot ? '（' + rot + '名轮转人员班次已互换）' : ''));
+}
+$('#monthLabel').onclick = ()=>{
+  let inp = $('#monthInput');
+  if(!inp){
+    inp = document.createElement('input');
+    inp.type='month'; inp.id='monthInput';
+    inp.style.position='fixed'; inp.style.opacity='0'; inp.style.pointerEvents='none';
+    document.body.appendChild(inp);
+    inp.addEventListener('change', ()=>{ if(inp.value){ const [y,m]=inp.value.split('-').map(Number); setMonth(y,m); } });
+  }
+  inp.value = CUR.y + '-' + String(CUR.m).padStart(2,'0');
+  if(inp.showPicker) inp.showPicker(); else inp.click();
+};
+$('#genBtn').onclick = ()=>{ renderAll(); toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线（手工修改保留）'); };
+$('#rotateBtn').onclick = ()=>{
+  const key = CUR.key; let n=0;
+  for(const p of state.people){
+    if(p.shiftRule!=='rotate') continue;
+    const cur = ensureMonthShift(p.id,key);
+    state.monthShift[key][p.id] = cur==='day' ? 'night' : 'day'; n++;
+  }
+  saveState(); renderAll();
+  toast('🔁 本月已强制转班（' + n + '人）');
+};
+$('#idleBtn').onclick = ()=>{
+  state.idleMode = !state.idleMode;
+  saveState(); renderAll();
+  toast(state.idleMode ? '💤 留守模式已开启：每天保留白班' + state.idleDay + '人 + 夜班' + state.idleNight + '人' : '💤 留守模式已关闭');
+};
+$('#clearManBtn').onclick = ()=>{
+  if(!state.manual[CUR.key] || !Object.keys(state.manual[CUR.key]).length){ toast('本月没有手工修改'); return; }
+  delete state.manual[CUR.key];
+  saveState(); renderAll(); toast('🧹 已清除本月手工修改，恢复自动排班');
+};
+$('#satLoad').onchange = ()=>{ state.satLoad = $('#satLoad').value; saveState(); renderAll(); toast('周六负荷已设为「' + loadTxt(state.satLoad) + '」'); };
+$('#sunLoad').onchange = ()=>{ state.sunLoad = $('#sunLoad').value; saveState(); renderAll(); toast('周日负荷已设为「' + loadTxt(state.sunLoad) + '」'); };
+function loadTxt(v){ return v==='busy' ? '繁忙' : (v==='low' ? '低负荷' : '正常'); }
+
+/* ================= 导出 / 打印 ================= */
+$('#exportBtn').onclick = ()=>{
+  const dim = CUR.dim; const grid = CUR.grid;
+  const rows = [['技术员','部门','班次规则', ...Array.from({length:dim},(_,i)=>'第'+(i+1)+'天')]];
+  for(const p of state.people){
+    const arr = grid[p.id]||[];
+    const shTxt = p.shiftRule==='fixed-day'?'固定白班':(p.shiftRule==='fixed-night'?'固定夜班':'月轮转');
+    rows.push([p.name, p.dept, shTxt, ...arr.map(c=>{
+      if(c==='d') return '白班'; if(c==='n') return '夜班';
+      if(c==='D') return '白班(加班)'; if(c==='N') return '夜班(加班)';
+      if(c==='x') return '白班(留守)'; if(c==='y') return '夜班(留守)';
+      return '休';
+    })]);
+  }
+  const csv = '\ufeff' + rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '排班表_' + CUR.key + '.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('⬇ 已导出 CSV（可用 Excel 打开）');
+};
+$('#printBtn').onclick = ()=> window.print();
+$('#helpBtn').onclick = ()=> $('#helpModal').classList.add('show');
+$('#helpClose').onclick = ()=> $('#helpModal').classList.remove('show');
+$('#helpModal').addEventListener('click', e=>{ if(e.target.id==='helpModal') e.target.classList.remove('show'); });
+$('#personModal').addEventListener('click', e=>{ if(e.target.id==='personModal') e.target.classList.remove('show'); });
+
+/* ================= 示例数据 & 引导 ================= */
+function samplePeople(){
+  return [
+    {id:'s1', name:'陈建国', dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', note:'组长'},
+    {id:'s2', name:'刘志强', dept:'除气', shiftRule:'fixed-night', initialShift:'night', restRule:'sixOne', note:''},
+    {id:'s3', name:'王丽华', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'weekend', note:''},
+    {id:'s4', name:'赵永刚', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'none', note:''},
+    {id:'s5', name:'钱文杰', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
+    {id:'s6', name:'孙秀兰', dept:'转码', shiftRule:'fixed-day', initialShift:'day', restRule:'weekend', note:''},
+    {id:'s7', name:'周晓峰', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'weekend', note:''},
+    {id:'s8', name:'吴国庆', dept:'转码', shiftRule:'fixed-night', initialShift:'night', restRule:'none', note:'新人'}
+  ];
+}
+$('#wSample').onclick = ()=>{
+  state.people = samplePeople();
+  state.manual = {}; state.monthShift = {};
+  const t = today(); state.curYear = t.y; state.curMonth = t.m;
+  saveState(); renderAll();
+  $('#welcomeModal').classList.remove('show');
+  toast('🧪 已填入 8 名示例技术员，试试「⚡ 自动排班」');
+};
+$('#wStart').onclick = ()=>{
+  $('#welcomeModal').classList.remove('show');
+  toast('先从「＋ 添加」开始吧');
+};
+
+/* ================= 初始化 ================= */
+loadState(); initMonth();
+renderAll();
+if(!state.people.length && !Object.keys(state.manual).length){
+  $('#welcomeModal').classList.add('show');
+}
+</script>
+</body>
+</html>

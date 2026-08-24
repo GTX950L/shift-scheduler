@@ -1,0 +1,5 @@
+# dev artifacts
+_check.js
+_*.png
+.DS_Store
+Thumbs.db
