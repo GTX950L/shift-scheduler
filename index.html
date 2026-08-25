@@ -79,6 +79,11 @@
   table.sheet tbody th{position:sticky;left:0;z-index:4;background:#fbfdff;font-weight:600;font-size:12px;padding:3px 6px;text-align:left;white-space:nowrap}
   table.sheet tbody th .nm{display:flex;align-items:center;gap:5px}
   table.sheet tbody th .dept-tag{font-size:9px;padding:1px 5px;border-radius:8px;font-weight:700;flex:0 0 auto}
+  /* 行拖动排序 */
+  #sheet tbody tr[data-pid]{cursor:grab}
+  #sheet tbody tr[data-pid]:active{cursor:grabbing}
+  #sheet tbody tr.drag-src{opacity:.45}
+  #sheet tbody tr.drag-over{outline:2px dashed var(--brand);outline-offset:-2px;background:#eef6ff}
   .tag-除气{background:#e8f1fe;color:#1d4ed8}
   .tag-转码{background:#fef3c7;color:#92400e}
   .cell{width:33px;height:33px;cursor:pointer;position:relative;user-select:none;transition:box-shadow .1s,transform .08s,filter .08s}
@@ -369,7 +374,7 @@
 <main class="wrap">
   <section class="panel sheet-panel">
     <h2><span class="t">📋 排班表 <span id="sheetTitle" style="font-size:12px;color:var(--muted);font-weight:600"></span></span>
-      <span id="kpis" class="mini-stat"></span></h2>
+      <span style="display:inline-flex;gap:6px;align-items:center"><button id="resetRowBtn" class="sm" style="display:none" title="恢复默认部门排序（除气在上、转码在下）">🔄 部门排序</button><span id="kpis" class="mini-stat"></span></span></h2>
     <div class="sheet-scroll" id="sheetScroll">
       <table class="sheet" id="sheet"></table>
     </div>
@@ -388,6 +393,7 @@
         <b>② 点「⚡ 自动排班」</b>生成当月排班基线。<br>
         <b>③ 微调</b>：点击格子循环切换 休→白→夜；<kbd>Shift</kbd>+点击 加班；<kbd>Alt</kbd>+点击 留守；按住拖拽批量填充；<kbd>右键</kbd>菜单（休/请假/清除手动）；<kbd>Ctrl+Z/Y</kbd> 撤销/重做。<br>
         <b>📋 复制排班</b>：右侧人员卡片点「📋」选源 → 点目标人员卡片 → 当月排班整体复制（含休），可 Ctrl+Z 撤销。<br>
+        <b>↕️ 调整行序</b>：排班表按住<b>人名行</b>上下拖动，谁在上谁在下随意排（自动保存）；想恢复部门分组点「🔄 部门排序」。<br>
         <b>⌨ 快捷键</b>：<kbd>1</kbd>循环 <kbd>2</kbd>白 <kbd>3</kbd>夜 <kbd>4</kbd>休 <kbd>5</kbd>加班 <kbd>6</kbd>留守；<kbd>←</kbd><kbd>→</kbd>或<kbd>PgUp</kbd><kbd>PgDn</kbd> 切换月份。<br>
         <b>④ 周末负荷</b>：周六/周日可设「繁忙 / 正常 / 低负荷」——繁忙=双休者叫回加班（<b>上六休一者的休息日照休</b>，保持每周休1天）；<b>低负荷=按部门保底留人</b>（默认 除气白2 + 转码白1夜1，固定班优先，其余休）。<br>
         <b>⑤ 留守模式</b>：低负荷时每天仅保留白班2人/夜班1人（全员轮换）。<br>
@@ -483,6 +489,7 @@
         <li>快捷键：<kbd>1</kbd>~<kbd>6</kbd> 切换画笔（循环/白/夜/休/加班/留守）；<kbd>Shift</kbd>+点击=加班，<kbd>Alt</kbd>+点击=留守，<kbd>右键</kbd>=弹出菜单（休息 / 请假 / 清除手动）。</li>
         <li><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd>（或工具栏 ↩ ↪）撤销 / 重做；<kbd>←</kbd><kbd>→</kbd> 或 <kbd>PgUp</kbd><kbd>PgDn</kbd> 切换中心月份。</li>
         <li><b>复制排班</b>：右侧技术员卡片点「📋」→ 再点另一张卡片，把源人员<b>当月排班整体复制</b>给目标（含休息日，可 Ctrl+Z 撤销）；点空白处取消。</li>
+        <li><b>调整行顺序</b>：排班表按住<b>人名行</b>上下拖动即可换位（自动保存，跨月视图同样生效）；点表头「🔄 部门排序」恢复默认（除气在上、转码在下）。</li>
       </ul>
     </div>
     <div class="help-sec">
@@ -625,11 +632,12 @@ function toast(msg){
 const LS_KEY = 'shift-scheduler-v1';
 const defaultState = () => ({
   v: 6,                 // 数据版本（v6: restOffset=星期几 周末错峰休）
-  people: [],            // {id,name,dept,shiftRule:'fixed-day'|'fixed-night'|'rotate',initialShift:'day'|'night',restRule:'none'|'sixOne'|'weekend',note}
+  people: [],            // {id,name,workId,dept,shiftRule:'fixed-day'|'fixed-night'|'rotate',initialShift:'day'|'night',restRule:'none'|'sixOne'|'weekend',restOffset,note}
   monthShift: {},        // {'2026-08': {pid:'day'|'night'}} 各月实际班次
   manual: {},            // {'2026-08': {pid:'...'}} 手动覆盖字符串(_=未设置 .=休 d/n=班 D/N=加班 x/y=留守)
   leave: {},             // {'2026-08': {pid: {'3':'事假'}}} 请假登记（日期->原因）
   holidays: {},          // {'2026-08': {'1':'国庆节'}} 节假日/停线日
+  rowOrder: [],          // 排班表自定义行顺序（pid 数组）；空=按部门分组（除气在上、转码在下）
   satLoad: 'normal', sunLoad: 'normal',
   weekendLow: {          // 「低负荷」日每部门保底人数（day=白班岗 night=夜班岗；固定班优先保留）
     sat:  {'除气':{day:2,night:0}, '转码':{day:1,night:1}},
@@ -921,6 +929,8 @@ function renderAll(){
   $('#rotateDay').disabled = (state.rotateMode||'lastWeekend') !== 'fixed';
   $('#idleBtn').classList.toggle('on', !!state.idleMode);
   $('#idleBtn').textContent = state.idleMode ? '💤 留守模式：开' : '💤 留守模式';
+  const rb = $('#resetRowBtn');
+  if(rb) rb.style.display = (state.rowOrder && state.rowOrder.length) ? '' : 'none';
   updateHistBtns();
   renderSheet(); renderPeople(); renderStats(); renderChart(); renderKpis(); renderLegend();
 }
@@ -946,6 +956,18 @@ function loadClass(dow, load){
   if(dow===0||dow===6) return load==='busy' ? 'col-busy' : (load==='low' ? 'col-low' : 'col-sat');
   return '';
 }
+/* 排班表行顺序：默认部门分组（除气在上、转码在下）；用户拖拽后按 rowOrder 自定义 */
+const deptOrder = {'除气':0, '转码':1};
+function rowOrderPeople(){
+  const ro = state.rowOrder || [];
+  const byId = {}; state.people.forEach(p=>byId[p.id]=p);
+  if(ro.length){
+    const ordered = ro.map(id=>byId[id]).filter(Boolean);
+    state.people.forEach(p=>{ if(!ordered.includes(p)) ordered.push(p); }); // 新加人员追加末尾
+    return ordered;
+  }
+  return state.people.slice().sort((a,b)=>((deptOrder[a.dept]??9)-(deptOrder[b.dept]??9)));
+}
 function renderSheet(){
   const tb = $('#sheet'); const tt = today();
   const months = CUR.months;
@@ -966,11 +988,9 @@ function renderSheet(){
       + '<div>' + c.d + (hol?' 🏮':'') + '</div><div class="dow">' + (hol?hol+' · ':'') + '周' + WEEK[c.dow] + (c.load==='busy'?'🔥':c.load==='low'?'💤':'') + '</div></th>';
   }
   h += '</tr></thead><tbody>';
-  // 每人一行（按部门分组：除气在上、转码在下，组内保持录入顺序）
-  const deptOrder = {'除气':0, '转码':1};
-  const sheetRows = state.people.slice().sort((a,b)=>((deptOrder[a.dept]??9)-(deptOrder[b.dept]??9)));
-  for(const p of sheetRows){
-    h += '<tr><th><span class="nm"><span class="dept-tag tag-' + p.dept + '">' + p.dept + '</span><span>' + esc(p.name) + '</span></span></th>';
+  // 每人一行：默认按部门分组（除气在上、转码在下，组内保持录入顺序）；用户拖拽后按自定义顺序
+  for(const p of rowOrderPeople()){
+    h += '<tr data-pid="' + p.id + '" draggable="true" title="按住拖动可调整行顺序"><th><span class="nm"><span class="dept-tag tag-' + p.dept + '">' + p.dept + '</span><span>' + esc(p.name) + '</span></span></th>';
     for(const c of cols){
       const grid = CUR.grids[c.key]; if(!grid) continue;
       const arr = grid[p.id] || [];
@@ -1195,6 +1215,59 @@ function renderLegend(){
 }
 /* ================= 交互：排班表 ================= */
 let painting = null; // 正在拖拽填充的值
+let dragPid = null;  // 行拖动排序：正在拖动的 pid
+function clearRowDrag(){
+  if(dragPid){
+    const tr = document.querySelector('#sheet tr[data-pid="' + dragPid + '"]');
+    if(tr) tr.classList.remove('drag-src');
+  }
+  document.querySelectorAll('#sheet tr.drag-over').forEach(tr=>tr.classList.remove('drag-over'));
+  dragPid = null;
+}
+const sheetTB = () => document.querySelector('#sheet tbody');
+document.addEventListener('dragstart', e=>{
+  const tr = e.target.closest && e.target.closest('#sheet tbody tr[data-pid]');
+  if(!tr) return;
+  if(e.target.closest && e.target.closest('td.cell')){ e.preventDefault(); return; } // 格子拖拽填充优先
+  dragPid = tr.dataset.pid; tr.classList.add('drag-src');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', dragPid);
+});
+document.addEventListener('dragover', e=>{
+  if(!dragPid) return;
+  const tr = e.target.closest && e.target.closest('#sheet tbody tr[data-pid]');
+  if(!tr || tr.dataset.pid === dragPid) return;
+  e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+  tr.classList.add('drag-over');
+});
+document.addEventListener('dragleave', e=>{
+  if(!dragPid) return;
+  const tr = e.target.closest && e.target.closest('#sheet tbody tr[data-pid]');
+  if(tr) tr.classList.remove('drag-over');
+});
+document.addEventListener('drop', e=>{
+  if(!dragPid) return;
+  e.preventDefault();
+  const tr = e.target.closest && e.target.closest('#sheet tbody tr[data-pid]');
+  if(tr && tr.dataset.pid !== dragPid){
+    const order = rowOrderPeople().map(p=>p.id);
+    const from = order.indexOf(dragPid), to = order.indexOf(tr.dataset.pid);
+    order.splice(from,1);
+    order.splice(to,0,dragPid);
+    state.rowOrder = order;
+    saveState();
+    const rb2 = $('#resetRowBtn'); if(rb2) rb2.style.display = '';
+    renderSheet();
+    toast('↕️ 已调整行顺序（可继续拖动，或点「🔄 部门排序」恢复）');
+  }
+  clearRowDrag();
+});
+document.addEventListener('dragend', clearRowDrag);
+$('#resetRowBtn').onclick = ()=>{
+  state.rowOrder = [];
+  saveState(); renderAll();
+  toast('已恢复部门排序（除气在上、转码在下）');
+};
 let checkViol = {};  // 体检违规标记：'mkey|pid|day' -> true
 /* 请假/手动记录的历史操作（撤销用）：op = {t:'cell'|'leave', pid, mkey, day, before, after} */
 let hist = [], histIdx = -1, histTx = null;
@@ -1710,8 +1783,7 @@ function cellToTxt(c){
 function exportCSV(){
   const dim = CUR.dim; const grid = CUR.grid;
   const rows = [['技术员','部门','班次规则','休息规则', ...Array.from({length:dim},(_,i)=>'第'+(i+1)+'天')]];
-  const deptOrder = {'除气':0, '转码':1};
-  const csvPeople = state.people.slice().sort((a,b)=>((deptOrder[a.dept]??9)-(deptOrder[b.dept]??9)));
+  const csvPeople = rowOrderPeople(); // 与排班表显示顺序一致（含用户拖拽排序）
   for(const p of csvPeople){
     const arr = grid[p.id]||[];
     rows.push([p.name, p.dept, SHIFT_TXT[p.shiftRule]||'月轮转', REST_TXT[p.restRule]||'无休', ...arr.map((c,i)=>{
@@ -1726,7 +1798,7 @@ function exportCSV(){
 }
 function exportJSON(){
   const data = { app:'shift-scheduler', version:1, savedAt:new Date().toISOString(),
-    state:{ people:state.people, monthShift:state.monthShift, manual:state.manual, leave:state.leave, holidays:state.holidays,
+    state:{ people:state.people, monthShift:state.monthShift, manual:state.manual, leave:state.leave, holidays:state.holidays, rowOrder:state.rowOrder,
       satLoad:state.satLoad, sunLoad:state.sunLoad, idleMode:state.idleMode,
       idleDay:state.idleDay, idleNight:state.idleNight, curYear:state.curYear, curMonth:state.curMonth } };
   downloadBlob(JSON.stringify(data,null,2), 'application/json', '排班备份_' + CUR.key + '.json');
@@ -1890,6 +1962,7 @@ function importJSONData(data){
   state.manual = s.manual || {};
   state.leave = s.leave || {};
   state.holidays = s.holidays || {};
+  state.rowOrder = Array.isArray(s.rowOrder) ? s.rowOrder : [];
   state.satLoad = s.satLoad || 'normal'; state.sunLoad = s.sunLoad || 'normal';
   state.idleMode = !!s.idleMode; state.idleDay = s.idleDay||2; state.idleNight = s.idleNight||1;
   state.curYear = s.curYear || today().y; state.curMonth = s.curMonth || today().m;
