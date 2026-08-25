@@ -121,6 +121,7 @@
   .p-card:hover .ops{opacity:1}
   .p-card .ops button{background:none;color:#4b5563;padding:2px 5px;font-size:11px;border-radius:6px}
   .p-card .ops button:hover{background:#eef2f7;color:#1e4d8c}
+  .p-card.src-hl{border-color:var(--brand);box-shadow:0 0 0 2px rgba(47,109,181,.35);cursor:pointer;background:#f3f8ff}
   .p-empty{text-align:center;padding:26px 12px;color:var(--muted);font-size:13px}
   .p-empty .big{font-size:15px;color:#374151;font-weight:700;margin-bottom:6px}
   .mini-stat{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:8px}
@@ -385,6 +386,7 @@
         <b>① 添加技术员</b>：设置部门、班次规则（固定白班 / 固定夜班 / 月轮转）、休息规则。<br>
         <b>② 点「⚡ 自动排班」</b>生成当月排班基线。<br>
         <b>③ 微调</b>：点击格子循环切换 休→白→夜；<kbd>Shift</kbd>+点击 加班；<kbd>Alt</kbd>+点击 留守；按住拖拽批量填充；<kbd>右键</kbd>菜单（休/请假/清除手动）；<kbd>Ctrl+Z/Y</kbd> 撤销/重做。<br>
+        <b>📋 复制排班</b>：右侧人员卡片点「📋」选源 → 点目标人员卡片 → 当月排班整体复制（含休），可 Ctrl+Z 撤销。<br>
         <b>⌨ 快捷键</b>：<kbd>1</kbd>循环 <kbd>2</kbd>白 <kbd>3</kbd>夜 <kbd>4</kbd>休 <kbd>5</kbd>加班 <kbd>6</kbd>留守；<kbd>←</kbd><kbd>→</kbd>或<kbd>PgUp</kbd><kbd>PgDn</kbd> 切换月份。<br>
         <b>④ 周末繁忙</b>：把周六/周日设为「繁忙」，自动排班时双休人员会被叫回并标记加班。<br>
         <b>⑤ 低负荷</b>：开启「留守模式」，每天仅保留白班2人/夜班1人。<br>
@@ -472,6 +474,7 @@
         <li>「🔁 循环切换」画笔：点击依次 休 → 白班 → 夜班 → 休。</li>
         <li>快捷键：<kbd>1</kbd>~<kbd>6</kbd> 切换画笔（循环/白/夜/休/加班/留守）；<kbd>Shift</kbd>+点击=加班，<kbd>Alt</kbd>+点击=留守，<kbd>右键</kbd>=弹出菜单（休息 / 请假 / 清除手动）。</li>
         <li><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd>（或工具栏 ↩ ↪）撤销 / 重做；<kbd>←</kbd><kbd>→</kbd> 或 <kbd>PgUp</kbd><kbd>PgDn</kbd> 切换中心月份。</li>
+        <li><b>复制排班</b>：右侧技术员卡片点「📋」→ 再点另一张卡片，把源人员<b>当月排班整体复制</b>给目标（含休息日，可 Ctrl+Z 撤销）；点空白处取消。</li>
       </ul>
     </div>
     <div class="help-sec">
@@ -916,18 +919,54 @@ function renderPeople(){
       const shTxt = p.shiftRule==='fixed-day' ? '固定白班' : (p.shiftRule==='fixed-night' ? '固定夜班' : '月轮转');
       const shNow = sh==='day' ? '☀️白' : '🌙夜';
       const restTxt = p.restRule==='none' ? '无休' : (p.restRule==='sixOne' ? '上六休一' : '双休');
-      html += '<div class="p-card"><div class="row1"><span class="pname">' + esc(p.name)
+      html += '<div class="p-card' + (copySrc===p.id ? ' src-hl' : '') + '" data-id="' + p.id + '"><div class="row1"><span class="pname">' + esc(p.name)
         + (p.note ? '<span class="badge b-white">' + esc(p.note) + '</span>' : '') + '</span>'
-        + '<span class="ops"><button class="op-edit" data-id="' + p.id + '" title="编辑">✏️</button>'
+        + '<span class="ops"><button class="op-copy" data-id="' + p.id + '" title="复制当月排班到其他技术员">📋</button>'
+        + '<button class="op-edit" data-id="' + p.id + '" title="编辑">✏️</button>'
         + '<button class="op-del" data-id="' + p.id + '" title="删除">🗑</button></span></div>'
         + '<div class="pmeta"><span class="badge ' + (p.shiftRule==='rotate'?'b-rot':p.shiftRule==='fixed-night'?'b-night':'b-white') + '">' + shTxt + '</span>'
         + '<span>本月 ' + shNow + '</span><span class="badge b-white">' + restTxt + '</span></div></div>';
     }
   }
   box.innerHTML = html;
+  box.querySelectorAll('.op-copy').forEach(b=>b.onclick = e=>{ e.stopPropagation(); startCopy(b.dataset.id); });
   box.querySelectorAll('.op-edit').forEach(b=>b.onclick = ()=>openPersonModal(b.dataset.id));
   box.querySelectorAll('.op-del').forEach(b=>b.onclick = ()=>delPerson(b.dataset.id));
+  // 复制模式下点击目标卡片完成复制
+  box.querySelectorAll('.p-card').forEach(card=>card.onclick = e=>{
+    if(e.target.closest('button')) return;
+    if(copySrc) doCopy(card.dataset.id);
+  });
 }
+/* 复制排班：源选择 → 目标点击 → 当月排班整体复制（可撤销） */
+let copySrc = null;
+function startCopy(id){
+  if(copySrc === id){ copySrc = null; renderPeople(); toast('已取消复制'); return; }
+  copySrc = id; renderPeople();
+  const p = state.people.find(x=>x.id===id);
+  toast('📋 已选源「' + (p?p.name:'') + '」，点击右侧目标人员卡片完成复制');
+}
+function doCopy(targetId){
+  const src = copySrc; copySrc = null;
+  const key = CUR.key;
+  const sn = (state.people.find(x=>x.id===src)||{}).name, tn = (state.people.find(x=>x.id===targetId)||{}).name;
+  const arr = (CUR.grids[key] && CUR.grids[key][src]) || [];
+  if(!arr.length){ renderPeople(); toast('源排班为空，无法复制'); return; }
+  const row = arr.join('');
+  histBegin();
+  const before = (state.manual[key] && state.manual[key][targetId]) || '_'.repeat(row.length);
+  histPush({t:'copyRow', mkey:key, pid:targetId, before, after:row});
+  state.manual[key] = state.manual[key] || {};
+  state.manual[key][targetId] = row;
+  if(CUR.grids[key] && CUR.grids[key][targetId]) CUR.grids[key][targetId] = arr.slice();
+  histCommit('复制排班');
+  renderPeople(); renderSheet(); renderStats();
+  saveState();
+  toast('📋 已复制 ' + sn + ' → ' + tn + '（' + key.replace('-','年') + '月）');
+}
+document.addEventListener('mousedown', e=>{
+  if(copySrc && !e.target.closest('.p-card')){ copySrc = null; renderPeople(); }
+});
 function renderStats(){
   const box = $('#statsTable'); const grid = CUR.grid; const dim = CUR.dim;
   if(!state.people.length){
@@ -1102,6 +1141,7 @@ function undo(){
     else if(op.t==='leave') setLeave(op.pid, op.mkey, op.day, op.before);
     else if(op.t==='clearMan'){ state.manual[op.key] = JSON.parse(op.before); }
     else if(op.t==='shift'){ state.monthShift[op.key][op.pid] = op.before; }
+    else if(op.t==='copyRow'){ state.manual[op.mkey] = state.manual[op.mkey]||{}; state.manual[op.mkey][op.pid] = op.before; }
   }
   histIdx--; checkViol = {}; saveState(); updateHistBtns(); renderAll();
   toast('↩ 已撤销：' + tx.label);
@@ -1114,6 +1154,7 @@ function redo(){
     else if(op.t==='leave') setLeave(op.pid, op.mkey, op.day, op.after);
     else if(op.t==='clearMan'){ delete state.manual[op.key]; }
     else if(op.t==='shift'){ state.monthShift[op.key][op.pid] = op.after; }
+    else if(op.t==='copyRow'){ state.manual[op.mkey] = state.manual[op.mkey]||{}; state.manual[op.mkey][op.pid] = op.after; }
   }
   histIdx++; checkViol = {}; saveState(); updateHistBtns(); renderAll();
   toast('↪ 已重做：' + tx.label);
