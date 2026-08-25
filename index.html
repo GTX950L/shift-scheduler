@@ -321,6 +321,7 @@
     <label title="排班表显示范围：跨月视图可连续查看转班前后几天">视图</label>
     <select id="viewMode" title="排班表显示范围：跨月视图可连续查看转班前后几天">
       <option value="month">本月</option>
+      <option value="cn" selected>本月+下月</option>
       <option value="pc">上月+本月</option>
       <option value="pcn">上月+本月+下月</option>
     </select>
@@ -534,10 +535,10 @@
     <div class="help-sec">
       <h4>📅 跨月连续查看</h4>
       <ul>
-        <li>工具栏「视图」切换显示范围：本月 / 上月+本月 / 上月+本月+下月（默认跨 3 个月连续滚动）。</li>
-        <li>跨月视图下月底与下月初连在一起，可直接观察<b>转班那几天</b>的人员衔接。</li>
+        <li>工具栏「视图」切换显示范围：本月 / <b>本月+下月（默认）</b> / 上月+本月 / 上月+本月+下月。</li>
+        <li>跨月视图下相邻月底与月初连在一起，可直接观察<b>转班那几天</b>的人员衔接。</li>
         <li>表头显示真实日期与星期，月初列标出月份（如「9月」）；双击任一日期列 = 把<b>前一天</b>的排班复制到该日（跨月自动衔接）。</li>
-        <li>统计 / 图表 / CSV 导出均针对<b>当前中心月</b>。</li>
+        <li>统计 / 图表 / CSV 导出均针对<b>当前中心月</b>（CSV 文件名会标注「跨月」以提示当前视图）；<b>打印</b>内容跟随视图——跨月视图打印前会询问「按当前视图打印」还是「切到本月打印单月」。</li>
       </ul>
     </div>
     <div class="help-sec">
@@ -577,6 +578,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.22</b> · 视图：新增「本月+下月」并设为默认显示（旧 3 月视图用户自动切换到新默认）；打印跨月视图时询问「按当前视图 / 切本月单月」；CSV 导出提示当前视图（文件名标注跨月）。</div>
       <div class="log-ver"><b>v1.21</b> · 新功能：CSV 导出加真实日期+星期行；新增月度统计 CSV 导出（月底报工）；「📋 复制到下月」整月搬移手工修改；「📅 一键标记 2026 法定假日」；排班表部门筛选；人员卡片显示本月出勤；体检新增夜班均衡检查（轮转人员夜班偏多提醒）。</div>
       <div class="log-ver"><b>v1.20</b> · 防呆加固：清手动/强制转班/留守模式/JSON导入/CSV导入/示例覆盖均加确认；人员同名提醒+工号重复拦截；CSV 自动识别 GBK/UTF-8 编码；导出/打印前自动查违规；体检一键修复连班；删除人员标注不可撤销；多标签页防覆盖提示。</div>
       <div class="log-ver"><b>v1.19</b> · 连班防呆：手动点击/拖拽/复制排班时，「夜班→次日白班」0 小时间隔连班被直接拦截（只能设休或夜），循环画笔自动跳过违规班次。</div>
@@ -683,7 +685,7 @@ function toast(msg){
 /* ================= 状态 ================= */
 const LS_KEY = 'shift-scheduler-v1';
 const defaultState = () => ({
-  v: 6,                 // 数据版本（v6: restOffset=星期几 周末错峰休）
+  v: 7,                 // 数据版本（v7: 视图默认「本月+下月」cn）
   people: [],            // {id,name,workId,dept,shiftRule:'fixed-day'|'fixed-night'|'rotate',initialShift:'day'|'night',restRule:'none'|'sixOne'|'weekend',restOffset,note}
   monthShift: {},        // {'2026-08': {pid:'day'|'night'}} 各月实际班次
   manual: {},            // {'2026-08': {pid:'...'}} 手动覆盖字符串(_=未设置 .=休 d/n=班 D/N=加班 x/y=留守)
@@ -697,7 +699,7 @@ const defaultState = () => ({
   },
   idleMode: false,
   idleDay: 2, idleNight: 1,
-  viewMode: 'pcn',      // month=本月 | pc=上月+本月 | pcn=上月+本月+下月
+  viewMode: 'cn',       // month=本月 | cn=本月+下月(默认) | pc=上月+本月 | pcn=上月+本月+下月
   deptFilter: 'all',    // all=全部 | 除气 | 转码（排班表显示筛选）
   rotateMode: 'lastWeekend', // lastWeekend=每月最后周末转班 | fixed=固定日期
   rotateDay: 1,         // 固定转班日（rotateMode='fixed' 时用，1~31）
@@ -734,6 +736,11 @@ function loadState(){
           else if(o === 6) p.restOffset = 6;
         }
         state.v = 6;
+      }
+      // v6→v7：视图新增「本月+下月」并设为默认；原「上月+本月+下月」用户切到新默认（下拉可改回）
+      if(state.v < 7){
+        if(state.viewMode === 'pcn') state.viewMode = 'cn';
+        state.v = 7;
       }
       return;
     }
@@ -954,10 +961,10 @@ function cloneGrid(g){ const o={}; for(const k in g) o[k]=g[k].slice(); return o
 let CUR = {}; // {y,m,key,dim,grid,grids,cols}
 let scrollToKey = '';
 function viewMonths(){
-  const vm = state.viewMode || 'pcn';
+  const vm = state.viewMode || 'cn';
   const prev = (CUR.m===1) ? {y:CUR.y-1, m:12} : {y:CUR.y, m:CUR.m-1};
   const next = (CUR.m===12) ? {y:CUR.y+1, m:1} : {y:CUR.y, m:CUR.m+1};
-  const list = vm==='month' ? [CUR] : (vm==='pc' ? [prev,CUR] : [prev,CUR,next]);
+  const list = vm==='month' ? [CUR] : (vm==='cn' ? [CUR,next] : (vm==='pc' ? [prev,CUR] : [prev,CUR,next]));
   return list.map(o=>({y:o.y, m:o.m, key:ym(o.y,o.m), dim:daysInMonth(o.y,o.m)}));
 }
 function renderAll(){
@@ -974,7 +981,7 @@ function renderAll(){
   $('#monthLabel').textContent = CUR.y + '年' + CUR.m + '月';
   $('#sheetTitle').textContent = CUR.y + '-' + String(CUR.m).padStart(2,'0') + ' · 表格跨月连续 · 双击列头复制前一天 · 统计/导出为当前月';
   $('#satLoad').value = state.satLoad; $('#sunLoad').value = state.sunLoad;
-  $('#viewMode').value = state.viewMode || 'pcn';
+  $('#viewMode').value = state.viewMode || 'cn';
   $('#deptFilter').value = state.deptFilter || 'all';
   $('#rotateMode').value = state.rotateMode || 'lastWeekend';
   $('#rotateDay').value = state.rotateDay || 1;
@@ -1800,7 +1807,7 @@ $('#sunLoad').onchange = ()=>{ state.sunLoad = $('#sunLoad').value; saveState();
 $('#viewMode').onchange = ()=>{
   state.viewMode = $('#viewMode').value;
   saveState(); renderAll();
-  toast('视图已切换为「' + ({month:'本月',pc:'上月+本月',pcn:'上月+本月+下月'})[state.viewMode] + '」');
+  toast('视图已切换为「' + ({month:'本月',cn:'本月+下月',pc:'上月+本月',pcn:'上月+本月+下月'})[state.viewMode] + '」');
 };
 $('#rotateMode').onchange = ()=>{
   state.rotateMode = $('#rotateMode').value;
@@ -2020,6 +2027,7 @@ function runChecks(){
 
 
 /* ================= 导出 / 导入 / 打印 ================= */
+const VM_NAMES = {month:'本月', cn:'本月+下月', pc:'上月+本月', pcn:'上月+本月+下月'};
 function downloadBlob(content, mime, fname){
   const blob = new Blob([content], {type:mime});
   const a = document.createElement('a');
@@ -2088,7 +2096,7 @@ function exportCSV(){
   const csv = '\ufeff' + rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
   const vmTxt = (state.viewMode==='month') ? '' : '跨月';
   downloadBlob(csv, 'text/csv;charset=utf-8', '排班表_' + CUR.key + (vmTxt ? '_' + vmTxt : '') + '.csv');
-  toast('⬇ 已导出 CSV（含人员与本月排班，可用 Excel 打开）');
+  toast('⬇ 已导出 ' + CUR.y + '年' + CUR.m + '月 排班 CSV（当前视图「' + (VM_NAMES[state.viewMode||'cn']||'本月+下月') + '」，CSV 固定为当前中心月）');
 }
 function exportJSON(){
   const data = { app:'shift-scheduler', version:1, savedAt:new Date().toISOString(),
@@ -2350,7 +2358,16 @@ $('#printBtn').onclick = ()=>{
   if(!state.people.length){ toast('👷 暂无可打印的技术员'); return; }
   const v = countViolations();
   if(v > 0 && !confirm('⚠️ 当前排班有 ' + v + ' 处违规（连班/无人上班），建议先「🔍 体检」处理。\n确定仍要打印 / 存 PDF？')) return;
-  if((state.viewMode||'pcn') !== 'month') toast('提示：跨月视图打印较宽，建议先切到「本月」视图再打印');
+  const vm = state.viewMode || 'cn';
+  if(vm !== 'month'){
+    if(!confirm('当前视图为「' + (VM_NAMES[vm]||'本月+下月') + '」（跨月，打印较宽）。\n点「确定」= 按当前视图打印；\n点「取消」= 切到「本月」视图打印单月。')){
+      state.viewMode = 'month';
+      saveState(); renderAll();
+      toast('已切到「本月」视图，正在打印单月…');
+      setTimeout(()=>window.print(), 150);
+      return;
+    }
+  }
   setTimeout(()=>window.print(), 60);
 };
 $('#helpBtn').onclick = ()=> $('#helpModal').classList.add('show');
