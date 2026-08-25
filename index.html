@@ -887,8 +887,10 @@ function renderSheet(){
       + '<div>' + c.d + (hol?' 🏮':'') + '</div><div class="dow">' + (hol?hol+' · ':'') + '周' + WEEK[c.dow] + (c.load==='busy'?'🔥':c.load==='low'?'💤':'') + '</div></th>';
   }
   h += '</tr></thead><tbody>';
-  // 每人一行
-  for(const p of state.people){
+  // 每人一行（按部门分组：除气在上、转码在下，组内保持录入顺序）
+  const deptOrder = {'除气':0, '转码':1};
+  const sheetRows = state.people.slice().sort((a,b)=>((deptOrder[a.dept]??9)-(deptOrder[b.dept]??9)));
+  for(const p of sheetRows){
     h += '<tr><th><span class="nm"><span class="dept-tag tag-' + p.dept + '">' + p.dept + '</span><span>' + esc(p.name) + '</span></span></th>';
     for(const c of cols){
       const grid = CUR.grids[c.key]; if(!grid) continue;
@@ -1621,7 +1623,9 @@ function cellToTxt(c){
 function exportCSV(){
   const dim = CUR.dim; const grid = CUR.grid;
   const rows = [['技术员','部门','班次规则','休息规则', ...Array.from({length:dim},(_,i)=>'第'+(i+1)+'天')]];
-  for(const p of state.people){
+  const deptOrder = {'除气':0, '转码':1};
+  const csvPeople = state.people.slice().sort((a,b)=>((deptOrder[a.dept]??9)-(deptOrder[b.dept]??9)));
+  for(const p of csvPeople){
     const arr = grid[p.id]||[];
     rows.push([p.name, p.dept, SHIFT_TXT[p.shiftRule]||'月轮转', REST_TXT[p.restRule]||'无休', ...arr.map((c,i)=>{
       const lv = getLeave(p.id, CUR.key, i+1);
