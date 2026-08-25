@@ -954,6 +954,7 @@ function renderPeople(){
         + '<span class="ops"><button class="op-copy" data-id="' + p.id + '" title="复制当月排班到其他技术员">📋</button>'
         + '<button class="op-edit" data-id="' + p.id + '" title="编辑">✏️</button>'
         + '<button class="op-del" data-id="' + p.id + '" title="删除">🗑</button></span></div>'
+        + (p.workId ? '<div class="pmeta"><span class="badge b-white">工号 ' + esc(p.workId) + '</span></div>' : '')
         + '<div class="pmeta"><span class="badge ' + (p.shiftRule==='rotate'?'b-rot':p.shiftRule==='fixed-night'?'b-night':'b-white') + '">' + shTxt + '</span>'
         + '<span>本月 ' + shNow + '</span><span class="badge b-white">' + restTxt + '</span></div></div>';
     }
@@ -1850,39 +1851,43 @@ $('#personModal').addEventListener('click', e=>{ if(e.target.id==='personModal')
 /* ================= 示例数据 & 引导 ================= */
 function samplePeople(){
   return [
-    /* —— 除气技术员：现夜班 → 月末转白班（restOffset 错峰：0,0,1,1,2,2,3,3） —— */
-    {id:'s1', name:'段帅帅', restOffset:0, restOffset:0, dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
-    {id:'s2', name:'张云鹏', restOffset:0, restOffset:0, dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
-    {id:'s3', name:'蒋豪', restOffset:1, restOffset:1,   dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
-    {id:'s4', name:'宋心阳', restOffset:1, restOffset:1, dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
-    {id:'s5', name:'喻来', restOffset:2, restOffset:2,   dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
-    {id:'s6', name:'陈红浩', restOffset:2, restOffset:2, dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
-    {id:'s7', name:'罗铭', restOffset:3, restOffset:3,   dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
-    {id:'s8', name:'程稳', restOffset:3, restOffset:3,   dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
-    /* —— 转码技术员：现白班 → 月末转夜班（restOffset 错峰：0,0,1,1,2,2,3,3,4） —— */
-    {id:'t1', name:'吴兆哲', restOffset:0, restOffset:0, dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
-    {id:'t2', name:'冯少帅', restOffset:0, restOffset:0, dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
-    {id:'t3', name:'黄湛江', restOffset:1, restOffset:1, dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
-    {id:'t4', name:'段高翔', restOffset:1, restOffset:1, dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
-    {id:'t5', name:'金凡', restOffset:2, restOffset:2,   dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
-    {id:'t6', name:'李冉', restOffset:2, restOffset:2,   dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
-    {id:'t7', name:'徐强', restOffset:3, restOffset:3,   dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
-    {id:'t8', name:'李晓东', restOffset:3, restOffset:3, dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
-    {id:'t9', name:'刘进', restOffset:4, restOffset:4,   dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
-    /* —— 固定班 —— */
-    {id:'f1', name:'郑高鑫', restOffset:0, restOffset:0, dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', note:'不转班'},
-    {id:'f2', name:'周洪发', restOffset:0, restOffset:0, dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', note:'组长'},
-    {id:'f3', name:'孙子恒', restOffset:0, restOffset:0, dept:'转码', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', note:'不转夜班'}
+    {id:'p1', workId:'2413324', name:'周洪发', dept:'除气', shiftRule:'fixed-day', initialShift:'night', restRule:'sixOne', restOffset:5, note:'组长'},
+    {id:'p2', workId:'2617230', name:'吴兆哲', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p3', workId:'2627909', name:'冯少帅', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:5, note:''},
+    {id:'p4', workId:'2640154', name:'黄湛江', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:5, note:''},
+    {id:'p5', workId:'2603373', name:'段高翔', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p6', workId:'2603374', name:'郑高鑫', dept:'除气', shiftRule:'fixed-day', initialShift:'night', restRule:'sixOne', restOffset:6, note:'不转班'},
+    {id:'p7', workId:'2626890', name:'金凡', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p8', workId:'2525667', name:'李冉', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p9', workId:'2422671', name:'徐强', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:5, note:''},
+    {id:'p10', workId:'2514103', name:'李晓东', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p11', workId:'2525198', name:'刘进', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p12', workId:'2531099', name:'段帅帅', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:5, note:''},
+    {id:'p13', workId:'2629260', name:'张云鹏', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p14', workId:'2630447', name:'蒋豪', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p15', workId:'2527332', name:'宋心阳', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p16', workId:'2602581', name:'喻来', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p17', workId:'2627905', name:'陈红浩', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p18', workId:'2500589', name:'罗铭', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:5, note:''},
+    {id:'p19', workId:'2525196', name:'孙子恒', dept:'转码', shiftRule:'fixed-night', initialShift:'day', restRule:'sixOne', restOffset:6, note:'不转班'},
+    {id:'p20', workId:'2529793', name:'程稳', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
   ];
 }
+
+/* 8月排班锁定（源自 MTW10/MTW30 6休1排班计划表） */
+function sampleManual8(){
+  return {"p1": "..dddddd.dddddd.dddddd.dddddd.d", "p2": "..dddddd.dddddd.ddddd.dddddd.dd", "p3": "d.dddddd.dddddd.ddddd.dddddd.dd", "p4": "..dddddd.dddddd.dddddd.dddddd.d", "p5": "..ddddd.dddddd.dddddd.dddddd.dd", "p6": ".dddddd.dddddd.dddddd.dddddd.dd", "p7": "..ddddd.dddddd.dddddd.dddddd.dd", "p8": ".dddddd.dddddd.dddddd.dddddd.dd", "p9": ".dddddd..dddddd.dddddd.dddddd.d", "p10": "..dddddd.dddddd.ddddd.dddddd.dd", "p11": "d.ddddd.dddddd.dddddd.dddddd.dd", "p12": "..nnnnnn.nnnnnn.nnnnnn.nnnnnn.n", "p13": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p14": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p15": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p16": "n.nnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p17": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p18": "n.nnnnnn.nnnnnn.nnnnnn.nnnnnn.n", "p19": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p20": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn"};
+}
+
 $('#wSample').onclick = ()=>{
   state.people = samplePeople();
   state.manual = {}; state.monthShift = {};
   const t = today(); state.curYear = t.y; state.curMonth = t.m;
+  if(state.curYear === 2026 && state.curMonth === 8) state.manual['2026-08'] = sampleManual8(); // 8月锁定真实排班表
   state.satLoad = 'low'; state.sunLoad = 'busy'; // 周六任务少(保底留人) 周日任务多
   histReset(); saveState(); renderAll();
   $('#welcomeModal').classList.remove('show');
-  toast('🧪 已填入 20 名技术员（除气8轮转 + 转码9轮转 + 郑高鑫/周洪发/孙子恒固定白班），试试「⚡ 自动排班」');
+  toast('🧪 已填入 20 名技术员（MTW10/MTW30 8月6休1排班），试试「⚡ 自动排班」');
 };
 $('#wStart').onclick = ()=>{
   $('#welcomeModal').classList.remove('show');
