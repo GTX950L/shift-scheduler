@@ -173,6 +173,8 @@
   .help-sec h4{margin:0 0 6px;font-size:14px;color:#16273d}
   .help-sec ul{margin:0;padding-left:18px;font-size:12.5px;color:#374151}
   .help-sec li{margin-bottom:4px}
+  .log-ver{font-size:12px;color:#374151;padding:7px 10px;border-left:3px solid var(--brand);background:#f6f9fc;border-radius:6px;margin-bottom:8px;line-height:1.6}
+  .log-ver b{color:#1e4d8c}
   kbd{background:#eef2f7;border:1px solid #d6dee8;border-bottom-width:2px;border-radius:5px;padding:1px 5px;font-size:11px;font-family:inherit}
   .kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
   .kpi{flex:1 1 130px;max-width:240px;background:linear-gradient(180deg,#fbfdff,#f4f8fc);border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-align:center}
@@ -366,6 +368,7 @@
       </div>
     </div>
     <button id="printBtn" class="sec" title="打印 / 存为 PDF（横向 A4）">🖨 打印</button>
+    <button id="logBtn" class="sec" title="更新记录">📜 更新记录</button>
     <button id="helpBtn" class="sec" title="使用说明">❓ 帮助</button>
   </div>
 </nav>
@@ -551,6 +554,34 @@
       </ul>
     </div>
     <div class="modal-ops"><button id="helpClose">知道了</button></div>
+  </div>
+</div>
+
+<div class="modal-mask" id="logModal">
+  <div class="modal" style="max-width:560px">
+    <h3>📜 更新记录</h3>
+    <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.18</b> · 行拖动排序：排班表按住人名行上下拖动调整顺序（自动保存，可「🔄 部门排序」恢复）；CSV/备份同步顺序。</div>
+      <div class="log-ver"><b>v1.17</b> · 8月示例按月末周末转班（8/29 起白夜切换，9月无缝衔接）；loadSample 防崩溃。</div>
+      <div class="log-ver"><b>v1.16</b> · 全面修复：人员弹窗加「工号 / 休息日（周六/周日）」；补人不破坏休息日；使用指引文案修正。</div>
+      <div class="log-ver"><b>v1.15</b> · 月末周末转班修复：转班日跳过保底裁人/补人，白夜切换在周末完成；清理重复代码块。</div>
+      <div class="log-ver"><b>v1.14</b> · 尊重六休一休息日：周日「繁忙」不再叫回休息者；周六保底补人不破坏休息日；最长连续上班 ≤6 天。</div>
+      <div class="log-ver"><b>v1.13</b> · 休息日固定周末错峰（不再漂移到周二周三）；跨月连班保护（8/31 夜→9/1 白自动休）；转班日保底补人。</div>
+      <div class="log-ver"><b>v1.12</b> · 示例数据按真实排班表（MTW10/MTW30 6休1）：20人含工号、8月排班锁定；旧示例打开自动升级；锁定格不再显示蓝点。</div>
+      <div class="log-ver"><b>v1.11</b> · 排班表按部门分组（除气在上、转码在下）；部门按真实分配更新（除气14/转码6）；修复 1200 视口侧栏小条空白。</div>
+      <div class="log-ver"><b>v1.10</b> · 人员间复制排班：选源「📋」→ 点目标 → 当月排班整体复制（可撤销）。</div>
+      <div class="log-ver"><b>v1.9</b> · 连班保护扩展到全员：任何人「夜班→次日白班」自动插一天休息（转班点必歇）。</div>
+      <div class="log-ver"><b>v1.8</b> · 全面 bug 修复：清手动/本月转班可撤销、体检补查跨月边界、删除人员清请假等。</div>
+      <div class="log-ver"><b>v1.7</b> · 撤销/重做（Ctrl+Z/Y）+ 请假登记 + 排班体检 + 节假日/停线日标记。</div>
+      <div class="log-ver"><b>v1.6</b> · 修复布局留白（人力图 SVG/KPI 拉伸）+ 8 档视口窄屏审查。</div>
+      <div class="log-ver"><b>v1.5</b> · 连班保护（转班缓冲）：夜班后次日白班自动休一天。</div>
+      <div class="log-ver"><b>v1.4</b> · 默认「月末周末」转班（最靠近月末的周六起白夜互换）+ 黄金比例微调。</div>
+      <div class="log-ver"><b>v1.3</b> · 排班表美化（加班/留守徽标）+ 拖拽增量更新 + 快捷键 1~6 / ←→ + 窄屏四档断点。</div>
+      <div class="log-ver"><b>v1.2</b> · 跨月连续视图（上月+本月+下月）+ 自定义转班日（1~31）。</div>
+      <div class="log-ver"><b>v1.1</b> · CSV 智能导入旧排班 + JSON 完整备份/恢复 + 初版 bug 修复。</div>
+      <div class="log-ver"><b>v1.0</b> · 技术员排班助手：两班倒（白/夜 12h）、月轮转、周末加班、留守模式、导出打印（单文件 HTML，免安装）。</div>
+    </div>
+    <div class="modal-ops"><button id="logClose">知道了</button></div>
   </div>
 </div>
 
@@ -870,9 +901,7 @@ function genMonth(y, m){
         const p = nightPool[(d-1+i) % nightPool.length]; keepN[p.id]=1;
       }
       for(const p of people){
-        const sh = state.monthShift[key][p.id];
         grid[p.id][d-1] = keepD[p.id] ? 'x' : (keepN[p.id] ? 'y' : '.');
-        void sh;
       }
     }
   }
@@ -1224,7 +1253,6 @@ function clearRowDrag(){
   document.querySelectorAll('#sheet tr.drag-over').forEach(tr=>tr.classList.remove('drag-over'));
   dragPid = null;
 }
-const sheetTB = () => document.querySelector('#sheet tbody');
 document.addEventListener('dragstart', e=>{
   const tr = e.target.closest && e.target.closest('#sheet tbody tr[data-pid]');
   if(!tr) return;
@@ -1543,6 +1571,7 @@ function delPerson(id){
   const p = state.people.find(x=>x.id===id); if(!p) return;
   if(!confirm('确定删除技术员「' + p.name + '」？该人员的所有月份排班记录将一并移除。')) return;
   state.people = state.people.filter(x=>x.id!==id);
+  if(state.rowOrder) state.rowOrder = state.rowOrder.filter(x=>x!==id); // 同步清理行排序
   // 清理该人在所有月份的班次、手工与请假记录
   for(const k in state.monthShift){ if(state.monthShift[k]) delete state.monthShift[k][id]; }
   for(const k in state.manual){ if(state.manual[k]) delete state.manual[k][id]; }
@@ -1942,6 +1971,7 @@ function applyCSVImport(rows){
     }
     cells += chars.filter(c=>c!=='.'&&c!=='_').length;
   }
+  state.rowOrder = []; // 导入后恢复部门排序（人员结构已变）
   histReset(); saveState(); renderAll();
   const msg = '📄 导入完成：新增 ' + added + ' 人，更新 ' + updated + ' 人，锁定排班 ' + merged + ' 人（' + cells + ' 个上班格）';
   toast(msg);
@@ -2010,6 +2040,9 @@ $('#printBtn').onclick = ()=>{
 $('#helpBtn').onclick = ()=> $('#helpModal').classList.add('show');
 $('#helpClose').onclick = ()=> $('#helpModal').classList.remove('show');
 $('#helpModal').addEventListener('click', e=>{ if(e.target.id==='helpModal') e.target.classList.remove('show'); });
+$('#logBtn').onclick = ()=> $('#logModal').classList.add('show');
+$('#logClose').onclick = ()=> $('#logModal').classList.remove('show');
+$('#logModal').addEventListener('click', e=>{ if(e.target.id==='logModal') e.target.classList.remove('show'); });
 $('#personModal').addEventListener('click', e=>{ if(e.target.id==='personModal') e.target.classList.remove('show'); });
 
 /* ================= 示例数据 & 引导 ================= */
@@ -2059,6 +2092,7 @@ function sampleManual8(){
 function loadSample(){
   state.people = samplePeople();
   state.manual = {}; state.monthShift = {};
+  state.rowOrder = []; // 示例加载恢复默认部门排序
   const t = today(); state.curYear = t.y; state.curMonth = t.m;
   if(state.curYear === 2026 && state.curMonth === 8) state.manual['2026-08'] = sampleManual8(); // 8月锁定真实排班表
   state.satLoad = 'low'; state.sunLoad = 'busy'; // 周六任务少(保底留人) 周日任务多
