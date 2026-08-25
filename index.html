@@ -506,6 +506,7 @@
       <h4>🔍 排班体检</h4>
       <ul>
         <li>一键检查当前月：夜→白连班（红框+⛔）、最长连续上班超 7 天（⚠️）、某天无人上班（⛔）、节假日无人值班（⚠️）。</li>
+        <li>「🔧 自动修复连班」：把「夜班→次日白班」连班的次日批量改为休息（可 Ctrl+Z 撤销）。</li>
         <li>修改任意违规格子后红框自动清除；「清除红框标记」可一键清空。</li>
       </ul>
     </div>
@@ -551,7 +552,8 @@
       <ul>
         <li>所有数据自动保存在本机浏览器（localStorage），关闭页面不丢失。</li>
         <li>「⬇ 导出 ▾ → 排班表 CSV」导出当月排班（Excel 可开）；「→ 完整备份 JSON」备份全部数据。</li>
-        <li>换电脑 / 换浏览器：导出 JSON 备份 → 新电脑「⬆ 导入 ▾ → 完整备份 JSON」恢复（会覆盖当前数据）。</li>
+        <li>换电脑 / 换浏览器：导出 JSON 备份 → 新电脑「⬆ 导入 ▾ → 完整备份 JSON」恢复（会覆盖当前数据，导入前有确认）。</li>
+        <li>🔒 防呆保护：删除人员 / 清手动 / 强制转班 / 留守模式 / 导入覆盖 等破坏性操作均有<b>确认提示</b>；人员<b>同名</b>会提醒、<b>工号重复</b>会拦截；CSV 支持 GBK/UTF-8 自动识别；导出/打印前会检查是否存在连班违规。</li>
       </ul>
     </div>
     <div class="modal-ops"><button id="helpClose">知道了</button></div>
@@ -562,6 +564,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.20</b> · 防呆加固：清手动/强制转班/留守模式/JSON导入/CSV导入/示例覆盖均加确认；人员同名提醒+工号重复拦截；CSV 自动识别 GBK/UTF-8 编码；导出/打印前自动查违规；体检一键修复连班；删除人员标注不可撤销；多标签页防覆盖提示。</div>
       <div class="log-ver"><b>v1.19</b> · 连班防呆：手动点击/拖拽/复制排班时，「夜班→次日白班」0 小时间隔连班被直接拦截（只能设休或夜），循环画笔自动跳过违规班次。</div>
       <div class="log-ver"><b>v1.18</b> · 行拖动排序：排班表按住人名行上下拖动调整顺序（自动保存，可「🔄 部门排序」恢复）；CSV/备份同步顺序。</div>
       <div class="log-ver"><b>v1.17</b> · 8月示例按月末周末转班（8/29 起白夜切换，9月无缝衔接）；loadSample 防崩溃。</div>
@@ -606,6 +609,7 @@
     <h3>🔍 排班体检报告（<span id="checkMonth"></span>）</h3>
     <div id="checkList"></div>
     <div class="modal-ops">
+      <button class="sec" id="checkFix" title="把「夜班→次日白班」连班的次日批量改为休息（可 Ctrl+Z 撤销）">🔧 自动修复连班</button>
       <button class="sec" id="checkClear">清除红框标记</button>
       <button id="checkClose">知道了</button>
     </div>
@@ -1614,6 +1618,13 @@ $('#pmSave').onclick = ()=>{
   const restOffset = restRule==='sixOne' ? +$$('#pmRestDay input').find(r=>r.checked).value : undefined;
   const workId = $('#pmWorkId').value.trim() || undefined;
   const note = $('#pmNote').value.trim();
+  // 防呆：同名 / 工号重复检测（工号应唯一，排班表按姓名显示，同名极易混淆）
+  const dupName = state.people.find(x=>x.id!==editingId && x.name===name);
+  if(dupName && !confirm('已有同名技术员「' + dupName.name + '」（' + dupName.dept + '），确定继续保存？')) return;
+  if(workId){
+    const dupWork = state.people.find(x=>x.id!==editingId && x.workId===workId);
+    if(dupWork){ toast('⚠️ 工号 ' + workId + ' 已属于「' + dupWork.name + '」，工号应唯一'); return; }
+  }
   if(editingId){
     const p = state.people.find(x=>x.id===editingId);
     Object.assign(p, {name,dept,shiftRule,initialShift,restRule,note,workId,restOffset});
@@ -1629,7 +1640,7 @@ $('#pmSave').onclick = ()=>{
 };
 function delPerson(id){
   const p = state.people.find(x=>x.id===id); if(!p) return;
-  if(!confirm('确定删除技术员「' + p.name + '」？该人员的所有月份排班记录将一并移除。')) return;
+  if(!confirm('确定删除技术员「' + p.name + '」？该人员的所有月份排班记录将一并移除，且此操作不可撤销（Ctrl+Z 无效）。\n建议先「⬇ 导出 → 完整备份 JSON」留存数据。')) return;
   state.people = state.people.filter(x=>x.id!==id);
   if(state.rowOrder) state.rowOrder = state.rowOrder.filter(x=>x!==id); // 同步清理行排序
   // 清理该人在所有月份的班次、手工与请假记录
@@ -1680,12 +1691,18 @@ $('#monthLabel').onclick = ()=>{
   inp.value = CUR.y + '-' + String(CUR.m).padStart(2,'0');
   if(inp.showPicker) inp.showPicker(); else inp.click();
 };
-$('#genBtn').onclick = ()=>{ renderAll(); toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线（手工修改保留）'); };
+$('#genBtn').onclick = ()=>{
+  if(!state.people.length){ toast('👷 请先添加技术员再自动排班'); return; }
+  renderAll(); toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线（手工修改保留）');
+};
 $('#rotateBtn').onclick = ()=>{
-  const key = CUR.key; let n=0;
+  const key = CUR.key;
+  const rotPeople = state.people.filter(p=>p.shiftRule==='rotate');
+  if(!rotPeople.length){ toast('本月没有「月轮转」人员，无需转班'); return; }
+  if(!confirm('确定将本月（' + CUR.y + '年' + CUR.m + '月）' + rotPeople.length + ' 名「月轮转」人员的班次强制取反？\n此操作可 Ctrl+Z 撤销。')) return;
+  let n=0;
   histBegin();
-  for(const p of state.people){
-    if(p.shiftRule!=='rotate') continue;
+  for(const p of rotPeople){
     const cur = ensureMonthShift(p.id,key);
     const after = cur==='day' ? 'night' : 'day';
     histPush({t:'shift', key, pid:p.id, before:cur, after});
@@ -1696,12 +1713,18 @@ $('#rotateBtn').onclick = ()=>{
   toast('🔁 本月已强制转班（' + n + '人）');
 };
 $('#idleBtn').onclick = ()=>{
-  state.idleMode = !state.idleMode;
+  const next = !state.idleMode;
+  if(next){
+    if(!state.people.length){ toast('👷 请先添加技术员再开启留守模式'); return; }
+    if(!confirm('确定开启留守模式？每天只保留白班 ' + state.idleDay + ' 人 + 夜班 ' + state.idleNight + ' 人（名单轮换），其余人员全部休息。\n可再次点击本按钮关闭。')) return;
+  }
+  state.idleMode = next;
   saveState(); renderAll();
   toast(state.idleMode ? '💤 留守模式已开启：每天保留白班' + state.idleDay + '人 + 夜班' + state.idleNight + '人' : '💤 留守模式已关闭');
 };
 $('#clearManBtn').onclick = ()=>{
   if(!state.manual[CUR.key] || !Object.keys(state.manual[CUR.key]).length){ toast('本月没有手工修改'); return; }
+  if(!confirm('确定清除本月（' + CUR.y + '年' + CUR.m + '月）所有手工修改，恢复自动排班结果？\n此操作可 Ctrl+Z 撤销。')) return;
   histBegin();
   const snap = JSON.stringify(state.manual[CUR.key]);
   delete state.manual[CUR.key];
@@ -1740,6 +1763,36 @@ $('#checkBtn').onclick = runChecks;
 $('#holidayBtn').onclick = openHolidayModal;
 $('#checkClose').onclick = ()=> $('#checkModal').classList.remove('show');
 $('#checkClear').onclick = ()=>{ checkViol = {}; renderSheet(); $('#checkModal').classList.remove('show'); toast('🧹 已清除红框标记'); };
+/* 体检一键修复：把「夜→白」连班的次日批量设为休（入历史，可 Ctrl+Z 撤销） */
+function autoFixChecks(){
+  const key = CUR.key, dim = CUR.dim, grid = CUR.grids[key];
+  histBegin();
+  let n = 0;
+  for(const p of state.people){
+    for(let d=1; d<dim; d++){
+      const c = (grid[p.id]||[])[d-1], nx = (grid[p.id]||[])[d];
+      if(c && nx && isNightC(c) && isDayC(nx) && !getLeave(p.id, key, d+1)){
+        if(setManual(p.id, key, d+1, '.')) n++;
+      }
+    }
+  }
+  {
+    const py2 = CUR.m===1 ? CUR.y-1 : CUR.y, pm2 = CUR.m===1 ? 12 : CUR.m-1;
+    const pk = ym(py2,pm2);
+    const pgrid = mergeManualInto(genMonth(py2,pm2), pk);
+    const pdim = daysInMonth(py2,pm2);
+    for(const p of state.people){
+      const lastC = (pgrid[p.id]||[])[pdim-1], firstN = (grid[p.id]||[])[0];
+      if(lastC && firstN && isNightC(lastC) && isDayC(firstN) && !getLeave(p.id, key, 1)){
+        if(setManual(p.id, key, 1, '.')) n++;
+      }
+    }
+  }
+  histCommit('体检自动修复');
+  checkViol = {}; saveState(); renderAll();
+  toast(n ? '🔧 已自动修复 ' + n + ' 处连班（次日改为休，可 Ctrl+Z 撤销）' : '没有需要自动修复的连班');
+}
+$('#checkFix').onclick = ()=>{ autoFixChecks(); $('#checkModal').classList.remove('show'); };
 $('#checkModal').addEventListener('click', e=>{ if(e.target.id==='checkModal') e.target.classList.remove('show'); });
 /* ---------- 节假日管理 ---------- */
 function openHolidayModal(){
@@ -1770,6 +1823,9 @@ $('#holAdd').onclick = ()=>{
   const key = CUR.key;
   const d = +$('#holDay').value, name = $('#holName').value.trim();
   if(!name){ toast('请输入名称（如：国庆节）'); return; }
+  if(state.holidays[key] && state.holidays[key][d] && state.holidays[key][d] !== name){
+    if(!confirm('该日已标记为「' + state.holidays[key][d] + '」，确定覆盖为新名称？')) return;
+  }
   state.holidays[key] = state.holidays[key] || {};
   state.holidays[key][d] = name;
   saveState(); renderHolList(key); renderSheet();
@@ -1869,8 +1925,42 @@ function cellToTxt(c){
   if(c==='x') return '白班(留守)'; if(c==='y') return '夜班(留守)';
   return '休';
 }
+/* 导出/打印前轻量体检：返回 err 级违规数（连班 / 无人上班），仅用于拦阻提示，不弹报告 */
+function countViolations(){
+  const key = CUR.key, dim = CUR.dim, grid = CUR.grids[key];
+  let err = 0;
+  for(const p of state.people){
+    for(let d=1; d<dim; d++){
+      const c = (grid[p.id]||[])[d-1], n = (grid[p.id]||[])[d];
+      if(!c || !n) continue;
+      if(isNightC(c) && isDayC(n) && !getLeave(p.id, key, d+1)) err++;
+    }
+  }
+  {
+    const py2 = CUR.m===1 ? CUR.y-1 : CUR.y, pm2 = CUR.m===1 ? 12 : CUR.m-1;
+    const pk = ym(py2,pm2);
+    const pgrid = mergeManualInto(genMonth(py2,pm2), pk);
+    const pdim = daysInMonth(py2,pm2);
+    for(const p of state.people){
+      const lastC = (pgrid[p.id]||[])[pdim-1], firstN = (grid[p.id]||[])[0];
+      if(lastC && firstN && isNightC(lastC) && isDayC(firstN) && !getLeave(p.id, key, 1)) err++;
+    }
+  }
+  for(let d=1; d<=dim; d++){
+    let on=0;
+    for(const p of state.people){
+      const c = (grid[p.id]||[])[d-1];
+      if(c && c!=='.' && !getLeave(p.id, key, d)) on++;
+    }
+    if(state.people.length && on===0) err++;
+  }
+  return err;
+}
 function exportCSV(){
   const dim = CUR.dim; const grid = CUR.grid;
+  if(!state.people.length){ toast('👷 暂无可导出的技术员'); return; }
+  const v = countViolations();
+  if(v > 0 && !confirm('⚠️ 当前排班有 ' + v + ' 处违规（连班/无人上班），建议先「🔍 体检」处理。\n确定仍要导出？')) return;
   const rows = [['技术员','部门','班次规则','休息规则', ...Array.from({length:dim},(_,i)=>'第'+(i+1)+'天')]];
   const csvPeople = rowOrderPeople(); // 与排班表显示顺序一致（含用户拖拽排序）
   for(const p of csvPeople){
@@ -1882,7 +1972,8 @@ function exportCSV(){
     })]);
   }
   const csv = '\ufeff' + rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
-  downloadBlob(csv, 'text/csv;charset=utf-8', '排班表_' + CUR.key + '.csv');
+  const vmTxt = (state.viewMode==='month') ? '' : '跨月';
+  downloadBlob(csv, 'text/csv;charset=utf-8', '排班表_' + CUR.key + (vmTxt ? '_' + vmTxt : '') + '.csv');
   toast('⬇ 已导出 CSV（含人员与本月排班，可用 Excel 打开）');
 }
 function exportJSON(){
@@ -1998,6 +2089,8 @@ function applyCSVImport(rows){
     }
   }
   if(nameIdx<0 || !dateIdxs.length){ toast('⚠️ 无法识别表头：需要「姓名」列和日期列（第1天/1 等）'); return; }
+  // 防呆：导入会按姓名合并/更新人员并锁定排班，且不可撤销（Ctrl+Z 无效）
+  if(state.people.length && !confirm('⚠️ 将导入 ' + (rows.length-dataStart) + ' 行数据：按姓名合并/更新人员并锁定当月排班（不可撤销，Ctrl+Z 无效）。\n建议先「⬇ 导出 → 完整备份 JSON」留存当前数据。确定继续？')) return;
   let added=0, updated=0, merged=0, cells=0;
   const need = Math.min(dim, dateIdxs.length);
   for(let r=dataStart; r<rows.length; r++){
@@ -2046,6 +2139,7 @@ function applyCSVImport(rows){
 }
 function importJSONData(data){
   if(!data || data.app !== 'shift-scheduler' || !data.state){ toast('⚠️ 不是有效的排班助手备份文件'); return; }
+  if(state.people.length && !confirm('⚠️ 导入备份将覆盖当前所有数据（人员 ' + state.people.length + ' 人、全部排班/请假/节假日）。\n建议先「⬇ 导出 → 完整备份 JSON」留存当前数据。确定继续？')) return;
   const s = data.state;
   state.people = s.people || [];
   state.monthShift = s.monthShift || {};
@@ -2081,19 +2175,38 @@ $('#fileInput').addEventListener('change', ()=>{
   const reader = new FileReader();
   reader.onload = ()=>{
     try{
+      const buf = reader.result; // ArrayBuffer
+      let text;
       if(fileAct==='json'){
-        importJSONData(JSON.parse(reader.result));
+        text = new TextDecoder('utf-8').decode(buf);
       } else {
-        applyCSVImport(parseCSVText(reader.result));
+        // 防呆：中国区 Excel 另存 CSV 默认为 GBK（ANSI）编码，先按 UTF-8 解码，
+        // 出现替换符 \ufffd 且含中文时判定为 GBK，自动转码（避免整表乱码）
+        const utf8 = new TextDecoder('utf-8').decode(buf);
+        if(utf8.indexOf('\ufffd') >= 0){
+          try{
+            const gbk = new TextDecoder('gbk').decode(buf);
+            text = (gbk.indexOf('\ufffd') >= 0) ? utf8 : gbk;
+            if(text === gbk) toast('📄 检测到 GBK 编码（Excel 另存 CSV 默认格式），已自动转码');
+          }catch(e){ text = utf8; }
+        } else text = utf8;
+      }
+      if(fileAct==='json'){
+        importJSONData(JSON.parse(text));
+      } else {
+        applyCSVImport(parseCSVText(text));
       }
     }catch(err){
       toast('⚠️ 导入失败：' + err.message);
     }
     fileAct = null;
   };
-  reader.readAsText(f, 'utf-8');
+  reader.readAsArrayBuffer(f);
 });
 $('#printBtn').onclick = ()=>{
+  if(!state.people.length){ toast('👷 暂无可打印的技术员'); return; }
+  const v = countViolations();
+  if(v > 0 && !confirm('⚠️ 当前排班有 ' + v + ' 处违规（连班/无人上班），建议先「🔍 体检」处理。\n确定仍要打印 / 存 PDF？')) return;
   if((state.viewMode||'pcn') !== 'month') toast('提示：跨月视图打印较宽，建议先切到「本月」视图再打印');
   setTimeout(()=>window.print(), 60);
 };
@@ -2172,7 +2285,10 @@ function lockBase(pid, key, d){
   return m[d-1] === base[d-1];
 }
 
-$('#wSample').onclick = loadSample;
+$('#wSample').onclick = ()=>{
+  if(state.people.length && !confirm('⚠️ 用 MTW10/MTW30 示例数据覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
+  loadSample();
+};
 $('#wSampleSmall').onclick = ()=>{
   if(state.people.length && !confirm('⚠️ 用 MTW10/MTW30 示例数据覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
   loadSample();
@@ -2188,6 +2304,21 @@ $('#wImport').onclick = ()=>{
   fi.accept = '.csv,.txt';
   fi.value = ''; fi.click();
 };
+
+/* ================= 防呆：多标签页 / 意外关闭 ================= */
+/* 其他窗口/标签页修改了数据（storage 事件不在本窗口触发，天然排除自身） */
+window.addEventListener('storage', e=>{
+  if(e.key === LS_KEY && e.newValue !== e.oldValue){
+    toast('🔄 检测到其他窗口修改了排班数据，为避免互相覆盖请刷新本页');
+  }
+});
+/* 拖拽填充未完成时关闭/刷新页面 → 提示（数据已自动保存，主要防误操作丢失当前手势） */
+window.addEventListener('beforeunload', e=>{
+  if(painting !== null){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
 
 /* ================= 初始化 ================= */
 /* 旧版示例数据自动升级：示例数据打 sampleVer 标记；版本旧于 SAMPLE_VER 且名单匹配旧示例 → 自动替换为新范例 */
