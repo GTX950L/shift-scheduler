@@ -401,7 +401,7 @@
         <b>④ 周末负荷</b>：周六/周日可设「繁忙 / 正常 / 低负荷」——繁忙=双休者叫回加班（<b>上六休一者的休息日照休</b>，保持每周休1天）；<b>低负荷=按部门保底留人</b>（默认 除气白2 + 转码白1夜1，固定班优先，其余休）。<br>
         <b>⑤ 留守模式</b>：低负荷时每天仅保留白班2人/夜班1人（全员轮换）。<br>
         <b>⑥ 转班</b>：默认每月最后一个周末（周六起）白夜互换；可选「固定日期」；「视图」切跨月可连续看转班前后几天。<br>
-        <b>⑦ 连班保护</b>：任何人「夜班→次日白班」都会自动插一天休息（0 小时间隔禁止，转班点必歇）；白班→夜班（16h）允许。<br>
+        <b>⑦ 连班保护</b>：任何人「夜班→次日白班」都会自动插一天休息（0 小时间隔禁止，转班点必歇）；白班→夜班（16h）允许；<b>手动修改也防呆</b>——夜班后一天只能设「休」或「夜」，设白班会被拦截提示。<br>
         <b>⑧ 体检与节假日</b>：「🔍 体检」一键查连班/连续上班/班次空缺/节假日值班；「🏮 节假日」标记法定假日与停线日。<br>
         <b>⑨ 用旧表改新表</b>：「⬆ 导入 ▾」导入旧排班 CSV → 按提示清空 → 重新「自动排班」。
       </div>
@@ -532,7 +532,8 @@
       <ul>
         <li>默认「月末周末」：轮转人员每月<b>最靠近月末的周六起</b>白夜互换（周六、周日完成转班），跨月视图可直观看到衔接；示例数据（8 月）已按此规则在 8/29 起转班。</li>
         <li>也可在工具栏改为「固定日期」并设 1~31 号（如 20 = 每月 20 日起换班）。</li>
-        <li><b>连班保护（全员）</b>：任何人「夜班 → 次日白班」都是 0 小时间隔连班，自动排班会<b>自动在转班点插入一天休息</b>；「白班 → 次日夜班」（16 小时间隔）允许，不处理。周末繁忙叫回的加班同样受此保护。</li>
+        <li><b>连班保护（全员·防呆）</b>：任何人「夜班 → 次日白班」都是 0 小时间隔连班，自动排班会<b>自动在转班点插入一天休息</b>；「白班 → 次日夜班」（16 小时间隔）允许，不处理。周末繁忙叫回的加班同样受此保护。</li>
+        <li><b>手动防呆</b>：手工点击 / 拖拽 / 复制时，若会产生「夜班→次日白班」连班会被<b>拦截</b>——夜班后一天只能设「休」或「夜」；循环画笔会自动跳过违规班次。</li>
         <li>固定班次者不受转班影响；某月想破例可用「🔁 本月转班」强制取反，再手工微调。</li>
       </ul>
     </div>
@@ -561,6 +562,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.19</b> · 连班防呆：手动点击/拖拽/复制排班时，「夜班→次日白班」0 小时间隔连班被直接拦截（只能设休或夜），循环画笔自动跳过违规班次。</div>
       <div class="log-ver"><b>v1.18</b> · 行拖动排序：排班表按住人名行上下拖动调整顺序（自动保存，可「🔄 部门排序」恢复）；CSV/备份同步顺序。</div>
       <div class="log-ver"><b>v1.17</b> · 8月示例按月末周末转班（8/29 起白夜切换，9月无缝衔接）；loadSample 防崩溃。</div>
       <div class="log-ver"><b>v1.16</b> · 全面修复：人员弹窗加「工号 / 休息日（周六/周日）」；补人不破坏休息日；使用指引文案修正。</div>
@@ -1113,6 +1115,15 @@ function doCopy(targetId){
   const sn = (state.people.find(x=>x.id===src)||{}).name, tn = (state.people.find(x=>x.id===targetId)||{}).name;
   const arr = (CUR.grids[key] && CUR.grids[key][src]) || [];
   if(!arr.length){ renderPeople(); toast('源排班为空，无法复制'); return; }
+  // 防呆：源行内部 / 目标行跨月边界 若产生「夜→白」连班则拒绝复制
+  for(let i=0;i<arr.length-1;i++){
+    if(isNightC(arr[i]) && isDayC(arr[i+1])){
+      renderPeople(); toast('🔒 防呆：源排班含「夜→白」0 小时间隔连班，禁止复制'); return;
+    }
+  }
+  const dimC = daysInMonth(...key.split('-').map(Number));
+  if(isDayC(arr[0]) && isNightC(prevCell(targetId, key, 1))){ renderPeople(); toast('🔒 防呆：复制后首日与上月末形成连班，已取消复制'); return; }
+  if(isNightC(arr[dimC-1]) && isDayC(nextCell(targetId, key, dimC))){ renderPeople(); toast('🔒 防呆：复制后末日与下月初形成连班，已取消复制'); return; }
   const row = arr.join('');
   histBegin();
   const before = (state.manual[key] && state.manual[key][targetId]) || '_'.repeat(row.length);
@@ -1310,7 +1321,50 @@ function histCommit(label){
   histTx = null; updateHistBtns();
 }
 function histPush(op){ if(histTx) histTx.push(op); }
+/* ===== 防呆：禁止 0 小时间隔连班（夜班→次日白班） =====
+   任何手动修改都检查：新值=白班族(d/D/x)且前一天夜班 → 拦截；
+   新值=夜班族(n/N/y)且后一天白班 → 拦截。请假视为休（不出勤）。 */
+const isNightC = c => (c==='n'||c==='N'||c==='y');
+const isDayC = c => (c==='d'||c==='D'||c==='x');
+let lastBlockToast = 0;
+function cellAt(pid, mkey, day){ // 合并后实际值（无数据视为休）
+  const g = CUR.grids && CUR.grids[mkey]; if(!g || !g[pid]) return '.';
+  return g[pid][day-1] || '.';
+}
+function prevCell(pid, mkey, day){ // 前一天实际值（含跨月；请假视为休）
+  const [y,m] = mkey.split('-').map(Number);
+  if(day > 1) return getLeave(pid,mkey,day-1) ? '.' : cellAt(pid,mkey,day-1);
+  const pk = m===1 ? ym(y-1,12) : ym(y,m-1);
+  const pd = daysInMonth(+pk.split('-')[0], +pk.split('-')[1]);
+  return getLeave(pid,pk,pd) ? '.' : cellAt(pid,pk,pd);
+}
+function nextCell(pid, mkey, day){ // 后一天实际值（含跨月；请假视为休）
+  const dim = daysInMonth(...mkey.split('-').map(Number));
+  const [y,m] = mkey.split('-').map(Number);
+  if(day < dim) return getLeave(pid,mkey,day+1) ? '.' : cellAt(pid,mkey,day+1);
+  const nk = m===12 ? ym(y+1,1) : ym(y,m+1);
+  return getLeave(pid,nk,1) ? '.' : cellAt(pid,nk,1);
+}
+/* 返回违规方向：'prevNight'=前一天夜班 / 'nextDay'=后一天白班 / null=通过 */
+function backToBackBlock(pid, mkey, day, ch){
+  if(isDayC(ch) && isNightC(prevCell(pid, mkey, day))) return 'prevNight';
+  if(isNightC(ch) && isDayC(nextCell(pid, mkey, day))) return 'nextDay';
+  return null;
+}
+function blockToast(msg){
+  const now = Date.now();
+  if(now - lastBlockToast > 700){ lastBlockToast = now; toast(msg); }
+}
 function setManual(pid, mkey, day, ch, silent){
+  if(!silent && ch!=='_' && ch!=='.'){
+    const blk = backToBackBlock(pid, mkey, day, ch);
+    if(blk){
+      blockToast(blk==='prevNight'
+        ? '🔒 防呆拦截：前一天是夜班，此处只能设「休」或「夜」（0 小时间隔禁止）'
+        : '🔒 防呆拦截：后一天是白班，此处不能设「夜」（0 小时间隔禁止）');
+      return false;
+    }
+  }
   const dim = daysInMonth(...mkey.split('-').map(Number));
   state.manual[mkey] = state.manual[mkey] || {};
   let s = state.manual[mkey][pid] || '';
@@ -1325,6 +1379,7 @@ function setManual(pid, mkey, day, ch, silent){
     CUR.grids[mkey][pid][day-1] = (ch==='_') ? ((CUR.autoGrids && CUR.autoGrids[mkey] && CUR.autoGrids[mkey][pid] && CUR.autoGrids[mkey][pid][day-1]) || '.') : ch;
   }
   saveState();
+  return true;
 }
 /* 请假登记：reason 为空=取消；记录进历史 */
 function setLeave(pid, mkey, day, reason){
@@ -1387,8 +1442,13 @@ function paintCell(pid, mkey, day, ch){
   if(getLeave(pid, mkey, day)) setLeave(pid, mkey, day, null); // 点击请假格：先销假再按画笔处理
   if(!ch){ // cycle
     const cur = currentCellChar(pid, mkey, day);
-    const next = cur==='.' ? 'd' : (cur==='d' ? 'n' : '.');
-    setManual(pid, mkey, day, next);
+    let next = cur==='.' ? 'd' : (cur==='d' ? 'n' : '.');
+    if(next!=='.' && backToBackBlock(pid, mkey, day, next)){
+      const alt = next==='d' ? 'n' : 'd'; // 白被挡 → 试夜；夜被挡 → 试白
+      if(!backToBackBlock(pid, mkey, day, alt)){ next = alt; blockToast('🔒 防呆：该处自动改为「' + (alt==='n'?'夜班':'白班') + '」'); }
+      else { next = cur; blockToast('🔒 防呆：前后班次限制，此处只能保持「休」'); }
+    }
+    if(next !== cur) setManual(pid, mkey, day, next);
   } else if(ch==='ot' || ch==='duty'){
     const cur = currentCellChar(pid, mkey, day);
     const base = (state.monthShift[mkey]&&state.monthShift[mkey][pid]) || 'day';
@@ -1510,10 +1570,10 @@ $('#sheet').addEventListener('dblclick', e=>{
   let n = 0;
   for(const p of state.people){
     const c = (prevGrid[p.id]||[])[pd-1] || '.';
-    if(c !== '.'){ setManual(p.id, mkey, d, c); n++; }
+    if(c !== '.' && setManual(p.id, mkey, d, c)) n++; // 防呆：产生连班的格子跳过
   }
   histCommit('复制前一天排班');
-  renderSheet(); toast('已把 ' + py + '年' + pm + '月' + pd + '日 的排班复制到 ' + mkey.replace('-','年') + '月' + d + '日（' + n + '人）');
+  renderSheet(); toast('已把 ' + py + '年' + pm + '月' + pd + '日 的排班复制到 ' + mkey.replace('-','年') + '月' + d + '日（' + n + '人，连班防呆拦截的格子已跳过）');
 });
 
 /* ================= 交互：人员管理 ================= */
