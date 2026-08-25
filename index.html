@@ -1821,14 +1821,29 @@ $('#personModal').addEventListener('click', e=>{ if(e.target.id==='personModal')
 /* ================= 示例数据 & 引导 ================= */
 function samplePeople(){
   return [
-    {id:'s1', name:'陈建国', dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', note:'组长'},
-    {id:'s2', name:'刘志强', dept:'除气', shiftRule:'fixed-night', initialShift:'night', restRule:'sixOne', note:''},
-    {id:'s3', name:'王丽华', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'weekend', note:''},
-    {id:'s4', name:'赵永刚', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'none', note:''},
-    {id:'s5', name:'钱文杰', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
-    {id:'s6', name:'孙秀兰', dept:'转码', shiftRule:'fixed-day', initialShift:'day', restRule:'weekend', note:''},
-    {id:'s7', name:'周晓峰', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'weekend', note:''},
-    {id:'s8', name:'吴国庆', dept:'转码', shiftRule:'fixed-night', initialShift:'night', restRule:'none', note:'新人'}
+    /* —— 除气技术员：现夜班 → 月末转白班（initialShift=7月班次=白，8月=夜） —— */
+    {id:'s1', name:'段帅帅', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'none', note:''},
+    {id:'s2', name:'张云鹏', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'none', note:''},
+    {id:'s3', name:'蒋豪',   dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
+    {id:'s4', name:'宋心阳', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
+    {id:'s5', name:'喻来',   dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
+    {id:'s6', name:'陈红浩', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'weekend', note:''},
+    {id:'s7', name:'罗铭',   dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'weekend', note:''},
+    {id:'s8', name:'程稳',   dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', note:''},
+    /* —— 转码技术员：现白班 → 月末转夜班（initialShift=7月班次=夜，8月=白） —— */
+    {id:'t1', name:'吴兆哲', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'none', note:''},
+    {id:'t2', name:'冯少帅', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'none', note:''},
+    {id:'t3', name:'黄湛江', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
+    {id:'t4', name:'段高翔', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
+    {id:'t5', name:'金凡',   dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
+    {id:'t6', name:'李冉',   dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'weekend', note:''},
+    {id:'t7', name:'徐强',   dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'weekend', note:''},
+    {id:'t8', name:'李晓东', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
+    {id:'t9', name:'刘进',   dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', note:''},
+    /* —— 固定班 —— */
+    {id:'f1', name:'郑高鑫', dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', note:'不转班'},
+    {id:'f2', name:'周洪发', dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'weekend', note:'组长'},
+    {id:'f3', name:'孙子恒', dept:'转码', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', note:'不转夜班'}
   ];
 }
 $('#wSample').onclick = ()=>{
@@ -1837,7 +1852,7 @@ $('#wSample').onclick = ()=>{
   const t = today(); state.curYear = t.y; state.curMonth = t.m;
   histReset(); saveState(); renderAll();
   $('#welcomeModal').classList.remove('show');
-  toast('🧪 已填入 8 名示例技术员，试试「⚡ 自动排班」');
+  toast('🧪 已填入 20 名技术员（除气8轮转 + 转码9轮转 + 郑高鑫/周洪发/孙子恒固定白班），试试「⚡ 自动排班」');
 };
 $('#wStart').onclick = ()=>{
   $('#welcomeModal').classList.remove('show');
