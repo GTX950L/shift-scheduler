@@ -356,6 +356,7 @@
   <div class="grp">
     <button id="undoBtn" class="sec" title="撤销（Ctrl+Z）">↩ 撤销</button>
     <button id="redoBtn" class="sec" title="重做（Ctrl+Y）">↪ 重做</button>
+    <button id="snapBtn" class="sec" title="操作前自动快照（删除/导入/示例覆盖等不可撤销操作自动保存，可一键恢复）">⏪ 快照</button>
     <button id="checkBtn" class="sec" title="体检当前月排班：连班/连续上班/班次空缺/节假日值班">🔍 体检</button>
     <button id="holidayBtn" class="sec" title="标记节假日 / 停线日">🏮 节假日</button>
   </div>
@@ -568,6 +569,8 @@
         <li>工具栏「部门」下拉可只查看除气/转码的排班（月度统计与导出仍为全部人员）。</li>
         <li>换电脑 / 换浏览器：导出 JSON 备份 → 新电脑「⬆ 导入 ▾ → 完整备份 JSON」恢复（会覆盖当前数据，导入前有确认）。</li>
         <li>🔒 防呆保护：删除人员 / 清手动 / 强制转班 / 留守模式 / 导入覆盖 等破坏性操作均有<b>确认提示</b>；人员<b>同名</b>会提醒、<b>工号重复</b>会拦截；CSV 支持 GBK/UTF-8 自动识别；导出/打印前会检查是否存在连班违规。</li>
+        <li>⏪ <b>自动快照</b>：删除人员 / 导入 / 示例覆盖等不可撤销操作前自动保存完整数据（最近 5 份），工具栏「⏪ 快照」可一键恢复（恢复前也会再存一份当前数据）。</li>
+        <li>⚡ <b>自动闭环</b>：切到尚未排班的月份会自动引导「⚡ 自动排班」；点「自动排班」后自动体检——无问题提示通过，有问题直接弹出报告。</li>
       </ul>
     </div>
     <div class="modal-ops"><button id="helpClose">知道了</button></div>
@@ -578,6 +581,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.23</b> · 自动功能：① 高危操作（删除人员/导入/示例覆盖）前自动保存数据快照（最近5份），工具栏「⏪ 快照」一键恢复；② 「⚡ 自动排班」后自动体检，有问题直接弹报告；③ 切到未排班月份自动引导一键排班。</div>
       <div class="log-ver"><b>v1.22</b> · 视图：新增「本月+下月」并设为默认显示（旧 3 月视图用户自动切换到新默认）；打印跨月视图时询问「按当前视图 / 切本月单月」；CSV 导出提示当前视图（文件名标注跨月）。</div>
       <div class="log-ver"><b>v1.21</b> · 新功能：CSV 导出加真实日期+星期行；新增月度统计 CSV 导出（月底报工）；「📋 复制到下月」整月搬移手工修改；「📅 一键标记 2026 法定假日」；排班表部门筛选；人员卡片显示本月出勤；体检新增夜班均衡检查（轮转人员夜班偏多提醒）。</div>
       <div class="log-ver"><b>v1.20</b> · 防呆加固：清手动/强制转班/留守模式/JSON导入/CSV导入/示例覆盖均加确认；人员同名提醒+工号重复拦截；CSV 自动识别 GBK/UTF-8 编码；导出/打印前自动查违规；体检一键修复连班；删除人员标注不可撤销；多标签页防覆盖提示。</div>
@@ -630,6 +634,15 @@
       <button class="sec" id="checkClear">清除红框标记</button>
       <button id="checkClose">知道了</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="snapModal">
+  <div class="modal" style="max-width:520px">
+    <h3>⏪ 操作前自动快照（最近 5 份）</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">删除人员 / 导入 / 示例覆盖 等不可撤销操作前自动保存；恢复前会再存一份当前数据，可再次恢复。</div>
+    <div id="snapList" style="max-height:320px;overflow:auto"></div>
+    <div class="modal-ops"><button class="sec" id="snapClose">关闭</button></div>
   </div>
 </div>
 
@@ -749,6 +762,25 @@ function loadState(){
 }
 function saveState(){
   try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){ toast('⚠️ 保存失败：浏览器存储不可用'); }
+}
+
+/* ================= 操作前自动快照（防呆兜底） =================
+   删除人员 / 导入 / 示例覆盖 等不可撤销操作前自动保存完整数据快照，
+   保留最近 SNAP_MAX 份，工具栏「⏪ 快照」可一键恢复（恢复前也会再存一份）。 */
+const SNAP_KEY = 'shift-scheduler-snaps';
+const SNAP_MAX = 5;
+function pushSnapshot(reason){
+  try{
+    let snaps = [];
+    try{ snaps = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]'); }catch(e){ snaps = []; }
+    if(!Array.isArray(snaps)) snaps = [];
+    snaps.push({ t:new Date().toISOString(), reason, people:state.people.length, state:JSON.parse(JSON.stringify(state)) });
+    if(snaps.length > SNAP_MAX) snaps = snaps.slice(snaps.length - SNAP_MAX);
+    localStorage.setItem(SNAP_KEY, JSON.stringify(snaps));
+  }catch(e){}
+}
+function getSnaps(){
+  try{ const s = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]'); return Array.isArray(s) ? s : []; }catch(e){ return []; }
 }
 
 /* ================= 日历 ================= */
@@ -1680,6 +1712,7 @@ $('#pmSave').onclick = ()=>{
 function delPerson(id){
   const p = state.people.find(x=>x.id===id); if(!p) return;
   if(!confirm('确定删除技术员「' + p.name + '」？该人员的所有月份排班记录将一并移除，且此操作不可撤销（Ctrl+Z 无效）。\n建议先「⬇ 导出 → 完整备份 JSON」留存数据。')) return;
+  pushSnapshot('删除人员：' + p.name);
   state.people = state.people.filter(x=>x.id!==id);
   if(state.rowOrder) state.rowOrder = state.rowOrder.filter(x=>x!==id); // 同步清理行排序
   // 清理该人在所有月份的班次、手工与请假记录
@@ -1717,6 +1750,14 @@ function setMonth(y,m){
   }
   saveState(); renderAll();
   if(prev !== key) toast('已切换到 ' + y + '年' + m + '月' + (rot ? '（' + rot + '名轮转人员班次已互换）' : ''));
+  if(prev !== key) autoGuideMonth(key);
+}
+/* 切到新月份时：该月无任何手工锁定且已添加人员 → 引导自动排班 */
+function autoGuideMonth(key){
+  if(!state.people.length) return;
+  const man = state.manual[key];
+  const hasMan = man && Object.values(man).some(s=>s && /[^_]/.test(s));
+  if(!hasMan) setTimeout(()=>toast('💡 ' + key.replace('-','年') + '月 尚未排班，点「⚡ 自动排班」一键生成基线'), 700);
 }
 $('#monthLabel').onclick = ()=>{
   let inp = $('#monthInput');
@@ -1732,7 +1773,14 @@ $('#monthLabel').onclick = ()=>{
 };
 $('#genBtn').onclick = ()=>{
   if(!state.people.length){ toast('👷 请先添加技术员再自动排班'); return; }
-  renderAll(); toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线（手工修改保留）');
+  renderAll();
+  const issues = computeChecks();
+  if(issues.length){
+    toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线，发现 ' + issues.length + ' 处需关注，详见体检报告');
+    runChecks(); // 有违规/提醒 → 自动弹出体检报告
+  } else {
+    toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线，体检通过 ✅（手工修改保留）');
+  }
 };
 /* 整月复制：把当前月的手工修改（含请假锁定的班次）整体复制到下月，轮转班次自动生成不受影响 */
 function copyMonthToNext(){
@@ -1863,6 +1911,42 @@ function autoFixChecks(){
 }
 $('#checkFix').onclick = ()=>{ autoFixChecks(); $('#checkModal').classList.remove('show'); };
 $('#checkModal').addEventListener('click', e=>{ if(e.target.id==='checkModal') e.target.classList.remove('show'); });
+/* ---------- 快照弹窗：列出自动快照，可一键恢复 ---------- */
+function openSnapModal(){
+  const snaps = getSnaps();
+  const box = $('#snapList');
+  if(!snaps.length){
+    box.innerHTML = '<div class="p-empty"><div class="big">暂无快照</div>删除人员 / 导入 / 示例覆盖等不可撤销操作前会自动保存</div>';
+  } else {
+    box.innerHTML = snaps.slice().reverse().map((s,i)=>{
+      const dt = new Date(s.t);
+      const ts = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0') + ' ' + String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+      const idx = snaps.length - 1 - i;
+      return '<div class="hol-item"><span>⏱ ' + ts + ' · <b>' + esc(s.reason) + '</b> · ' + (s.people||0) + ' 人</span>'
+        + '<button class="hol-del snap-restore" data-idx="' + idx + '" style="color:#1d4ed8;background:none;border:none;cursor:pointer;font-size:12px;font-weight:700" title="恢复此快照">↩ 恢复</button></div>';
+    }).join('');
+    box.querySelectorAll('.snap-restore').forEach(b=>b.onclick = ()=>{
+      if(restoreSnapshot(+b.dataset.idx)) $('#snapModal').classList.remove('show');
+    });
+  }
+  $('#snapModal').classList.add('show');
+}
+function restoreSnapshot(idx){
+  const snaps = getSnaps();
+  const s = snaps[idx];
+  if(!s || !s.state) return false;
+  const dt = new Date(s.t);
+  const ts = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0') + ' ' + String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+  if(!confirm('⚠️ 恢复到 ' + ts + ' 的快照（' + s.reason + '，' + (s.people||0) + ' 人）将覆盖当前所有数据。\n恢复前会先保存当前数据为快照，可再次恢复。确定继续？')) return false;
+  pushSnapshot('恢复快照（' + ts + ' ' + s.reason + '）');
+  state = JSON.parse(JSON.stringify(s.state));
+  saveState(); histReset(); renderAll();
+  toast('⏪ 已恢复到 ' + ts + ' 的快照（' + s.reason + '）');
+  return true;
+}
+$('#snapBtn').onclick = openSnapModal;
+$('#snapClose').onclick = ()=> $('#snapModal').classList.remove('show');
+$('#snapModal').addEventListener('click', e=>{ if(e.target.id==='snapModal') e.target.classList.remove('show'); });
 /* ---------- 节假日管理 ---------- */
 function openHolidayModal(){
   const key = CUR.key, dim = CUR.dim;
@@ -1928,7 +2012,7 @@ $('#holAdd').onclick = ()=>{
 $('#holClose').onclick = ()=> $('#holidayModal').classList.remove('show');
 $('#holidayModal').addEventListener('click', e=>{ if(e.target.id==='holidayModal') e.target.classList.remove('show'); });
 /* ---------- 排班体检 ---------- */
-function runChecks(){
+function computeChecks(){
   const key = CUR.key, dim = CUR.dim, grid = CUR.grids[key];
   const people = state.people;
   const issues = []; checkViol = {};
@@ -2013,6 +2097,10 @@ function runChecks(){
       }
     }
   }
+  return issues;
+}
+function runChecks(){
+  const issues = computeChecks();
   $('#checkMonth').textContent = CUR.y + '年' + CUR.m + '月';
   const box = $('#checkList');
   if(!issues.length){ box.innerHTML = '<div class="p-empty"><div class="big" style="color:#1a7f37">✅ 体检通过</div>未发现连班、连续上班超限或班次空缺问题</div>'; }
@@ -2240,6 +2328,7 @@ function applyCSVImport(rows){
   if(nameIdx<0 || !dateIdxs.length){ toast('⚠️ 无法识别表头：需要「姓名」列和日期列（第1天/1 等）'); return; }
   // 防呆：导入会按姓名合并/更新人员并锁定排班，且不可撤销（Ctrl+Z 无效）
   if(state.people.length && !confirm('⚠️ 将导入 ' + (rows.length-dataStart) + ' 行数据：按姓名合并/更新人员并锁定当月排班（不可撤销，Ctrl+Z 无效）。\n建议先「⬇ 导出 → 完整备份 JSON」留存当前数据。确定继续？')) return;
+  pushSnapshot('导入排班 CSV');
   let added=0, updated=0, merged=0, cells=0;
   const need = Math.min(dim, dateIdxs.length);
   for(let r=dataStart; r<rows.length; r++){
@@ -2289,6 +2378,7 @@ function applyCSVImport(rows){
 function importJSONData(data){
   if(!data || data.app !== 'shift-scheduler' || !data.state){ toast('⚠️ 不是有效的排班助手备份文件'); return; }
   if(state.people.length && !confirm('⚠️ 导入备份将覆盖当前所有数据（人员 ' + state.people.length + ' 人、全部排班/请假/节假日）。\n建议先「⬇ 导出 → 完整备份 JSON」留存当前数据。确定继续？')) return;
+  pushSnapshot('导入备份 JSON');
   const s = data.state;
   state.people = s.people || [];
   state.monthShift = s.monthShift || {};
@@ -2423,6 +2513,7 @@ function sampleManual8(){
 }
 
 function loadSample(){
+  pushSnapshot('填入示例数据');
   state.people = samplePeople();
   state.manual = {}; state.monthShift = {};
   state.rowOrder = []; // 示例加载恢复默认部门排序
