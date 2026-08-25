@@ -389,7 +389,7 @@
         <b>③ 微调</b>：点击格子循环切换 休→白→夜；<kbd>Shift</kbd>+点击 加班；<kbd>Alt</kbd>+点击 留守；按住拖拽批量填充；<kbd>右键</kbd>菜单（休/请假/清除手动）；<kbd>Ctrl+Z/Y</kbd> 撤销/重做。<br>
         <b>📋 复制排班</b>：右侧人员卡片点「📋」选源 → 点目标人员卡片 → 当月排班整体复制（含休），可 Ctrl+Z 撤销。<br>
         <b>⌨ 快捷键</b>：<kbd>1</kbd>循环 <kbd>2</kbd>白 <kbd>3</kbd>夜 <kbd>4</kbd>休 <kbd>5</kbd>加班 <kbd>6</kbd>留守；<kbd>←</kbd><kbd>→</kbd>或<kbd>PgUp</kbd><kbd>PgDn</kbd> 切换月份。<br>
-        <b>④ 周末负荷</b>：周六/周日可设「繁忙 / 正常 / 低负荷」——繁忙=休息者叫回加班；<b>低负荷=按部门保底留人</b>（默认 除气白2 + 转码白1夜1，固定班优先，其余休）。<br>
+        <b>④ 周末负荷</b>：周六/周日可设「繁忙 / 正常 / 低负荷」——繁忙=双休者叫回加班（<b>上六休一者的休息日照休</b>，保持每周休1天）；<b>低负荷=按部门保底留人</b>（默认 除气白2 + 转码白1夜1，固定班优先，其余休）。<br>
         <b>⑤ 留守模式</b>：低负荷时每天仅保留白班2人/夜班1人（全员轮换）。<br>
         <b>⑥ 转班</b>：默认每月最后一个周末（周六起）白夜互换；可选「固定日期」；「视图」切跨月可连续看转班前后几天。<br>
         <b>⑦ 连班保护</b>：任何人「夜班→次日白班」都会自动插一天休息（0 小时间隔禁止，转班点必歇）；白班→夜班（16h）允许。<br>
@@ -497,7 +497,7 @@
       <ul>
         <li>周六 / 周日负荷设为「繁忙」：自动排班时双休人员该日改为上班并标记<b>加班</b>。</li>
         <li>设为「低负荷」：按部门保底留人——除气白班2人（固定班优先，如周洪发）+ 转码白班1人/夜班1人，其余休息；可配合「留守模式」使用。</li>
-        <li>设为「繁忙」：休息的双休/上六休一人员被叫回加班。</li>
+        <li>设为「繁忙」：双休人员被叫回加班；上六休一者的休息日（周六/周日错峰）不被覆盖。</li>
         <li>「留守模式」：每天只保留白班2人 + 夜班1人（名单轮换），其余休息，适合无任务时线上留守。</li>
       </ul>
     </div>
@@ -745,7 +745,8 @@ function genMonth(y, m){
     const load = dayLoad(y,m,d);
     if(load === 'busy'){
       for(const p of people){
-        if((p.restRule==='weekend'||p.restRule==='sixOne') && grid[p.id][d-1]==='.'){
+        // 繁忙只叫回「双休」规则者；「上六休一」者的休息日（周六/周日错峰）不被覆盖，保证每周休1天
+        if(p.restRule==='weekend' && grid[p.id][d-1]==='.'){
           grid[p.id][d-1] = state.monthShift[key][p.id]==='night' ? 'N' : 'D';
         }
       }
@@ -839,15 +840,15 @@ function genMonth(y, m){
         const dayOn = people.filter(p=>p.dept===dept && (grid[p.id][d-1]==='d'||grid[p.id][d-1]==='D'||grid[p.id][d-1]==='x'));
         const nightOn = people.filter(p=>p.dept===dept && (grid[p.id][d-1]==='n'||grid[p.id][d-1]==='N'||grid[p.id][d-1]==='y'));
         if(dayOn.length < dc.day){
-          const cand = people.filter(p=>p.dept===dept && grid[p.id][d-1]==='.' && (state.monthShift[key][p.id]||'day')==='day');
+          const cand = people.filter(p=>p.dept===dept && !dayOn.includes(p) && !nightOn.includes(p) && (state.monthShift[key][p.id]||'day')==='day');
           const prevNight = p => { const pc = d>1 ? grid[p.id][d-2] : ((prevGrid[p.id]||[])[30]||'.'); return pc==='n'||pc==='N'||pc==='y'; };
-          cand.sort((a,b)=> (fixed(a)-fixed(b)) || ((prevNight(a)?1:0)-(prevNight(b)?1:0)));
+          cand.sort((a,b)=> ((isRuleRest(a,y,m,d)?1:0)-(isRuleRest(b,y,m,d)?1:0)) || (fixed(a)-fixed(b)) || ((prevNight(a)?1:0)-(prevNight(b)?1:0)));
           for(let i=0; i<dc.day-dayOn.length && i<cand.length; i++) grid[cand[i].id][d-1] = 'd';
         }
         if(nightOn.length < dc.night){
-          const cand = people.filter(p=>p.dept===dept && grid[p.id][d-1]==='.' && state.monthShift[key][p.id]==='night');
+          const cand = people.filter(p=>p.dept===dept && !dayOn.includes(p) && !nightOn.includes(p) && state.monthShift[key][p.id]==='night');
           const prevDay = p => { const pc = d>1 ? grid[p.id][d-2] : ((prevGrid[p.id]||[])[30]||'.'); return pc==='d'||pc==='D'||pc==='x'; };
-          cand.sort((a,b)=> (fixed(a)-fixed(b)) || ((prevDay(a)?1:0)-(prevDay(b)?1:0)));
+          cand.sort((a,b)=> ((isRuleRest(a,y,m,d)?1:0)-(isRuleRest(b,y,m,d)?1:0)) || (fixed(a)-fixed(b)) || ((prevDay(a)?1:0)-(prevDay(b)?1:0)));
           for(let i=0; i<dc.night-nightOn.length && i<cand.length; i++) grid[cand[i].id][d-1] = 'n';
         }
       }
@@ -868,15 +869,15 @@ function genMonth(y, m){
         const dayOn = people.filter(p=>p.dept===dept && (grid[p.id][d-1]==='d'||grid[p.id][d-1]==='D'||grid[p.id][d-1]==='x'));
         const nightOn = people.filter(p=>p.dept===dept && (grid[p.id][d-1]==='n'||grid[p.id][d-1]==='N'||grid[p.id][d-1]==='y'));
         if(dayOn.length < dc.day){
-          const cand = people.filter(p=>p.dept===dept && grid[p.id][d-1]==='.' && (state.monthShift[key][p.id]||'day')==='day');
+          const cand = people.filter(p=>p.dept===dept && !dayOn.includes(p) && !nightOn.includes(p) && (state.monthShift[key][p.id]||'day')==='day');
           const prevNight = p => { const pc = d>1 ? grid[p.id][d-2] : ((prevGrid[p.id]||[])[30]||'.'); return pc==='n'||pc==='N'||pc==='y'; };
-          cand.sort((a,b)=> (fixed(a)-fixed(b)) || ((prevNight(a)?1:0)-(prevNight(b)?1:0)));
+          cand.sort((a,b)=> ((isRuleRest(a,y,m,d)?1:0)-(isRuleRest(b,y,m,d)?1:0)) || (fixed(a)-fixed(b)) || ((prevNight(a)?1:0)-(prevNight(b)?1:0)));
           for(let i=0; i<dc.day-dayOn.length && i<cand.length; i++) grid[cand[i].id][d-1] = 'd';
         }
         if(nightOn.length < dc.night){
-          const cand = people.filter(p=>p.dept===dept && grid[p.id][d-1]==='.' && state.monthShift[key][p.id]==='night');
+          const cand = people.filter(p=>p.dept===dept && !dayOn.includes(p) && !nightOn.includes(p) && state.monthShift[key][p.id]==='night');
           const prevDay = p => { const pc = d>1 ? grid[p.id][d-2] : ((prevGrid[p.id]||[])[30]||'.'); return pc==='d'||pc==='D'||pc==='x'; };
-          cand.sort((a,b)=> (fixed(a)-fixed(b)) || ((prevDay(a)?1:0)-(prevDay(b)?1:0)));
+          cand.sort((a,b)=> ((isRuleRest(a,y,m,d)?1:0)-(isRuleRest(b,y,m,d)?1:0)) || (fixed(a)-fixed(b)) || ((prevDay(a)?1:0)-(prevDay(b)?1:0)));
           for(let i=0; i<dc.night-nightOn.length && i<cand.length; i++) grid[cand[i].id][d-1] = 'n';
         }
       }
@@ -1986,7 +1987,7 @@ function samplePeople(){
     {id:'p17', workId:'2627905', name:'陈红浩', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
     {id:'p18', workId:'2500589', name:'罗铭', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:0, note:''},
     {id:'p19', workId:'2525196', name:'孙子恒', dept:'转码', shiftRule:'fixed-night', initialShift:'day', restRule:'sixOne', restOffset:6, note:'不转班'},
-    {id:'p20', workId:'2529793', name:'程稳', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p20', workId:'2529793', name:'程稳', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:0, note:''},
   ];
 }
 
@@ -2036,7 +2037,7 @@ $('#wImport').onclick = ()=>{
 
 /* ================= 初始化 ================= */
 /* 旧版示例数据自动升级：示例数据打 sampleVer 标记；版本旧于 SAMPLE_VER 且名单匹配旧示例 → 自动替换为新范例 */
-const SAMPLE_VER = 15;
+const SAMPLE_VER = 16;
 const SAMPLE_NAMES = ['周洪发','吴兆哲','冯少帅','黄湛江','段高翔','郑高鑫','金凡','李冉','徐强','李晓东','刘进','段帅帅','张云鹏','蒋豪','宋心阳','喻来','陈红浩','罗铭','孙子恒','程稳'];
 const OLD8_NAMES  = ['陈建国','刘志强','王丽华','赵永刚','钱文杰','孙秀兰','周晓峰','吴国庆'];
 function isOldSample(){
