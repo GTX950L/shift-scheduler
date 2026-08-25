@@ -66,40 +66,43 @@
   .sheet-panel{flex:1 1 860px;min-width:0}
   .side{flex:0 0 320px;display:flex;flex-direction:column;gap:18px}
   /* ===== 排班表 ===== */
-  .sheet-scroll{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:10px}
+  .sheet-scroll{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:10px;background:#fff}
   table.sheet{border-collapse:separate;border-spacing:0;font-size:12px;width:max-content;min-width:100%}
   table.sheet th,table.sheet td{border-right:1px solid #eef1f5;border-bottom:1px solid #eef1f5;padding:0;text-align:center;vertical-align:middle}
   table.sheet thead th{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,#f6f9fc,#eef3f8);
     font-weight:650;color:#374151;font-size:11px;padding:5px 2px;line-height:1.25}
   table.sheet thead th.dow{font-size:10px;color:var(--muted)}
-  table.sheet th.corner{position:sticky;left:0;top:0;z-index:10;min-width:118px}
+  table.sheet thead th.col-first{border-left:3px solid #24507e}
+  table.sheet thead th .m-head{color:#1e4d8c;font-weight:800;font-size:11px;background:rgba(47,109,181,.09);border-radius:6px;padding:0 5px;margin:0 auto 1px;width:fit-content}
+  table.sheet th.corner{position:sticky;left:0;top:0;z-index:10;min-width:118px;background:linear-gradient(180deg,#f6f9fc,#eef3f8)}
   table.sheet tbody th{position:sticky;left:0;z-index:4;background:#fbfdff;font-weight:600;font-size:12px;padding:3px 6px;text-align:left;white-space:nowrap}
   table.sheet tbody th .nm{display:flex;align-items:center;gap:5px}
   table.sheet tbody th .dept-tag{font-size:9px;padding:1px 5px;border-radius:8px;font-weight:700;flex:0 0 auto}
   .tag-除气{background:#e8f1fe;color:#1d4ed8}
   .tag-转码{background:#fef3c7;color:#92400e}
-  .cell{width:33px;height:33px;cursor:pointer;position:relative;user-select:none;transition:box-shadow .1s}
-  .cell:hover{box-shadow:inset 0 0 0 1.5px rgba(47,109,181,.55);z-index:1}
+  .cell{width:33px;height:33px;cursor:pointer;position:relative;user-select:none;transition:box-shadow .1s,transform .08s,filter .08s}
+  .cell:hover{box-shadow:inset 0 0 0 1.5px rgba(47,109,181,.6);z-index:1;filter:brightness(1.05)}
+  .cell:active{transform:scale(.94)}
   .cell .c-txt{font-weight:700;font-size:12px;line-height:33px}
-  .cell .c-badge{position:absolute;top:1px;right:2px;font-size:8px;font-weight:800;line-height:1;padding:1px 2px;border-radius:4px;color:#fff}
-  .cell.day{background:var(--c-day);color:var(--c-day-t)}
-  .cell.night{background:var(--c-night);color:var(--c-night-t)}
-  .cell.rest{background:var(--c-rest);color:var(--c-rest-t)}
-  .cell.ot{background:var(--c-ot);color:var(--c-ot-t)}
-  .cell.ot .c-badge{background:var(--c-ot-dot)}
-  .cell.duty{background:var(--c-duty);color:var(--c-duty-t)}
-  .cell.duty .c-badge{background:var(--c-duty-dot)}
-  .cell.man::after{content:'';position:absolute;left:1px;top:1px;width:4px;height:4px;border-radius:50%;background:var(--brand)}
-  .cell.today{box-shadow:inset 0 0 0 2px var(--brand)}
+  .cell .c-badge{position:absolute;top:1px;right:1px;font-size:8px;font-weight:800;line-height:1;padding:1.5px 3px;border-radius:4px;color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+  .cell.day{background:linear-gradient(180deg,#fef3c7 0%,var(--c-day) 100%);color:var(--c-day-t)}
+  .cell.night{background:linear-gradient(180deg,#eef2ff 0%,var(--c-night) 100%);color:var(--c-night-t)}
+  .cell.rest{background:linear-gradient(180deg,#f3fbf6 0%,var(--c-rest) 100%);color:var(--c-rest-t)}
+  .cell.ot{background:linear-gradient(180deg,#fff1f2 0%,var(--c-ot) 100%);color:var(--c-ot-t);box-shadow:inset 0 0 0 1px rgba(239,68,68,.35)}
+  .cell.ot .c-badge{background:linear-gradient(135deg,#f87171,#dc2626)}
+  .cell.duty{background:linear-gradient(180deg,#f0f9ff 0%,var(--c-duty) 100%);color:var(--c-duty-t);box-shadow:inset 0 0 0 1px rgba(14,165,233,.3)}
+  .cell.duty .c-badge{background:linear-gradient(135deg,#38bdf8,#0284c7)}
+  .cell.man::after{content:'';position:absolute;left:1px;top:1px;width:4px;height:4px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 1px rgba(255,255,255,.7)}
+  .cell.today{box-shadow:inset 0 0 0 2px var(--brand),inset 0 0 0 3px rgba(255,255,255,.9)}
   th.col-sat,th.col-sun{background:linear-gradient(180deg,#fdf6f6,#f8ecec)!important}
   th.col-busy{background:linear-gradient(180deg,#ffecee,#fbdadd)!important;color:#9f1239!important}
   th.col-low{background:linear-gradient(180deg,#eef7fe,#dceefe)!important;color:#075985!important}
-  th.col-now{outline:2px solid var(--brand);outline-offset:-2px;z-index:6}
+  th.col-now{outline:2px solid var(--brand);outline-offset:-2px;z-index:6;background:linear-gradient(180deg,#e8f1fb,#dcebf7)!important}
   td.dow-sat,td.dow-sun{background:var(--c-weekend)}
   td.dow-busy{background:rgba(255,228,230,.45)}
   td.dow-low{background:rgba(224,242,254,.4)}
-  tr.tot-row th{font-weight:700;color:#24344d}
-  tr.tot-row td{font-size:10px;padding:2px 0;line-height:1.4}
+  tr.tot-row th{font-weight:700;color:#24344d;background:#f8fafc}
+  tr.tot-row td{font-size:10px;padding:2px 0;line-height:1.4;background:#f8fafc;border-top:1px solid #e2e8f0}
   tr.tot-row .t-num{font-weight:800}
   .t-day{color:var(--c-day-t)} .t-night{color:var(--c-night-t)} .t-rest{color:var(--c-rest-t)}
   .t-ot{color:var(--c-ot-t)} .t-duty{color:var(--c-duty-t)}
@@ -168,7 +171,54 @@
   .kpi{flex:1 1 130px;background:linear-gradient(180deg,#fbfdff,#f4f8fc);border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-align:center}
   .kpi .v{font-size:20px;font-weight:800;color:#1e4d8c}
   .kpi .k{font-size:11px;color:var(--muted)}
-  @media (max-width:980px){.side{flex:1 1 100%}}
+  /* ===== 响应式 ===== */
+  @media (max-width:1100px){
+    .wrap{padding:16px 20px}
+    .sheet-panel{flex:1 1 100%}
+    .side{flex:1 1 100%}
+  }
+  @media (max-width:900px){
+    header{padding:14px 18px}
+    header h1{font-size:19px}
+    .toolbar{position:static;flex-wrap:wrap;padding:10px 14px;gap:7px}
+    .toolbar .sep{display:none}
+    .wrap{padding:14px}
+    .panel{padding:15px}
+    .dd-menu{min-width:210px}
+  }
+  @media (max-width:720px){
+    header h1{font-size:17px}
+    header p{display:none}
+    .month-nav .m-label{min-width:88px;font-size:14px}
+    .month-nav button{padding:4px 8px}
+    .toolbar{gap:6px}
+    .toolbar label{font-size:11px}
+    .toolbar button,.toolbar select{font-size:12px;padding:6px 9px}
+    #rotateDay{width:46px!important;padding:5px 4px!important}
+    .sheet-scroll{max-height:62vh}
+    .cell{width:30px;height:30px}
+    .cell .c-txt{font-size:11px;line-height:30px}
+    table.sheet tbody th{min-width:100px}
+    .stats-grid{flex-direction:column}
+    .kpi{flex:1 1 96px;padding:8px 10px}
+    .kpi .v{font-size:17px}
+  }
+  @media (max-width:480px){
+    header{padding:12px 14px}
+    header h1{font-size:15px}
+    .hd-right{width:100%}
+    .month-nav{flex:1;justify-content:space-between}
+    .toolbar .grp{flex-wrap:wrap}
+    .cell{width:28px;height:28px}
+    .cell .c-txt{font-size:10.5px;line-height:28px}
+    table.sheet thead th{font-size:10px}
+    table.sheet thead th .m-head{font-size:10px}
+    .modal{padding:18px 16px}
+    .f-row{flex-direction:column;align-items:stretch;gap:6px}
+    .f-row label{flex:none}
+    .f-hint{margin-left:0}
+    .legend{font-size:11px;gap:6px}
+  }
   /* ===== 下拉菜单 ===== */
   .dd{position:relative;display:inline-block}
   .dd-menu{position:absolute;top:calc(100% + 6px);right:0;min-width:230px;background:#fff;border:1px solid var(--border);
@@ -213,7 +263,7 @@
 <nav class="toolbar" id="toolbar">
   <div class="grp">
     <label>画笔</label>
-    <select id="brush" title="选择后点击/拖拽排班表单元格进行填充；循环模式=点击依次切换 休→白→夜">
+    <select id="brush" title="画笔：点击/拖拽填充单元格；循环模式=点击依次 休→白→夜。快捷键 1~6 快速切换，←→ 切换月份">
       <option value="cycle">🔁 循环切换</option>
       <option value="day">☀️ 白班</option>
       <option value="night">🌙 夜班</option>
@@ -304,6 +354,7 @@
         <b>① 添加技术员</b>：设置部门、班次规则（固定白班 / 固定夜班 / 月轮转）、休息规则。<br>
         <b>② 点「⚡ 自动排班」</b>生成当月排班基线。<br>
         <b>③ 微调</b>：点击格子循环切换 休→白→夜；<kbd>Shift</kbd>+点击 加班；<kbd>Alt</kbd>+点击 留守；按住拖拽批量填充。<br>
+        <b>⌨ 快捷键</b>：<kbd>1</kbd>循环 <kbd>2</kbd>白 <kbd>3</kbd>夜 <kbd>4</kbd>休 <kbd>5</kbd>加班 <kbd>6</kbd>留守；<kbd>←</kbd><kbd>→</kbd>或<kbd>PgUp</kbd><kbd>PgDn</kbd> 切换月份。<br>
         <b>④ 周末繁忙</b>：把周六/周日设为「繁忙」，自动排班时双休人员会被叫回并标记加班。<br>
         <b>⑤ 低负荷</b>：开启「留守模式」，每天仅保留白班2人/夜班1人。<br>
         <b>⑥ 转班</b>：设「转班日」（默认1号），轮转人员从该日起白夜互换；「视图」切跨月可连续看转班前后几天。<br>
@@ -386,8 +437,8 @@
       <ul>
         <li>选择「画笔」后点击 / 按住拖拽批量填充：白班 / 夜班 / 休 / 加班 / 留守。</li>
         <li>「🔁 循环切换」画笔：点击依次 休 → 白班 → 夜班 → 休。</li>
-        <li>快捷键：<kbd>Shift</kbd>+点击=加班，<kbd>Alt</kbd>+点击=留守，<kbd>右键</kbd>=休。</li>
-        <li>拖动表头边框可调整列宽（若支持）。</li>
+        <li>快捷键：<kbd>1</kbd>~<kbd>6</kbd> 切换画笔（循环/白/夜/休/加班/留守）；<kbd>Shift</kbd>+点击=加班，<kbd>Alt</kbd>+点击=留守，<kbd>右键</kbd>=休。</li>
+        <li><kbd>←</kbd><kbd>→</kbd> 或 <kbd>PgUp</kbd><kbd>PgDn</kbd> 切换中心月份；跨月视图下月末/月初连续可拖拽。</li>
       </ul>
     </div>
     <div class="help-sec">
@@ -476,9 +527,10 @@ function toast(msg){
 /* ================= 状态 ================= */
 const LS_KEY = 'shift-scheduler-v1';
 const defaultState = () => ({
+  v: 2,                 // 数据版本（v2: manual 中 '_'=未设置，'.'=强制休）
   people: [],            // {id,name,dept,shiftRule:'fixed-day'|'fixed-night'|'rotate',initialShift:'day'|'night',restRule:'none'|'sixOne'|'weekend',note}
   monthShift: {},        // {'2026-08': {pid:'day'|'night'}} 各月实际班次
-  manual: {},            // {'2026-08': {pid:'...'}} 手动覆盖字符串
+  manual: {},            // {'2026-08': {pid:'...'}} 手动覆盖字符串(_=未设置 .=休 d/n=班 D/N=加班 x/y=留守)
   satLoad: 'normal', sunLoad: 'normal',
   idleMode: false,
   idleDay: 2, idleNight: 1,
@@ -488,7 +540,20 @@ const defaultState = () => ({
 });
 let state;
 function loadState(){
-  try{ const raw = localStorage.getItem(LS_KEY); if(raw){ state = Object.assign(defaultState(), JSON.parse(raw)); return; } }catch(e){}
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){
+      state = Object.assign(defaultState(), JSON.parse(raw));
+      // v1→v2 迁移：旧版 manual 中 '.' 原义为"未设置"，新版以 '_' 表示；'.' 改表强制休
+      if(state.v !== 2){
+        for(const k in state.manual){
+          for(const pid in state.manual[k]) state.manual[k][pid] = String(state.manual[k][pid]).replace(/\./g,'_');
+        }
+        state.v = 2;
+      }
+      return;
+    }
+  }catch(e){}
   state = defaultState();
 }
 function saveState(){
@@ -581,19 +646,29 @@ function genMonth(y, m){
       }
     }
   }
-  // 4) 合并手动覆盖
+  // 4) 返回纯自动结果（手动覆盖由 renderAll 合并到 CUR.grids，保证实时增量更新）
+  return grid;
+}
+/* 把某月手动覆盖合并进 grid（复制一份，不修改入参）。
+   manual 字符：'_'=未设置(跟随自动) '.'=强制休 d/n=班 D/N=加班 x/y=留守 */
+function mergeManualInto(grid, key){
   const man = state.manual[key] || {};
+  const out = {};
+  for(const pid in grid) out[pid] = grid[pid].slice();
+  const keys = Object.keys(out);
+  const dim = keys.length ? out[keys[0]].length : 0;
   for(const pid in man){
     const s = man[pid];
-    if(grid[pid] && s && s.length>=dim){
+    if(out[pid] && s && s.length>=dim){
       for(let d=1; d<=dim; d++){
         const c = s[d-1];
-        if(c !== '.' && c !== undefined) grid[pid][d-1] = c;
+        if(c !== undefined && c !== '_') out[pid][d-1] = c; // '.' 也覆盖（强制休）
       }
     }
   }
-  return grid;
+  return out;
 }
+function cloneGrid(g){ const o={}; for(const k in g) o[k]=g[k].slice(); return o; }
 /* ================= 渲染 ================= */
 let CUR = {}; // {y,m,key,dim,grid,grids,cols}
 let scrollToKey = '';
@@ -609,7 +684,11 @@ function renderAll(){
   CUR.y = state.curYear; CUR.m = state.curMonth;
   CUR.key = ym(CUR.y, CUR.m); CUR.dim = daysInMonth(CUR.y, CUR.m);
   CUR.months = viewMonths();
-  CUR.grids = {}; for(const mo of CUR.months) CUR.grids[mo.key] = genMonth(mo.y, mo.m);
+  CUR.autoGrids = {}; CUR.grids = {};
+  for(const mo of CUR.months){
+    CUR.autoGrids[mo.key] = genMonth(mo.y, mo.m);
+    CUR.grids[mo.key] = mergeManualInto(CUR.autoGrids[mo.key], mo.key);
+  }
   CUR.grid = CUR.grids[CUR.key]; // 中心月（统计/图表/导出用）
   $('#monthLabel').textContent = CUR.y + '年' + CUR.m + '月';
   $('#sheetTitle').textContent = CUR.y + '-' + String(CUR.m).padStart(2,'0') + ' · 表格跨月连续 · 双击列头复制前一天 · 统计/导出为当前月';
@@ -653,8 +732,8 @@ function renderSheet(){
   // 表头
   let h = '<thead><tr><th class="corner">技术员 / 日期</th>';
   for(const c of cols){
-    h += '<th class="' + loadClass(c.dow,c.load) + (c.isToday?' col-now':'') + '" data-m="' + c.key + '" data-d="' + c.d + '" title="' + c.y + '年' + c.m + '月' + c.d + '日（双击复制前一天）">'
-      + (c.d===1 ? '<div class="m-head" style="color:#1e4d8c;font-weight:800">' + c.m + '月</div>' : '')
+    h += '<th class="' + (c.d===1?'col-first ':'') + loadClass(c.dow,c.load) + (c.isToday?' col-now':'') + '" data-m="' + c.key + '" data-d="' + c.d + '" title="' + c.y + '年' + c.m + '月' + c.d + '日（双击复制前一天）">'
+      + (c.d===1 ? '<div class="m-head">' + c.m + '月</div>' : '')
       + '<div>' + c.d + '</div><div class="dow">周' + WEEK[c.dow] + (c.load==='busy'?'🔥':c.load==='low'?'💤':'') + '</div></th>';
   }
   h += '</tr></thead><tbody>';
@@ -667,7 +746,7 @@ function renderSheet(){
       const cell = arr[c.d-1] || '.';
       const man = state.manual[c.key] || {};
       const ms = man[p.id] || '';
-      const isMan = !!(ms[c.d-1] && ms[c.d-1] !== '.');
+      const isMan = !!(ms[c.d-1] && ms[c.d-1] !== '_');
       const extra = (c.dow===0||c.dow===6) ? (c.load==='busy'?'dow-busy':c.load==='low'?'dow-low':'dow-sat') : '';
       h += cellHTML(cell, p.id, c.key, c.d, isMan, c.isToday, extra);
     }
@@ -846,20 +925,27 @@ function setManual(pid, mkey, day, ch){
   const dim = daysInMonth(...mkey.split('-').map(Number));
   state.manual[mkey] = state.manual[mkey] || {};
   let s = state.manual[mkey][pid] || '';
-  if(s.length !== dim) s = '.'.repeat(dim);
+  if(s.length !== dim) s = '_'.repeat(dim);
   const arr = s.split('');
   arr[day-1] = ch;
   state.manual[mkey][pid] = arr.join('');
+  // 同步内存中的合并排班（保证连续点击/拖拽基于最新值，无需整表重算）
+  if(CUR.grids && CUR.grids[mkey] && CUR.grids[mkey][pid]){
+    CUR.grids[mkey][pid][day-1] = (ch==='_') ? ((CUR.autoGrids && CUR.autoGrids[mkey] && CUR.autoGrids[mkey][pid] && CUR.autoGrids[mkey][pid][day-1]) || '.') : ch;
+  }
   saveState();
 }
+/* 读取单元格当前值（手动优先，已由 setManual 同步到 CUR.grids） */
+function currentCellChar(pid, mkey, day){
+  return (CUR.grids && CUR.grids[mkey] && CUR.grids[mkey][pid] && CUR.grids[mkey][pid][day-1]) || '.';
+}
 function paintCell(pid, mkey, day, ch){
-  const grid = CUR.grids[mkey]; const arr = (grid&&grid[pid])||[];
   if(!ch){ // cycle
-    const cur = arr[day-1] || '.';
+    const cur = currentCellChar(pid, mkey, day);
     const next = cur==='.' ? 'd' : (cur==='d' ? 'n' : '.');
     setManual(pid, mkey, day, next);
   } else if(ch==='ot' || ch==='duty'){
-    const cur = arr[day-1] || '.';
+    const cur = currentCellChar(pid, mkey, day);
     const base = (state.monthShift[mkey]&&state.monthShift[mkey][pid]) || 'day';
     const target = ch==='ot' ? (base==='night'?'N':'D') : (base==='night'?'y':'x');
     setManual(pid, mkey, day, cur===target ? base : target); // 再点一次取消
@@ -867,12 +953,32 @@ function paintCell(pid, mkey, day, ch){
     setManual(pid, mkey, day, ch);
   }
 }
+/* 增量更新单个单元格 DOM（拖拽时避免整表重绘，大幅提升流畅度） */
+function updateCellDOM(td){
+  if(!td) return;
+  const pid = td.dataset.p, mkey = td.dataset.m, d = +td.dataset.d;
+  const c = currentCellChar(pid, mkey, d);
+  const [cls,txt] = cellInfo(c);
+  const p = state.people.find(x=>x.id===pid);
+  const desc = c==='d'?'白班 08:00–20:00':c==='n'?'夜班 20:00–08:00':c==='D'?'白班·加班':c==='N'?'夜班·加班':c==='x'?'白班·留守':c==='y'?'夜班·留守':'休息';
+  const keep = ['man','today','dow-sat','dow-sun','dow-busy','dow-low'];
+  td.className = 'cell ' + cls + keep.filter(k=>td.classList.contains(k)).map(k=>' '+k).join('');
+  td.title = esc(p?p.name:'') + ' · ' + mkey.replace('-','年') + '月' + d + '日 · ' + desc;
+  const t = td.querySelector('.c-txt'); if(t) t.textContent = txt;
+  let b = td.querySelector('.c-badge');
+  const badgeTxt = (c==='D'||c==='N') ? '加' : (c==='x'||c==='y') ? '留' : '';
+  if(badgeTxt){ if(!b){ b = document.createElement('span'); b.className='c-badge'; td.appendChild(b); } b.textContent = badgeTxt; }
+  else if(b){ b.remove(); }
+  const ms = state.manual[mkey] && state.manual[mkey][pid];
+  td.classList.toggle('man', !!(ms && ms[d-1] && ms[d-1] !== '_'));
+}
 function brushValue(){
   const b = $('#brush').value;
   if(b==='day') return 'd'; if(b==='night') return 'n'; if(b==='rest') return '.';
   if(b==='ot') return 'ot'; if(b==='duty') return 'duty';
   return null; // cycle
 }
+let painted = false;
 $('#sheet').addEventListener('mousedown', e=>{
   const td = e.target.closest('td.cell'); if(!td || e.button===2) return;
   e.preventDefault();
@@ -880,20 +986,38 @@ $('#sheet').addEventListener('mousedown', e=>{
   if(e.shiftKey){ paintCell(pid, mkey, d, 'ot'); }
   else if(e.altKey){ paintCell(pid, mkey, d, 'duty'); }
   else { const bv = brushValue(); paintCell(pid, mkey, d, bv); painting = bv; }
-  renderSheet();
+  updateCellDOM(td); painted = true;
 });
 $('#sheet').addEventListener('mouseover', e=>{
   if(painting===null) return;
   const td = e.target.closest('td.cell'); if(!td) return;
   const pid = td.dataset.p, mkey = td.dataset.m, d = +td.dataset.d;
   paintCell(pid, mkey, d, painting === 'ot' ? 'ot' : painting === 'duty' ? 'duty' : painting);
+  updateCellDOM(td); painted = true;
 });
-document.addEventListener('mouseup', ()=>{ painting = null; });
+document.addEventListener('mouseup', ()=>{
+  painting = null;
+  if(painted){ painted = false; renderSheet(); } // 拖拽/点击结束后刷新合计行
+});
 $('#sheet').addEventListener('contextmenu', e=>{
   const td = e.target.closest('td.cell'); if(!td) return;
   e.preventDefault();
   setManual(td.dataset.p, td.dataset.m, +td.dataset.d, '.');
+  updateCellDOM(td); painted = true;
   renderSheet();
+});
+/* 键盘快捷键：1-6 切换画笔，←→ / PageUp/Down 切换月份 */
+document.addEventListener('keydown', e=>{
+  const tag = (e.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='select'||tag==='textarea'||e.target.isContentEditable) return;
+  const k = e.key;
+  const brushMap = {'1':'cycle','2':'day','3':'night','4':'rest','5':'ot','6':'duty'};
+  if(brushMap[k]){
+    $('#brush').value = brushMap[k];
+    toast('画笔：' + ({cycle:'🔁 循环切换',day:'☀️ 白班',night:'🌙 夜班',rest:'🟢 休',ot:'🔺 加班',duty:'🟦 留守'})[brushMap[k]]);
+  }
+  else if(k==='ArrowLeft'||k==='PageUp'){ e.preventDefault(); shiftMonth(-1); }
+  else if(k==='ArrowRight'||k==='PageDown'){ e.preventDefault(); shiftMonth(1); }
 });
 /* 双击列头：把前一天（跨月自动衔接）的排班复制到该日 */
 $('#sheet').addEventListener('dblclick', e=>{
@@ -1186,7 +1310,7 @@ function applyCSVImport(rows){
     const row = rows[r]; const name = String(row[nameIdx]||'').trim();
     if(!name || /^(合计|总计|小计|部门|技术员)$/.test(name)) continue;
     const chars = dateIdxs.map(i=>txtToCell(row[i]||'', null)).slice(0, dim);
-    while(chars.length < dim) chars.push('.');
+    while(chars.length < dim) chars.push('_'); // 未提供日期 = 未手动设置
     let shiftRule = shiftIdx>=0 ? txtToShift(row[shiftIdx]) : '';
     if(!shiftRule) shiftRule = inferShift(chars);
     let restRule = restIdx>=0 ? txtToRest(row[restIdx]) : '';
@@ -1205,13 +1329,13 @@ function applyCSVImport(rows){
     state.monthShift[key] = state.monthShift[key] || {};
     state.monthShift[key][p.id] = initialShift;
     const locked = chars.join('');
-    if(/[^.nNdDxXyY]/.test(locked)) continue; // 安全校验
-    if(/[^.]/.test(locked)){
+    if(/[^._nNdDxXyY]/.test(locked)) continue; // 安全校验
+    if(/[^_]/.test(locked)){ // 存在任何已设置格子才锁定
       state.manual[key] = state.manual[key] || {};
       state.manual[key][p.id] = locked;
       merged++;
     }
-    cells += chars.filter(c=>c!=='.').length;
+    cells += chars.filter(c=>c!=='.'&&c!=='_').length;
   }
   saveState(); renderAll();
   const msg = '📄 导入完成：新增 ' + added + ' 人，更新 ' + updated + ' 人，锁定排班 ' + merged + ' 人（' + cells + ' 个上班格）';
