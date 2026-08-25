@@ -898,7 +898,7 @@ function renderSheet(){
       const cell = arr[c.d-1] || '.';
       const man = state.manual[c.key] || {};
       const ms = man[p.id] || '';
-      const isMan = !!(ms[c.d-1] && ms[c.d-1] !== '_');
+      const isMan = !!(ms[c.d-1] && ms[c.d-1] !== '_' && !lockBase(p.id, c.key, c.d));
       const hol2 = (state.holidays[c.key] || {})[c.d];
       const extra = (c.dow===0||c.dow===6) ? (c.load==='busy'?'dow-busy':c.load==='low'?'dow-low':'dow-sat') : '';
       h += cellHTML(cell, p.id, c.key, c.d, isMan, c.isToday, extra + (hol2?' dow-hol':''));
@@ -1238,7 +1238,7 @@ function updateCellDOM(td){
   if(badgeTxt){ if(!b){ b = document.createElement('span'); b.className='c-badge'; td.appendChild(b); } b.textContent = badgeTxt; }
   else if(b){ b.remove(); }
   const ms = state.manual[mkey] && state.manual[mkey][pid];
-  td.classList.toggle('man', !!(ms && ms[d-1] && ms[d-1] !== '_'));
+  td.classList.toggle('man', !!(ms && ms[d-1] && ms[d-1] !== '_' && !lockBase(pid, mkey, d)));
 }
 function brushValue(){
   const b = $('#brush').value;
@@ -1894,6 +1894,17 @@ function loadSample(){
   $('#welcomeModal').classList.remove('show');
   toast('🧪 已填入 20 名技术员（MTW10/MTW30 8月6休1排班），试试「⚡ 自动排班」');
 }
+
+/* 是否与示例锁定值一致（一致的格子不显示手动蓝点，用户改过的才显示） */
+let _base8 = null;
+function lockBase(pid, key, d){
+  if(key !== '2026-08' || !state.sampleVer) return false;
+  if(!_base8) _base8 = sampleManual8();
+  const base = _base8[pid]; if(!base) return false;
+  const m = state.manual[key] && state.manual[key][pid]; if(!m) return false;
+  return m[d-1] === base[d-1];
+}
+
 $('#wSample').onclick = loadSample;
 $('#wSampleSmall').onclick = ()=>{
   if(state.people.length && !confirm('⚠️ 用 MTW10/MTW30 示例数据覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
