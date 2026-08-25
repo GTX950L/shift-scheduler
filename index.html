@@ -750,7 +750,8 @@ function genMonth(y, m){
           grid[p.id][d-1] = state.monthShift[key][p.id]==='night' ? 'N' : 'D';
         }
       }
-    } else if(load === 'low'){
+    } else if(load === 'low' && d !== rstart){
+      // 转班日(月末周六)不应用低负荷保底：保证白夜切换在周末完成，不被裁人/补人干扰
       const cfg = (state.weekendLow||{})[(dowOf(y,m,d)===6?'sat':'sun')] || {};
       for(const dept of ['除气','转码']){
         const dc = cfg[dept] || {day:0, night:0};
@@ -801,21 +802,6 @@ function genMonth(y, m){
       }
     }
   }
-  //      含跨月边界：上月末夜班 → 本月1日白班 → 本月1日自动休（默认视图含上月时生效）
-  {
-    const pk = prevKey(key);
-    const pg = (CUR.grids && CUR.grids[pk]) || (CUR.autoGrids && CUR.autoGrids[pk]) || null;
-    if(pg){
-      const pdim = daysInMonth(+pk.split('-')[0], +pk.split('-')[1]);
-      for(const p of people){
-        const last = (pg[p.id]||[])[pdim-1] || '.';
-        const first = grid[p.id][0];
-        const nightL = (last==='n'||last==='N'||last==='y');
-        const dayF = (first==='d'||first==='D'||first==='x');
-        if(nightL && dayF) grid[p.id][0] = '.';
-      }
-    }
-  }
   //       白班 → 夜班（16 小时间隔）则允许，不处理。置于周末繁忙之后，繁忙叫回的加班也受保护。
   for(const p of people){
     const arr = grid[p.id];
@@ -832,36 +818,7 @@ function genMonth(y, m){
     const prevGrid = (CUR.autoGrids && CUR.autoGrids[pk]) || {}; // 视图不含上月时不递归计算（d=1优先级判断退化）
     const fixed = p => (p.shiftRule==='fixed-day'||p.shiftRule==='fixed-night') ? 0 : 1;
     for(let d=1; d<=dim; d++){
-      if(dayLoad(y,m,d) !== 'low') continue;
-      const cfg = (state.weekendLow||{})[(dowOf(y,m,d)===6?'sat':'sun')] || {};
-      for(const dept of ['除气','转码']){
-        const dc = cfg[dept] || {day:0, night:0};
-        if(!dc.day && !dc.night) continue;
-        const dayOn = people.filter(p=>p.dept===dept && (grid[p.id][d-1]==='d'||grid[p.id][d-1]==='D'||grid[p.id][d-1]==='x'));
-        const nightOn = people.filter(p=>p.dept===dept && (grid[p.id][d-1]==='n'||grid[p.id][d-1]==='N'||grid[p.id][d-1]==='y'));
-        if(dayOn.length < dc.day){
-          const cand = people.filter(p=>p.dept===dept && !dayOn.includes(p) && !nightOn.includes(p) && (state.monthShift[key][p.id]||'day')==='day');
-          const prevNight = p => { const pc = d>1 ? grid[p.id][d-2] : ((prevGrid[p.id]||[])[30]||'.'); return pc==='n'||pc==='N'||pc==='y'; };
-          cand.sort((a,b)=> ((isRuleRest(a,y,m,d)?1:0)-(isRuleRest(b,y,m,d)?1:0)) || (fixed(a)-fixed(b)) || ((prevNight(a)?1:0)-(prevNight(b)?1:0)));
-          for(let i=0; i<dc.day-dayOn.length && i<cand.length; i++) grid[cand[i].id][d-1] = 'd';
-        }
-        if(nightOn.length < dc.night){
-          const cand = people.filter(p=>p.dept===dept && !dayOn.includes(p) && !nightOn.includes(p) && state.monthShift[key][p.id]==='night');
-          const prevDay = p => { const pc = d>1 ? grid[p.id][d-2] : ((prevGrid[p.id]||[])[30]||'.'); return pc==='d'||pc==='D'||pc==='x'; };
-          cand.sort((a,b)=> ((isRuleRest(a,y,m,d)?1:0)-(isRuleRest(b,y,m,d)?1:0)) || (fixed(a)-fixed(b)) || ((prevDay(a)?1:0)-(prevDay(b)?1:0)));
-          for(let i=0; i<dc.night-nightOn.length && i<cand.length; i++) grid[cand[i].id][d-1] = 'n';
-        }
-      }
-    }
-  }
-  // 2.6) 低负荷补人复查：连班保护可能把保底的人改休，此时从"本月该班次且当天休"者补，
-  //      优先选前一天非夜班者补白班（避免再次连班），保证线上留人
-  if((state.weekendLow||{}).sat || (state.weekendLow||{}).sun){
-    const pk = prevKey(key), py2 = +pk.split('-')[0], pm2 = +pk.split('-')[1];
-    const prevGrid = (CUR.autoGrids && CUR.autoGrids[pk]) || {}; // 视图不含上月时不递归计算（d=1优先级判断退化）
-    const fixed = p => (p.shiftRule==='fixed-day'||p.shiftRule==='fixed-night') ? 0 : 1;
-    for(let d=1; d<=dim; d++){
-      if(dayLoad(y,m,d) !== 'low') continue;
+      if(dayLoad(y,m,d) !== 'low' || d === rstart) continue; // 转班日跳过保底补人
       const cfg = (state.weekendLow||{})[(dowOf(y,m,d)===6?'sat':'sun')] || {};
       for(const dept of ['除气','转码']){
         const dc = cfg[dept] || {day:0, night:0};
