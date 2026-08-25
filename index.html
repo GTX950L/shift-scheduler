@@ -617,7 +617,7 @@ function toast(msg){
 /* ================= 状态 ================= */
 const LS_KEY = 'shift-scheduler-v1';
 const defaultState = () => ({
-  v: 5,                 // 数据版本（v5: weekendLow 周末保底）
+  v: 6,                 // 数据版本（v6: restOffset=星期几 周末错峰休）
   people: [],            // {id,name,dept,shiftRule:'fixed-day'|'fixed-night'|'rotate',initialShift:'day'|'night',restRule:'none'|'sixOne'|'weekend',note}
   monthShift: {},        // {'2026-08': {pid:'day'|'night'}} 各月实际班次
   manual: {},            // {'2026-08': {pid:'...'}} 手动覆盖字符串(_=未设置 .=休 d/n=班 D/N=加班 x/y=留守)
@@ -658,6 +658,15 @@ function loadState(){
         state.weekendLow = { sat:{'除气':{day:2,night:0},'转码':{day:1,night:1}}, sun:{'除气':{day:0,night:0},'转码':{day:0,night:0}} };
         state.v = 5;
       }
+      // v5→v6：restOffset 语义由"每月第几天偏移"改为"星期几"（0=周日 6=周六）
+      if(state.v < 6){
+        for(const p of (state.people||[])){
+          const o = p.restOffset;
+          if(o === 5) p.restOffset = 0;
+          else if(o === 6) p.restOffset = 6;
+        }
+        state.v = 6;
+      }
       return;
     }
   }catch(e){}
@@ -694,7 +703,7 @@ function isRuleRest(p, y, m, d){
   if(p.restRule === 'none') return false;
   const dow = dowOf(y,m,d);
   if(p.restRule === 'weekend') return (dow===0 || dow===6);
-  if(p.restRule === 'sixOne') return ((d + (p.restOffset||0)) % 7 === 0); // 上六休一（restOffset 错峰 0~6）
+  if(p.restRule === 'sixOne') return (dow === (p.restOffset||0)); // 上六休一：固定星期几休（restOffset 0=周日 6=周六，周末错峰）
   return false;
 }
 
@@ -745,6 +754,8 @@ function genMonth(y, m){
       for(const dept of ['除气','转码']){
         const dc = cfg[dept] || {day:0, night:0};
         if(!dc.day && !dc.night) continue;
+        const fixed = p => (p.shiftRule==='fixed-day'||p.shiftRule==='fixed-night') ? 0 : 1;
+        // 当天已上班者（尊重休息规则/周六日错峰/连班保护）
         const dayPool = [], nightPool = [];
         for(const p of people){
           if(p.dept !== dept) continue;
@@ -752,15 +763,58 @@ function genMonth(y, m){
           if(c==='d'||c==='D'||c==='x') dayPool.push(p);
           else if(c==='n'||c==='N'||c==='y') nightPool.push(p);
         }
-        const fixed = p => (p.shiftRule==='fixed-day'||p.shiftRule==='fixed-night') ? 0 : 1;
         dayPool.sort((a,b)=>fixed(a)-fixed(b));
         nightPool.sort((a,b)=>fixed(a)-fixed(b));
+        // 先保留当天上班者（超额裁休）
         dayPool.forEach((p,i)=>{ if(i >= dc.day) grid[p.id][d-1] = '.'; });
         nightPool.forEach((p,i)=>{ if(i >= dc.night) grid[p.id][d-1] = '.'; });
+        // 保底不足时从"本月该班次但当天休"的人员中补（保证线上留人）
+        if(dayPool.length < dc.day || nightPool.length < dc.night){
+          const backD = [], backN = [];
+          for(const p of people){
+            if(p.dept !== dept) continue;
+            if(dayPool.includes(p) || nightPool.includes(p)) continue;
+            (state.monthShift[key][p.id]==='night' ? backN : backD).push(p);
+          }
+          backD.sort((a,b)=>fixed(a)-fixed(b));
+          backN.sort((a,b)=>fixed(a)-fixed(b));
+          for(let i=0; i<dc.day-dayPool.length && i<backD.length; i++) grid[backD[i].id][d-1] = 'd';
+          for(let i=0; i<dc.night-nightPool.length && i<backN.length; i++) grid[backN[i].id][d-1] = 'n';
+        }
       }
     }
   }
   // 2.5) 连班保护（全员）：任何人的「夜班 → 次日白班」为 0 小时间隔连班，自动插入一天休息。
+  //      含跨月边界：上月末夜班 → 本月1日白班 → 本月1日自动休（默认视图含上月时生效）
+  {
+    const pk = prevKey(key);
+    const pg = (CUR.grids && CUR.grids[pk]) || (CUR.autoGrids && CUR.autoGrids[pk]) || null;
+    if(pg){
+      const pdim = daysInMonth(+pk.split('-')[0], +pk.split('-')[1]);
+      for(const p of people){
+        const last = (pg[p.id]||[])[pdim-1] || '.';
+        const first = grid[p.id][0];
+        const nightL = (last==='n'||last==='N'||last==='y');
+        const dayF = (first==='d'||first==='D'||first==='x');
+        if(nightL && dayF) grid[p.id][0] = '.';
+      }
+    }
+  }
+  //      含跨月边界：上月末夜班 → 本月1日白班 → 本月1日自动休（默认视图含上月时生效）
+  {
+    const pk = prevKey(key);
+    const pg = (CUR.grids && CUR.grids[pk]) || (CUR.autoGrids && CUR.autoGrids[pk]) || null;
+    if(pg){
+      const pdim = daysInMonth(+pk.split('-')[0], +pk.split('-')[1]);
+      for(const p of people){
+        const last = (pg[p.id]||[])[pdim-1] || '.';
+        const first = grid[p.id][0];
+        const nightL = (last==='n'||last==='N'||last==='y');
+        const dayF = (first==='d'||first==='D'||first==='x');
+        if(nightL && dayF) grid[p.id][0] = '.';
+      }
+    }
+  }
   //       白班 → 夜班（16 小时间隔）则允许，不处理。置于周末繁忙之后，繁忙叫回的加班也受保护。
   for(const p of people){
     const arr = grid[p.id];
@@ -770,7 +824,65 @@ function genMonth(y, m){
       if(prevIsNight && nextIsDay) arr[d] = '.';
     }
   }
-  // 3) 留守模式：每班只保留最低人数，轮换
+  // 2.6) 低负荷补人复查：连班保护可能把保底的人改休，此时从"本月该班次且当天休"者补，
+  //      优先选前一天非夜班者补白班（避免再次连班），保证线上留人
+  if((state.weekendLow||{}).sat || (state.weekendLow||{}).sun){
+    const pk = prevKey(key), py2 = +pk.split('-')[0], pm2 = +pk.split('-')[1];
+    const prevGrid = (CUR.autoGrids && CUR.autoGrids[pk]) || {}; // 视图不含上月时不递归计算（d=1优先级判断退化）
+    const fixed = p => (p.shiftRule==='fixed-day'||p.shiftRule==='fixed-night') ? 0 : 1;
+    for(let d=1; d<=dim; d++){
+      if(dayLoad(y,m,d) !== 'low') continue;
+      const cfg = (state.weekendLow||{})[(dowOf(y,m,d)===6?'sat':'sun')] || {};
+      for(const dept of ['除气','转码']){
+        const dc = cfg[dept] || {day:0, night:0};
+        if(!dc.day && !dc.night) continue;
+        const dayOn = people.filter(p=>p.dept===dept && (grid[p.id][d-1]==='d'||grid[p.id][d-1]==='D'||grid[p.id][d-1]==='x'));
+        const nightOn = people.filter(p=>p.dept===dept && (grid[p.id][d-1]==='n'||grid[p.id][d-1]==='N'||grid[p.id][d-1]==='y'));
+        if(dayOn.length < dc.day){
+          const cand = people.filter(p=>p.dept===dept && grid[p.id][d-1]==='.' && (state.monthShift[key][p.id]||'day')==='day');
+          const prevNight = p => { const pc = d>1 ? grid[p.id][d-2] : ((prevGrid[p.id]||[])[30]||'.'); return pc==='n'||pc==='N'||pc==='y'; };
+          cand.sort((a,b)=> (fixed(a)-fixed(b)) || ((prevNight(a)?1:0)-(prevNight(b)?1:0)));
+          for(let i=0; i<dc.day-dayOn.length && i<cand.length; i++) grid[cand[i].id][d-1] = 'd';
+        }
+        if(nightOn.length < dc.night){
+          const cand = people.filter(p=>p.dept===dept && grid[p.id][d-1]==='.' && state.monthShift[key][p.id]==='night');
+          const prevDay = p => { const pc = d>1 ? grid[p.id][d-2] : ((prevGrid[p.id]||[])[30]||'.'); return pc==='d'||pc==='D'||pc==='x'; };
+          cand.sort((a,b)=> (fixed(a)-fixed(b)) || ((prevDay(a)?1:0)-(prevDay(b)?1:0)));
+          for(let i=0; i<dc.night-nightOn.length && i<cand.length; i++) grid[cand[i].id][d-1] = 'n';
+        }
+      }
+    }
+  }
+  // 2.6) 低负荷补人复查：连班保护可能把保底的人改休，此时从"本月该班次且当天休"者补，
+  //      优先选前一天非夜班者补白班（避免再次连班），保证线上留人
+  if((state.weekendLow||{}).sat || (state.weekendLow||{}).sun){
+    const pk = prevKey(key), py2 = +pk.split('-')[0], pm2 = +pk.split('-')[1];
+    const prevGrid = (CUR.autoGrids && CUR.autoGrids[pk]) || {}; // 视图不含上月时不递归计算（d=1优先级判断退化）
+    const fixed = p => (p.shiftRule==='fixed-day'||p.shiftRule==='fixed-night') ? 0 : 1;
+    for(let d=1; d<=dim; d++){
+      if(dayLoad(y,m,d) !== 'low') continue;
+      const cfg = (state.weekendLow||{})[(dowOf(y,m,d)===6?'sat':'sun')] || {};
+      for(const dept of ['除气','转码']){
+        const dc = cfg[dept] || {day:0, night:0};
+        if(!dc.day && !dc.night) continue;
+        const dayOn = people.filter(p=>p.dept===dept && (grid[p.id][d-1]==='d'||grid[p.id][d-1]==='D'||grid[p.id][d-1]==='x'));
+        const nightOn = people.filter(p=>p.dept===dept && (grid[p.id][d-1]==='n'||grid[p.id][d-1]==='N'||grid[p.id][d-1]==='y'));
+        if(dayOn.length < dc.day){
+          const cand = people.filter(p=>p.dept===dept && grid[p.id][d-1]==='.' && (state.monthShift[key][p.id]||'day')==='day');
+          const prevNight = p => { const pc = d>1 ? grid[p.id][d-2] : ((prevGrid[p.id]||[])[30]||'.'); return pc==='n'||pc==='N'||pc==='y'; };
+          cand.sort((a,b)=> (fixed(a)-fixed(b)) || ((prevNight(a)?1:0)-(prevNight(b)?1:0)));
+          for(let i=0; i<dc.day-dayOn.length && i<cand.length; i++) grid[cand[i].id][d-1] = 'd';
+        }
+        if(nightOn.length < dc.night){
+          const cand = people.filter(p=>p.dept===dept && grid[p.id][d-1]==='.' && state.monthShift[key][p.id]==='night');
+          const prevDay = p => { const pc = d>1 ? grid[p.id][d-2] : ((prevGrid[p.id]||[])[30]||'.'); return pc==='d'||pc==='D'||pc==='x'; };
+          cand.sort((a,b)=> (fixed(a)-fixed(b)) || ((prevDay(a)?1:0)-(prevDay(b)?1:0)));
+          for(let i=0; i<dc.night-nightOn.length && i<cand.length; i++) grid[cand[i].id][d-1] = 'n';
+        }
+      }
+    }
+  }
+  // 3) 留守模式  // 3) 留守模式  // 3) 留守模式：每班只保留最低人数，轮换
   if(state.idleMode){
     const dayPool = people.filter(p=>state.monthShift[key][p.id]==='day');
     const nightPool = people.filter(p=>state.monthShift[key][p.id]==='night');
@@ -1855,24 +1967,24 @@ $('#personModal').addEventListener('click', e=>{ if(e.target.id==='personModal')
 /* ================= 示例数据 & 引导 ================= */
 function samplePeople(){
   return [
-    {id:'p1', workId:'2413324', name:'周洪发', dept:'除气', shiftRule:'fixed-day', initialShift:'night', restRule:'sixOne', restOffset:5, note:'组长'},
+    {id:'p1', workId:'2413324', name:'周洪发', dept:'除气', shiftRule:'fixed-day', initialShift:'night', restRule:'sixOne', restOffset:0, note:'组长'},
     {id:'p2', workId:'2617230', name:'吴兆哲', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p3', workId:'2627909', name:'冯少帅', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:5, note:''},
-    {id:'p4', workId:'2640154', name:'黄湛江', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:5, note:''},
+    {id:'p3', workId:'2627909', name:'冯少帅', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:0, note:''},
+    {id:'p4', workId:'2640154', name:'黄湛江', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:0, note:''},
     {id:'p5', workId:'2603373', name:'段高翔', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
     {id:'p6', workId:'2603374', name:'郑高鑫', dept:'除气', shiftRule:'fixed-day', initialShift:'night', restRule:'sixOne', restOffset:6, note:'不转班'},
     {id:'p7', workId:'2626890', name:'金凡', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
     {id:'p8', workId:'2525667', name:'李冉', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p9', workId:'2422671', name:'徐强', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:5, note:''},
+    {id:'p9', workId:'2422671', name:'徐强', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:0, note:''},
     {id:'p10', workId:'2514103', name:'李晓东', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
     {id:'p11', workId:'2525198', name:'刘进', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p12', workId:'2531099', name:'段帅帅', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:5, note:''},
+    {id:'p12', workId:'2531099', name:'段帅帅', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:0, note:''},
     {id:'p13', workId:'2629260', name:'张云鹏', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
     {id:'p14', workId:'2630447', name:'蒋豪', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
     {id:'p15', workId:'2527332', name:'宋心阳', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
     {id:'p16', workId:'2602581', name:'喻来', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
     {id:'p17', workId:'2627905', name:'陈红浩', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p18', workId:'2500589', name:'罗铭', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:5, note:''},
+    {id:'p18', workId:'2500589', name:'罗铭', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:0, note:''},
     {id:'p19', workId:'2525196', name:'孙子恒', dept:'转码', shiftRule:'fixed-night', initialShift:'day', restRule:'sixOne', restOffset:6, note:'不转班'},
     {id:'p20', workId:'2529793', name:'程稳', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
   ];
