@@ -415,8 +415,9 @@
         <b>⑤ 留守模式</b>：低负荷时每天仅保留白班2人/夜班1人（全员轮换）。<br>
         <b>⑥ 转班</b>：默认每月最后一个周末（周六起）白夜互换；可选「固定日期」；「视图」切跨月可连续看转班前后几天。<br>
         <b>⑦ 连班保护</b>：任何人「夜班→次日白班」都会自动插一天休息（0 小时间隔禁止，转班点必歇）；白班→夜班（16h）允许；<b>手动修改也防呆</b>——夜班后一天只能设「休」或「夜」，设白班会被拦截提示。<br>
-        <b>⑧ 体检与节假日</b>：「🔍 体检」一键查连班/连续上班/班次空缺/节假日值班；「🏮 节假日」标记法定假日与停线日。<br>
-        <b>⑨ 用旧表改新表</b>：「⬆ 导入 ▾」导入旧排班 CSV → 按提示清空 → 重新「自动排班」。
+        <b>⑧ 体检与节假日</b>：「🔍 体检」一键查连班/连续上班/班次空缺/节假日值班/夜班均衡；点「⚡ 自动排班」后会<b>自动体检</b>，有问题直接弹报告。「🏮 节假日」可标记法定假日与停线日，或「📅 一键标记 2026 法定假日」。<br>
+        <b>⑨ 用旧表改新表</b>：「⬆ 导入 ▾」导入旧排班 CSV → 按提示清空 → 重新「自动排班」。<br>
+        <b>⑩ 新功能</b>：「部门」下拉只看单个部门（导出仍为全部）；「📋 复制到下月」把本月请假/调班搬去下月；「⏪ 快照」可恢复删除/导入前的数据；切到未排班月份会自动引导排班；「⬇ 导出」含<b>排班表 CSV（带日期）</b>与<b>月度统计 CSV</b>。
       </div>
     </section>
   </aside>
@@ -494,6 +495,7 @@
       <ul>
         <li>先「＋ 添加」技术员：姓名、工号（选填）、部门（除气/转码）、班次规则、休息规则；上六休一可再选休息日（周六/周日）。</li>
         <li>点「⚡ 自动排班」生成当月基线；之后随时可再点，<b>手工改过的格子不会被覆盖</b>（格子左上角蓝点 = 手动修改）。</li>
+        <li>切到尚未排班的月份会自动提示「一键排班」；点「自动排班」后<b>自动体检</b>——无问题提示通过，有问题直接弹出报告。</li>
         <li>格子上方标记：<kbd>🔵蓝点</kbd>手动修改 <kbd>「加」</kbd>加班 <kbd>「留」</kbd>留守（加班/留守徽标在格子上方）。</li>
       </ul>
     </div>
@@ -581,6 +583,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.24</b> · 验收修复：① 修复「部门筛选后导出 CSV 只含该部门」——导出始终为全部人员；② 修复「筛选视图下拖拽排序丢失其他部门行序」——行序基于全部人员；③ 操作指引补充新功能（部门筛选/复制到下月/快照/自动体检/法定假日/统计导出）；④ README 数据版本号同步 v7。</div>
       <div class="log-ver"><b>v1.23</b> · 自动功能：① 高危操作（删除人员/导入/示例覆盖）前自动保存数据快照（最近5份），工具栏「⏪ 快照」一键恢复；② 「⚡ 自动排班」后自动体检，有问题直接弹报告；③ 切到未排班月份自动引导一键排班。</div>
       <div class="log-ver"><b>v1.22</b> · 视图：新增「本月+下月」并设为默认显示（旧 3 月视图用户自动切换到新默认）；打印跨月视图时询问「按当前视图 / 切本月单月」；CSV 导出提示当前视图（文件名标注跨月）。</div>
       <div class="log-ver"><b>v1.21</b> · 新功能：CSV 导出加真实日期+星期行；新增月度统计 CSV 导出（月底报工）；「📋 复制到下月」整月搬移手工修改；「📅 一键标记 2026 法定假日」；排班表部门筛选；人员卡片显示本月出勤；体检新增夜班均衡检查（轮转人员夜班偏多提醒）。</div>
@@ -1047,9 +1050,10 @@ function loadClass(dow, load){
   if(dow===0||dow===6) return load==='busy' ? 'col-busy' : (load==='low' ? 'col-low' : 'col-sat');
   return '';
 }
-/* 排班表行顺序：默认部门分组（除气在上、转码在下）；用户拖拽后按 rowOrder 自定义；deptFilter 过滤显示 */
+/* 排班表行顺序：默认部门分组（除气在上、转码在下）；用户拖拽后按 rowOrder 自定义；deptFilter 过滤显示。
+   ignoreFilter=true 时忽略部门筛选（导出等需要全量数据的场景用）。 */
 const deptOrder = {'除气':0, '转码':1};
-function rowOrderPeople(){
+function rowOrderPeople(ignoreFilter){
   const ro = state.rowOrder || [];
   const byId = {}; state.people.forEach(p=>byId[p.id]=p);
   let list;
@@ -1061,7 +1065,7 @@ function rowOrderPeople(){
     list = state.people.slice().sort((a,b)=>((deptOrder[a.dept]??9)-(deptOrder[b.dept]??9)));
   }
   const df = state.deptFilter || 'all';
-  if(df !== 'all') list = list.filter(p=>p.dept===df);
+  if(df !== 'all' && !ignoreFilter) list = list.filter(p=>p.dept===df);
   return list;
 }
 function renderSheet(){
@@ -1362,7 +1366,7 @@ document.addEventListener('drop', e=>{
   e.preventDefault();
   const tr = e.target.closest && e.target.closest('#sheet tbody tr[data-pid]');
   if(tr && tr.dataset.pid !== dragPid){
-    const order = rowOrderPeople().map(p=>p.id);
+    const order = rowOrderPeople(true).map(p=>p.id); // 忽略部门筛选：行序永远基于全部人员，避免筛选视图下拖拽丢行
     const from = order.indexOf(dragPid), to = order.indexOf(tr.dataset.pid);
     order.splice(from,1);
     order.splice(to,0,dragPid);
@@ -2172,7 +2176,7 @@ function exportCSV(){
   const dowHead  = Array.from({length:dim},(_,i)=>'周' + WEEK[dowOf(CUR.y,CUR.m,i+1)]);
   const rows = [['技术员','部门','班次规则','休息规则', ...dateHead]];
   rows.push(['星期','','','', ...dowHead]);
-  const csvPeople = rowOrderPeople(); // 与排班表显示顺序一致（含用户拖拽排序；部门筛选不影响导出，保证数据完整）
+  const csvPeople = rowOrderPeople(true); // 忽略部门筛选：导出始终为全部人员，保证数据完整
   for(const p of csvPeople){
     const arr = grid[p.id]||[];
     rows.push([p.name, p.dept, SHIFT_TXT[p.shiftRule]||'月轮转', REST_TXT[p.restRule]||'无休', ...arr.map((c,i)=>{
