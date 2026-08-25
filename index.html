@@ -169,7 +169,7 @@
   .help-sec li{margin-bottom:4px}
   kbd{background:#eef2f7;border:1px solid #d6dee8;border-bottom-width:2px;border-radius:5px;padding:1px 5px;font-size:11px;font-family:inherit}
   .kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-  .kpi{flex:1 1 130px;background:linear-gradient(180deg,#fbfdff,#f4f8fc);border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-align:center}
+  .kpi{flex:1 1 130px;max-width:240px;background:linear-gradient(180deg,#fbfdff,#f4f8fc);border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-align:center}
   .kpi .v{font-size:20px;font-weight:800;color:#1e4d8c}
   .kpi .k{font-size:11px;color:var(--muted)}
   /* ===== 响应式 ===== */
@@ -892,7 +892,7 @@ function renderChart(){
   }
   const W = Math.max(dim*cw, 480);
   const H = ch + padB;
-  let svg = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" style="min-width:100%">';
+  let svg = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block;min-width:320px">';
   svg += '<line x1="0" y1="' + (ch+4) + '" x2="' + W + '" y2="' + (ch+4) + '" stroke="#c6d0dc"/>';
   // 网格线
   for(let g=1; g<=max; g++){
