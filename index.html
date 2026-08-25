@@ -378,7 +378,7 @@
 
   <aside class="side">
     <section class="panel">
-      <h2><span class="t">👷 技术员</span><button class="sm" id="addPersonBtn">＋ 添加</button></h2>
+      <h2><span class="t">👷 技术员</span><button class="sm sec" id="wSampleSmall" title="用 MTW10/MTW30 示例数据覆盖当前内容（20人+8月排班）">🧪 示例数据</button><button class="sm" id="addPersonBtn">＋ 添加</button></h2>
       <div class="people-list" id="peopleList"></div>
     </section>
     <section class="panel">
@@ -1879,7 +1879,7 @@ function sampleManual8(){
   return {"p1": "..dddddd.dddddd.dddddd.dddddd.d", "p2": "..dddddd.dddddd.ddddd.dddddd.dd", "p3": "d.dddddd.dddddd.ddddd.dddddd.dd", "p4": "..dddddd.dddddd.dddddd.dddddd.d", "p5": "..ddddd.dddddd.dddddd.dddddd.dd", "p6": ".dddddd.dddddd.dddddd.dddddd.dd", "p7": "..ddddd.dddddd.dddddd.dddddd.dd", "p8": ".dddddd.dddddd.dddddd.dddddd.dd", "p9": ".dddddd..dddddd.dddddd.dddddd.d", "p10": "..dddddd.dddddd.ddddd.dddddd.dd", "p11": "d.ddddd.dddddd.dddddd.dddddd.dd", "p12": "..nnnnnn.nnnnnn.nnnnnn.nnnnnn.n", "p13": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p14": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p15": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p16": "n.nnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p17": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p18": "n.nnnnnn.nnnnnn.nnnnnn.nnnnnn.n", "p19": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p20": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn"};
 }
 
-$('#wSample').onclick = ()=>{
+function loadSample(){
   state.people = samplePeople();
   state.manual = {}; state.monthShift = {};
   const t = today(); state.curYear = t.y; state.curMonth = t.m;
@@ -1888,6 +1888,11 @@ $('#wSample').onclick = ()=>{
   histReset(); saveState(); renderAll();
   $('#welcomeModal').classList.remove('show');
   toast('🧪 已填入 20 名技术员（MTW10/MTW30 8月6休1排班），试试「⚡ 自动排班」');
+}
+$('#wSample').onclick = loadSample;
+$('#wSampleSmall').onclick = ()=>{
+  if(state.people.length && !confirm('⚠️ 用 MTW10/MTW30 示例数据覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
+  loadSample();
 };
 $('#wStart').onclick = ()=>{
   $('#welcomeModal').classList.remove('show');
