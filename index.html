@@ -520,7 +520,7 @@
     <div class="help-sec">
       <h4>🔁 转班</h4>
       <ul>
-        <li>默认「月末周末」：轮转人员每月<b>最靠近月末的周六起</b>白夜互换（周六、周日完成转班），跨月视图可直观看到衔接。</li>
+        <li>默认「月末周末」：轮转人员每月<b>最靠近月末的周六起</b>白夜互换（周六、周日完成转班），跨月视图可直观看到衔接；示例数据（8 月）已按此规则在 8/29 起转班。</li>
         <li>也可在工具栏改为「固定日期」并设 1~31 号（如 20 = 每月 20 日起换班）。</li>
         <li><b>连班保护（全员）</b>：任何人「夜班 → 次日白班」都是 0 小时间隔连班，自动排班会<b>自动在转班点插入一天休息</b>；「白班 → 次日夜班」（16 小时间隔）允许，不处理。周末繁忙叫回的加班同样受此保护。</li>
         <li>固定班次者不受转班影响；某月想破例可用「🔁 本月转班」强制取反，再手工微调。</li>
@@ -1967,7 +1967,20 @@ function samplePeople(){
 
 /* 8月排班锁定（源自 MTW10/MTW30 6休1排班计划表） */
 function sampleManual8(){
-  return {"p1": "..dddddd.dddddd.dddddd.dddddd.d", "p2": "..dddddd.dddddd.ddddd.dddddd.dd", "p3": "d.dddddd.dddddd.ddddd.dddddd.dd", "p4": "..dddddd.dddddd.dddddd.dddddd.d", "p5": "..ddddd.dddddd.dddddd.dddddd.dd", "p6": ".dddddd.dddddd.dddddd.dddddd.dd", "p7": "..ddddd.dddddd.dddddd.dddddd.dd", "p8": ".dddddd.dddddd.dddddd.dddddd.dd", "p9": ".dddddd..dddddd.dddddd.dddddd.d", "p10": "..dddddd.dddddd.ddddd.dddddd.dd", "p11": "d.ddddd.dddddd.dddddd.dddddd.dd", "p12": "..nnnnnn.nnnnnn.nnnnnn.nnnnnn.n", "p13": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p14": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p15": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p16": "n.nnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p17": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p18": "n.nnnnnn.nnnnnn.nnnnnn.nnnnnn.n", "p19": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p20": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn"};
+  const m = {"p1": "..dddddd.dddddd.dddddd.dddddd.d", "p2": "..dddddd.dddddd.ddddd.dddddd.dd", "p3": "d.dddddd.dddddd.ddddd.dddddd.dd", "p4": "..dddddd.dddddd.dddddd.dddddd.d", "p5": "..ddddd.dddddd.dddddd.dddddd.dd", "p6": ".dddddd.dddddd.dddddd.dddddd.dd", "p7": "..ddddd.dddddd.dddddd.dddddd.dd", "p8": ".dddddd.dddddd.dddddd.dddddd.dd", "p9": ".dddddd..dddddd.dddddd.dddddd.d", "p10": "..dddddd.dddddd.ddddd.dddddd.dd", "p11": "d.ddddd.dddddd.dddddd.dddddd.dd", "p12": "..nnnnnn.nnnnnn.nnnnnn.nnnnnn.n", "p13": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p14": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p15": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p16": "n.nnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p17": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p18": "n.nnnnnn.nnnnnn.nnnnnn.nnnnnn.n", "p19": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p20": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn"};
+  // 8月锁定表按「月末周末转班」修正：8/29（2026年8月最后周六）起轮转人员班次翻转，周末完成切换
+  const rot = {};
+  for(const p of samplePeople()){ if(p.shiftRule==='rotate') rot[p.id] = true; }
+  for(const pid in m){
+    if(!rot[pid]) continue;
+    const a = m[pid].split('');
+    for(let d=29; d<=31; d++){
+      if(a[d-1]==='d') a[d-1]='n';
+      else if(a[d-1]==='n') a[d-1]='d';
+    }
+    m[pid] = a.join('');
+  }
+  return m;
 }
 
 function loadSample(){
@@ -1978,8 +1991,8 @@ function loadSample(){
   state.satLoad = 'low'; state.sunLoad = 'busy'; // 周六任务少(保底留人) 周日任务多
   state.sampleVer = SAMPLE_VER; // 示例版本标记（供旧示例自动升级判定）
   histReset(); saveState(); renderAll();
-  $('#welcomeModal').classList.remove('show');
-  toast('🧪 已填入 20 名技术员（MTW10/MTW30 8月6休1排班），试试「⚡ 自动排班」');
+  const wm = $('#welcomeModal'); if(wm) wm.classList.remove('show');
+  toast('🧪 已填入 20 名技术员（MTW10/MTW30 8月6休1排班，8月底已按月末周末转班）');
 }
 
 /* 是否与示例锁定值一致（一致的格子不显示手动蓝点，用户改过的才显示） */
@@ -1998,11 +2011,11 @@ $('#wSampleSmall').onclick = ()=>{
   loadSample();
 };
 $('#wStart').onclick = ()=>{
-  $('#welcomeModal').classList.remove('show');
+  const wm = $('#welcomeModal'); if(wm) wm.classList.remove('show');
   toast('先从「＋ 添加」开始吧');
 };
 $('#wImport').onclick = ()=>{
-  $('#welcomeModal').classList.remove('show');
+  const wm = $('#welcomeModal'); if(wm) wm.classList.remove('show');
   fileAct = 'csv';
   const fi = $('#fileInput');
   fi.accept = '.csv,.txt';
@@ -2011,7 +2024,7 @@ $('#wImport').onclick = ()=>{
 
 /* ================= 初始化 ================= */
 /* 旧版示例数据自动升级：示例数据打 sampleVer 标记；版本旧于 SAMPLE_VER 且名单匹配旧示例 → 自动替换为新范例 */
-const SAMPLE_VER = 16;
+const SAMPLE_VER = 17;
 const SAMPLE_NAMES = ['周洪发','吴兆哲','冯少帅','黄湛江','段高翔','郑高鑫','金凡','李冉','徐强','李晓东','刘进','段帅帅','张云鹏','蒋豪','宋心阳','喻来','陈红浩','罗铭','孙子恒','程稳'];
 const OLD8_NAMES  = ['陈建国','刘志强','王丽华','赵永刚','钱文杰','孙秀兰','周晓峰','吴国庆'];
 function isOldSample(){
