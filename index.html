@@ -250,7 +250,7 @@
   #checkList .ci.err{border-color:#fecaca;background:#fff7f7}
   #checkList .ci.warn{border-color:#fde68a;background:#fffbeb}
   @media print{
-    header,.toolbar,.side,.legend,.stats-panel,.modal-mask{display:none!important}
+    header,.toolbar,.side,.legend,.stats-panel,.modal-mask,.cell-menu,#toast{display:none!important}
     body{background:#fff}
     .wrap{padding:0;max-width:none}
     .sheet-panel{flex:1 1 100%}
@@ -828,7 +828,6 @@ function cellHTML(c, pid, mkey, d, manual, isToday, extra){
   const desc = lv ? ('请假·' + lv) : (c==='d'?'白班 08:00–20:00':c==='n'?'夜班 20:00–08:00':c==='D'?'白班·加班':c==='N'?'夜班·加班':c==='x'?'白班·留守':c==='y'?'夜班·留守':'休息');
   const badge = (c==='D'||c==='N') ? '<span class="c-badge">加</span>' :
                 (c==='x'||c==='y') ? '<span class="c-badge">留</span>' : '';
-  const mm = mkey ? (mkey.split('-')[1]|0) + '月' : '';
   return '<td class="cell ' + clsF + (extra?' '+extra:'') + (manual?' man':'') + (isToday?' today':'') + (viol?' viol':'') + '" data-p="' + pid + '" data-m="' + mkey + '" data-d="' + d + '" title="' + esc(p?p.name:'') + ' · ' + mkey.replace('-','年') + '月' + d + '日 · ' + desc + (viol?' ⚠️违规':'') + '">'
     + '<span class="c-txt">' + txtF + '</span>' + badge + '</td>';
 }
@@ -1101,9 +1100,11 @@ function undo(){
   for(let i=tx.ops.length-1; i>=0; i--){
     const op = tx.ops[i];
     if(op.t==='cell') setManual(op.pid, op.mkey, op.day, op.before, true);
-    else setLeave(op.pid, op.mkey, op.day, op.before);
+    else if(op.t==='leave') setLeave(op.pid, op.mkey, op.day, op.before);
+    else if(op.t==='clearMan'){ state.manual[op.key] = JSON.parse(op.before); }
+    else if(op.t==='shift'){ state.monthShift[op.key][op.pid] = op.before; }
   }
-  histIdx--; updateHistBtns(); renderSheet(); renderStats();
+  histIdx--; checkViol = {}; saveState(); updateHistBtns(); renderAll();
   toast('↩ 已撤销：' + tx.label);
 }
 function redo(){
@@ -1111,9 +1112,11 @@ function redo(){
   const tx = hist[histIdx+1];
   for(const op of tx.ops){
     if(op.t==='cell') setManual(op.pid, op.mkey, op.day, op.after, true);
-    else setLeave(op.pid, op.mkey, op.day, op.after);
+    else if(op.t==='leave') setLeave(op.pid, op.mkey, op.day, op.after);
+    else if(op.t==='clearMan'){ delete state.manual[op.key]; }
+    else if(op.t==='shift'){ state.monthShift[op.key][op.pid] = op.after; }
   }
-  histIdx++; updateHistBtns(); renderSheet(); renderStats();
+  histIdx++; checkViol = {}; saveState(); updateHistBtns(); renderAll();
   toast('↪ 已重做：' + tx.label);
 }
 function updateHistBtns(){
@@ -1192,6 +1195,8 @@ document.addEventListener('mouseup', ()=>{
   painting = null;
   if(painted){ painted = false; histCommit('排班修改'); renderSheet(); } // 拖拽/点击结束后提交历史并刷新合计行
 });
+/* 窗口失焦兜底：鼠标在窗口外松开时提交悬空事务 */
+window.addEventListener('blur', ()=>{ painting = null; if(histTx && histTx.length){ histCommit('排班修改'); } });
 /* 右键：自定义菜单（休息/请假/清除手动） */
 let cmCell = null;
 $('#sheet').addEventListener('contextmenu', e=>{
@@ -1199,9 +1204,10 @@ $('#sheet').addEventListener('contextmenu', e=>{
   e.preventDefault();
   cmCell = td;
   const m = $('#cellMenu');
-  m.style.left = Math.min(e.clientX, innerWidth - 175) + 'px';
-  m.style.top = Math.min(e.clientY, innerHeight - 190) + 'px';
   m.classList.add('show');
+  const mw = m.offsetWidth, mh = m.offsetHeight;
+  m.style.left = Math.max(8, Math.min(e.clientX, innerWidth - mw - 8)) + 'px';
+  m.style.top = Math.max(8, Math.min(e.clientY, innerHeight - mh - 8)) + 'px';
 });
 document.addEventListener('mousedown', e=>{ if(!e.target.closest('#cellMenu')) $('#cellMenu').classList.remove('show'); });
 $('#cellMenu').addEventListener('click', e=>{
@@ -1304,9 +1310,15 @@ function delPerson(id){
   const p = state.people.find(x=>x.id===id); if(!p) return;
   if(!confirm('确定删除技术员「' + p.name + '」？该人员的所有月份排班记录将一并移除。')) return;
   state.people = state.people.filter(x=>x.id!==id);
-  // 清理该人在所有月份的班次与手工记录
+  // 清理该人在所有月份的班次、手工与请假记录
   for(const k in state.monthShift){ if(state.monthShift[k]) delete state.monthShift[k][id]; }
   for(const k in state.manual){ if(state.manual[k]) delete state.manual[k][id]; }
+  for(const k in state.leave){
+    if(state.leave[k]){
+      if(state.leave[k][id]) delete state.leave[k][id];
+      if(!Object.keys(state.leave[k]).length) delete state.leave[k];
+    }
+  }
   histReset(); saveState(); renderAll(); toast('已删除 ' + p.name);
 }
 $('#addPersonBtn').onclick = ()=> openPersonModal(null);
@@ -1349,11 +1361,15 @@ $('#monthLabel').onclick = ()=>{
 $('#genBtn').onclick = ()=>{ renderAll(); toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线（手工修改保留）'); };
 $('#rotateBtn').onclick = ()=>{
   const key = CUR.key; let n=0;
+  histBegin();
   for(const p of state.people){
     if(p.shiftRule!=='rotate') continue;
     const cur = ensureMonthShift(p.id,key);
-    state.monthShift[key][p.id] = cur==='day' ? 'night' : 'day'; n++;
+    const after = cur==='day' ? 'night' : 'day';
+    histPush({t:'shift', key, pid:p.id, before:cur, after});
+    state.monthShift[key][p.id] = after; n++;
   }
+  histCommit('本月强制转班');
   saveState(); renderAll();
   toast('🔁 本月已强制转班（' + n + '人）');
 };
@@ -1364,8 +1380,13 @@ $('#idleBtn').onclick = ()=>{
 };
 $('#clearManBtn').onclick = ()=>{
   if(!state.manual[CUR.key] || !Object.keys(state.manual[CUR.key]).length){ toast('本月没有手工修改'); return; }
+  histBegin();
+  const snap = JSON.stringify(state.manual[CUR.key]);
   delete state.manual[CUR.key];
-  saveState(); renderAll(); toast('🧹 已清除本月手工修改，恢复自动排班');
+  if(CUR.grids && CUR.grids[CUR.key]) for(const pid in CUR.grids[CUR.key]){ CUR.grids[CUR.key][pid] = ((CUR.autoGrids[CUR.key]||{})[pid]||[]).slice(); }
+  histPush({t:'clearMan', key:CUR.key, before:snap});
+  histCommit('清除本月手动修改');
+  saveState(); renderAll(); toast('🧹 已清除本月手工修改，恢复自动排班（可 Ctrl+Z 撤销）');
 };
 $('#satLoad').onchange = ()=>{ state.satLoad = $('#satLoad').value; saveState(); renderAll(); toast('周六负荷已设为「' + loadTxt(state.satLoad) + '」'); };
 $('#sunLoad').onchange = ()=>{ state.sunLoad = $('#sunLoad').value; saveState(); renderAll(); toast('周日负荷已设为「' + loadTxt(state.sunLoad) + '」'); };
@@ -1440,6 +1461,22 @@ function runChecks(){
   const people = state.people;
   const issues = []; checkViol = {};
   const nameOf = id => { const p = state.people.find(x=>x.id===id); return p?p.name:'?'; };
+  // 0) 跨月边界：上月末夜班 → 本月 1 日白班（0 小时间隔连班）
+  {
+    const py2 = CUR.m===1 ? CUR.y-1 : CUR.y, pm2 = CUR.m===1 ? 12 : CUR.m-1;
+    const pk = ym(py2,pm2);
+    const pgrid = mergeManualInto(genMonth(py2,pm2), pk);
+    const pdim = daysInMonth(py2,pm2);
+    for(const p of people){
+      const lastC = (pgrid[p.id]||[])[pdim-1], firstN = (grid[p.id]||[])[0];
+      if(!lastC || !firstN) continue;
+      const night = (lastC==='n'||lastC==='N'||lastC==='y'), dayN = (firstN==='d'||firstN==='D'||firstN==='x');
+      if(night && dayN && !getLeave(p.id, key, 1)){
+        issues.push({lvl:'err', txt: nameOf(p.id) + '：' + pm2 + '月' + pdim + '日 夜班 → ' + CUR.m + '月1日 白班（跨月 0 小时间隔连班，建议' + CUR.m + '月1日休息）', p:p.id, d:1});
+        checkViol[key+'|'+p.id+'|1'] = true;
+      }
+    }
+  }
   // 1) 夜班 → 次日白班：0 小时间隔连班
   for(const p of people){
     for(let d=1; d<dim; d++){
