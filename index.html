@@ -35,7 +35,7 @@
   header::after{content:'';position:absolute;left:46%;bottom:-90px;width:320px;height:320px;
     background:radial-gradient(circle,rgba(47,109,181,.38),transparent 70%);border-radius:50%}
   header>*{position:relative;z-index:1}
-  header h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.25)}
+  header h1{margin:0;font-size:23px;font-weight:700;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.25)}
   header p{margin:4px 0 0;font-size:12px;color:#c3d3e4}
   .hd-right{display:flex;align-items:center;gap:8px}
   .month-nav{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
@@ -47,7 +47,7 @@
   .toolbar .grp{display:flex;gap:6px;align-items:center}
   .toolbar label{font-size:12px;color:var(--muted);white-space:nowrap}
   button{font-family:inherit;font-size:13px;font-weight:600;border:none;border-radius:9px;cursor:pointer;
-    background:linear-gradient(135deg,#3d83c9,#24507e);color:#fff;padding:7px 14px;transition:transform .12s,box-shadow .12s,filter .12s}
+    background:linear-gradient(135deg,#3d83c9,#24507e);color:#fff;padding:8px 13px;transition:transform .12s,box-shadow .12s,filter .12s}
   button:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(42,95,157,.38);filter:brightness(1.06)}
   button:active{transform:translateY(0)}
   button.sec{background:#fff;color:#374151;border:1px solid var(--border);box-shadow:none}
@@ -59,12 +59,13 @@
   select:focus,input:focus{outline:none;border-color:#3d83c9;box-shadow:0 0 0 3px rgba(61,131,201,.15)}
   input[type=text],input[type=month],input[type=number]{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text)}
   input[type=number]{padding:6px 8px}
+  input:disabled{opacity:.45;background:#f1f5f9;cursor:not-allowed}
   .wrap{display:flex;flex-wrap:wrap;gap:18px;padding:18px 30px;align-items:flex-start;max-width:1500px;margin:0 auto}
   .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow-sm)}
   .panel h2{margin:0 0 12px;font-size:15px;font-weight:700;color:#24344d;display:flex;align-items:center;gap:8px;justify-content:space-between}
   .panel h2 .t{display:flex;align-items:center;gap:7px}
-  .sheet-panel{flex:1 1 860px;min-width:0}
-  .side{flex:0 0 320px;display:flex;flex-direction:column;gap:18px}
+  .sheet-panel{flex:1 1 858px;min-width:0}
+  .side{flex:0 0 329px;display:flex;flex-direction:column;gap:18px}
   /* ===== 排班表 ===== */
   .sheet-scroll{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:10px;background:#fff}
   table.sheet{border-collapse:separate;border-spacing:0;font-size:12px;width:max-content;min-width:100%}
@@ -248,7 +249,7 @@
 <header>
   <div>
     <h1>🗓️ 技术员排班助手</h1>
-    <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 自定义转班日 · 周末负荷调节 · 留守模式</p>
+    <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节 · 留守模式</p>
   </div>
   <div class="hd-right">
     <div class="month-nav">
@@ -295,8 +296,12 @@
       <option value="pc">上月+本月</option>
       <option value="pcn">上月+本月+下月</option>
     </select>
-    <label title="每月转班日：轮转人员从该日起班次互换（如 20 = 每月20日转班）">转班日</label>
-    <input type="number" id="rotateDay" min="1" max="31" step="1" title="每月转班日（1~31）：自动排班时轮转人员从该日起班次互换；设为 1 即月初转班" style="width:52px;text-align:center">
+    <label title="转班时间：默认每月最后一个周末（周六起）转班，也可固定每月某天">转班</label>
+    <select id="rotateMode" title="月末周末=每月最靠近月末的周六起转班（默认）；固定日期=每月指定第几天转班">
+      <option value="lastWeekend">月末周末</option>
+      <option value="fixed">固定日期</option>
+    </select>
+    <input type="number" id="rotateDay" min="1" max="31" step="1" title="固定转班日（1~31），选「固定日期」时生效" style="width:52px;text-align:center">
   </div>
   <div class="sep"></div>
   <div class="grp">
@@ -357,7 +362,7 @@
         <b>⌨ 快捷键</b>：<kbd>1</kbd>循环 <kbd>2</kbd>白 <kbd>3</kbd>夜 <kbd>4</kbd>休 <kbd>5</kbd>加班 <kbd>6</kbd>留守；<kbd>←</kbd><kbd>→</kbd>或<kbd>PgUp</kbd><kbd>PgDn</kbd> 切换月份。<br>
         <b>④ 周末繁忙</b>：把周六/周日设为「繁忙」，自动排班时双休人员会被叫回并标记加班。<br>
         <b>⑤ 低负荷</b>：开启「留守模式」，每天仅保留白班2人/夜班1人。<br>
-        <b>⑥ 转班</b>：设「转班日」（默认1号），轮转人员从该日起白夜互换；「视图」切跨月可连续看转班前后几天。<br>
+        <b>⑥ 转班</b>：默认每月最后一个周末（周六起）白夜互换；可选「固定日期」；「视图」切跨月可连续看转班前后几天。<br>
         <b>⑦ 用旧表改新表</b>：「⬆ 导入 ▾」导入旧排班 CSV → 按提示清空 → 重新「自动排班」。
       </div>
     </section>
@@ -461,9 +466,9 @@
     <div class="help-sec">
       <h4>🔁 转班</h4>
       <ul>
-        <li>班次规则选「月轮转」的技术员，按<b>每月转班日</b>自动白夜互换（工具栏可设 1~31 号，默认 1 号月初转）。</li>
-        <li>例：转班日设为 20 → 每月 1~19 日按本月班次，20 日起互换，与下月连续衔接。</li>
-        <li>固定班次者不受转班日影响；某月想破例可用「🔁 本月转班」强制取反，再手工微调。</li>
+        <li>默认「月末周末」：轮转人员每月<b>最靠近月末的周六起</b>白夜互换（周六、周日完成转班），跨月视图可直观看到衔接。</li>
+        <li>也可在工具栏改为「固定日期」并设 1~31 号（如 20 = 每月 20 日起换班）。</li>
+        <li>固定班次者不受转班影响；某月想破例可用「🔁 本月转班」强制取反，再手工微调。</li>
       </ul>
     </div>
     <div class="help-sec">
@@ -527,7 +532,7 @@ function toast(msg){
 /* ================= 状态 ================= */
 const LS_KEY = 'shift-scheduler-v1';
 const defaultState = () => ({
-  v: 2,                 // 数据版本（v2: manual 中 '_'=未设置，'.'=强制休）
+  v: 3,                 // 数据版本（v2: manual '_'=未设置 '.'=强制休；v3: rotateMode 月末周末）
   people: [],            // {id,name,dept,shiftRule:'fixed-day'|'fixed-night'|'rotate',initialShift:'day'|'night',restRule:'none'|'sixOne'|'weekend',note}
   monthShift: {},        // {'2026-08': {pid:'day'|'night'}} 各月实际班次
   manual: {},            // {'2026-08': {pid:'...'}} 手动覆盖字符串(_=未设置 .=休 d/n=班 D/N=加班 x/y=留守)
@@ -535,7 +540,8 @@ const defaultState = () => ({
   idleMode: false,
   idleDay: 2, idleNight: 1,
   viewMode: 'pcn',      // month=本月 | pc=上月+本月 | pcn=上月+本月+下月
-  rotateDay: 1,         // 每月转班日：轮转人员从该日起班次互换（1=月初转班）
+  rotateMode: 'lastWeekend', // lastWeekend=每月最后周末转班 | fixed=固定日期
+  rotateDay: 1,         // 固定转班日（rotateMode='fixed' 时用，1~31）
   curYear: null, curMonth: null
 });
 let state;
@@ -545,11 +551,16 @@ function loadState(){
     if(raw){
       state = Object.assign(defaultState(), JSON.parse(raw));
       // v1→v2 迁移：旧版 manual 中 '.' 原义为"未设置"，新版以 '_' 表示；'.' 改表强制休
-      if(state.v !== 2){
+      if(state.v < 2){
         for(const k in state.manual){
           for(const pid in state.manual[k]) state.manual[k][pid] = String(state.manual[k][pid]).replace(/\./g,'_');
         }
         state.v = 2;
+      }
+      // v2→v3 迁移：rotateDay 若曾被自定义(≠1) 视为固定日期模式；否则默认月末周末
+      if(state.v < 3){
+        state.rotateMode = (state.rotateDay && state.rotateDay!==1) ? 'fixed' : 'lastWeekend';
+        state.v = 3;
       }
       return;
     }
@@ -599,6 +610,12 @@ function dayLoad(y,m,d){
   if(dow===0) return state.sunLoad;
   return 'normal';
 }
+/* 转班起始日：lastWeekend=该月最后一个周六(含周日)；fixed=固定日期 */
+function rotateStartDay(y, m, dim){
+  if((state.rotateMode||'lastWeekend')==='fixed') return Math.min(31, Math.max(1, state.rotateDay || 1));
+  for(let d=dim; d>=1; d--){ if(dowOf(y,m,d)===6) return d; }
+  return 1;
+}
 /* 生成某月自动排班（不覆盖 manual） */
 function genMonth(y, m){
   const key = ym(y,m), dim = daysInMonth(y,m);
@@ -607,7 +624,7 @@ function genMonth(y, m){
   people.forEach(p => ensureMonthShift(p.id, key));
   // 1) 基线：按班次 + 休息规则（轮转人员从转班日起班次互换）
   const grid = {}; // pid -> arr[day]，单元使用单字符：.=休 d=白 n=夜 D=白加 N=夜加 x=白留 y=夜留
-  const rd = Math.min(31, Math.max(1, state.rotateDay || 1));
+  const rstart = rotateStartDay(y, m, dim);
   for(const p of people){
     const sh = state.monthShift[key][p.id];
     const base = sh==='night' ? 'n' : 'd';
@@ -615,7 +632,7 @@ function genMonth(y, m){
     grid[p.id] = [];
     for(let d=1; d<=dim; d++){
       if(isRuleRest(p,y,m,d)){ grid[p.id][d-1] = '.'; continue; }
-      grid[p.id][d-1] = (rot && d>=rd) ? (base==='n'?'d':'n') : base;
+      grid[p.id][d-1] = (rot && d>=rstart) ? (base==='n'?'d':'n') : base;
     }
   }
   // 2) 周末繁忙 → 双休人员叫回（加班）
@@ -694,7 +711,9 @@ function renderAll(){
   $('#sheetTitle').textContent = CUR.y + '-' + String(CUR.m).padStart(2,'0') + ' · 表格跨月连续 · 双击列头复制前一天 · 统计/导出为当前月';
   $('#satLoad').value = state.satLoad; $('#sunLoad').value = state.sunLoad;
   $('#viewMode').value = state.viewMode || 'pcn';
+  $('#rotateMode').value = state.rotateMode || 'lastWeekend';
   $('#rotateDay').value = state.rotateDay || 1;
+  $('#rotateDay').disabled = (state.rotateMode||'lastWeekend') !== 'fixed';
   $('#idleBtn').classList.toggle('on', !!state.idleMode);
   $('#idleBtn').textContent = state.idleMode ? '💤 留守模式：开' : '💤 留守模式';
   renderSheet(); renderPeople(); renderStats(); renderChart(); renderKpis(); renderLegend();
@@ -1155,12 +1174,19 @@ $('#viewMode').onchange = ()=>{
   saveState(); renderAll();
   toast('视图已切换为「' + ({month:'本月',pc:'上月+本月',pcn:'上月+本月+下月'})[state.viewMode] + '」');
 };
+$('#rotateMode').onchange = ()=>{
+  state.rotateMode = $('#rotateMode').value;
+  $('#rotateDay').disabled = state.rotateMode !== 'fixed';
+  if(state.rotateMode === 'lastWeekend') state.rotateDay = 1;
+  saveState(); renderAll();
+  toast(state.rotateMode==='lastWeekend' ? '🔁 转班：每月最后一个周末（周六起）' : '🔁 转班：每月固定日期');
+};
 $('#rotateDay').onchange = ()=>{
   let v = Math.round(+$('#rotateDay').value);
-  if(!v || isNaN(v) || v<1 || v>31){ $('#rotateDay').value = state.rotateDay || 1; toast('转班日需为 1~31 的整数'); return; }
+  if(!v || isNaN(v) || v<1 || v>31){ $('#rotateDay').value = state.rotateDay || 1; toast('固定转班日需为 1~31 的整数'); return; }
   state.rotateDay = v;
   saveState(); renderAll();
-  toast('🔁 每月转班日已设为 ' + v + ' 号' + (v===1?'（月初转班）':'：轮转人员从每月 ' + v + ' 日起班次互换'));
+  toast('🔁 固定转班日已设为每月 ' + v + ' 号');
 };
 function loadTxt(v){ return v==='busy' ? '繁忙' : (v==='low' ? '低负荷' : '正常'); }
 
