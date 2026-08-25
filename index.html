@@ -1856,13 +1856,13 @@ $('#personModal').addEventListener('click', e=>{ if(e.target.id==='personModal')
 function samplePeople(){
   return [
     {id:'p1', workId:'2413324', name:'周洪发', dept:'除气', shiftRule:'fixed-day', initialShift:'night', restRule:'sixOne', restOffset:5, note:'组长'},
-    {id:'p2', workId:'2617230', name:'吴兆哲', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p3', workId:'2627909', name:'冯少帅', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:5, note:''},
-    {id:'p4', workId:'2640154', name:'黄湛江', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:5, note:''},
-    {id:'p5', workId:'2603373', name:'段高翔', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p2', workId:'2617230', name:'吴兆哲', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p3', workId:'2627909', name:'冯少帅', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:5, note:''},
+    {id:'p4', workId:'2640154', name:'黄湛江', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:5, note:''},
+    {id:'p5', workId:'2603373', name:'段高翔', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
     {id:'p6', workId:'2603374', name:'郑高鑫', dept:'除气', shiftRule:'fixed-day', initialShift:'night', restRule:'sixOne', restOffset:6, note:'不转班'},
-    {id:'p7', workId:'2626890', name:'金凡', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p8', workId:'2525667', name:'李冉', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p7', workId:'2626890', name:'金凡', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p8', workId:'2525667', name:'李冉', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
     {id:'p9', workId:'2422671', name:'徐强', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:5, note:''},
     {id:'p10', workId:'2514103', name:'李晓东', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
     {id:'p11', workId:'2525198', name:'刘进', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
@@ -1872,9 +1872,9 @@ function samplePeople(){
     {id:'p15', workId:'2527332', name:'宋心阳', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
     {id:'p16', workId:'2602581', name:'喻来', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
     {id:'p17', workId:'2627905', name:'陈红浩', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p18', workId:'2500589', name:'罗铭', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:5, note:''},
+    {id:'p18', workId:'2500589', name:'罗铭', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:5, note:''},
     {id:'p19', workId:'2525196', name:'孙子恒', dept:'转码', shiftRule:'fixed-night', initialShift:'day', restRule:'sixOne', restOffset:6, note:'不转班'},
-    {id:'p20', workId:'2529793', name:'程稳', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p20', workId:'2529793', name:'程稳', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
   ];
 }
 
@@ -1889,7 +1889,7 @@ function loadSample(){
   const t = today(); state.curYear = t.y; state.curMonth = t.m;
   if(state.curYear === 2026 && state.curMonth === 8) state.manual['2026-08'] = sampleManual8(); // 8月锁定真实排班表
   state.satLoad = 'low'; state.sunLoad = 'busy'; // 周六任务少(保底留人) 周日任务多
-  state.sampleVer = 14; // 示例版本标记（供旧示例自动升级判定）
+  state.sampleVer = SAMPLE_VER; // 示例版本标记（供旧示例自动升级判定）
   histReset(); saveState(); renderAll();
   $('#welcomeModal').classList.remove('show');
   toast('🧪 已填入 20 名技术员（MTW10/MTW30 8月6休1排班），试试「⚡ 自动排班」');
@@ -1912,7 +1912,8 @@ $('#wImport').onclick = ()=>{
 };
 
 /* ================= 初始化 ================= */
-/* 旧版示例数据自动升级：示例数据打 sampleVer 标记；无标记且名单匹配旧示例 → 自动替换为新范例 */
+/* 旧版示例数据自动升级：示例数据打 sampleVer 标记；版本旧于 SAMPLE_VER 且名单匹配旧示例 → 自动替换为新范例 */
+const SAMPLE_VER = 15;
 const SAMPLE_NAMES = ['周洪发','吴兆哲','冯少帅','黄湛江','段高翔','郑高鑫','金凡','李冉','徐强','李晓东','刘进','段帅帅','张云鹏','蒋豪','宋心阳','喻来','陈红浩','罗铭','孙子恒','程稳'];
 const OLD8_NAMES  = ['陈建国','刘志强','王丽华','赵永刚','钱文杰','孙秀兰','周晓峰','吴国庆'];
 function isOldSample(){
@@ -1923,7 +1924,7 @@ function isOldSample(){
   return false;
 }
 loadState(); initMonth();
-if(!state.sampleVer && isOldSample()){
+if((state.sampleVer||0) < SAMPLE_VER && isOldSample()){
   loadSample(); // 自动升级为 MTW10/MTW30 新范例（loadSample 内会设置 sampleVer 并保存）
   setTimeout(()=>toast('✨ 检测到旧版示例，已自动升级为 MTW10/MTW30 20人新范例（工号+8月排班锁定）'), 600);
 }
