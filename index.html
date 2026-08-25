@@ -333,7 +333,17 @@
   </div>
   <div class="sep"></div>
   <div class="grp">
+    <label title="排班表按部门筛选显示（统计/导出仍为全部人员）">部门</label>
+    <select id="deptFilter" title="排班表按部门筛选显示；统计/导出仍包含全部人员">
+      <option value="all">全部</option>
+      <option value="除气">除气</option>
+      <option value="转码">转码</option>
+    </select>
+  </div>
+  <div class="sep"></div>
+  <div class="grp">
     <button id="genBtn" title="按人员规则 + 周末负荷 + 转班日自动生成本月排班（保留手工修改）">⚡ 自动排班</button>
+    <button id="copyMonthBtn" class="sec" title="把本月手工修改（含请假/调班）整体复制到下月，轮转班次自动生成">📋 复制到下月</button>
     <button id="rotateBtn" class="sec" title="把本月所有“月轮转”人员的班次强制取反（手动控制转班时机）">🔁 本月转班</button>
   </div>
   <div class="sep"></div>
@@ -354,7 +364,8 @@
       <button id="exportBtn" class="sec" title="导出排班表 CSV 或完整备份 JSON">⬇ 导出 ▾</button>
       <div class="dd-menu" id="exportMenu">
         <div class="dd-title">导出（当前数据）</div>
-        <button data-act="csv">📄 排班表 CSV（Excel 可打开）</button>
+        <button data-act="csv">📄 排班表 CSV（含日期，Excel 可打开）</button>
+        <button data-act="stats">📊 月度统计 CSV（白/夜/加班/出勤）</button>
         <button data-act="json">💾 完整备份 JSON（含人员/排班/设置）</button>
       </div>
     </div>
@@ -492,6 +503,7 @@
         <li>快捷键：<kbd>1</kbd>~<kbd>6</kbd> 切换画笔（循环/白/夜/休/加班/留守）；<kbd>Shift</kbd>+点击=加班，<kbd>Alt</kbd>+点击=留守，<kbd>右键</kbd>=弹出菜单（休息 / 请假 / 清除手动）。</li>
         <li><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd>（或工具栏 ↩ ↪）撤销 / 重做；<kbd>←</kbd><kbd>→</kbd> 或 <kbd>PgUp</kbd><kbd>PgDn</kbd> 切换中心月份。</li>
         <li><b>复制排班</b>：右侧技术员卡片点「📋」→ 再点另一张卡片，把源人员<b>当月排班整体复制</b>给目标（含休息日，可 Ctrl+Z 撤销）；点空白处取消。</li>
+        <li><b>整月复制</b>：工具栏「📋 复制到下月」把本月全部手工修改（请假/调班/锁定班次）复制到下月，轮转班次自动生成，可 Ctrl+Z 撤销。</li>
         <li><b>调整行顺序</b>：排班表按住<b>人名行</b>上下拖动即可换位（自动保存，跨月视图同样生效）；点表头「🔄 部门排序」恢复默认（除气在上、转码在下）。</li>
       </ul>
     </div>
@@ -499,13 +511,13 @@
       <h4>📝 请假 / 🏮 节假日</h4>
       <ul>
         <li>排班表任意格子<b>右键 → 请假</b>（事假/病假/年假/其他），格子变灰显示「假」，统计/合计自动计入请假、出勤排除；右键「取消请假」销假。</li>
-        <li>「🏮 节假日」按钮可给任意日期标记法定假日/停线日：表头显示 🏮+名称、列淡黄高亮。</li>
+        <li>「🏮 节假日」按钮可给任意日期标记法定假日/停线日：表头显示 🏮+名称、列淡黄高亮；弹窗内「📅 一键标记 2026 法定假日」按国务院放假安排批量标记（已有其他名称的日期不覆盖）。</li>
       </ul>
     </div>
     <div class="help-sec">
       <h4>🔍 排班体检</h4>
       <ul>
-        <li>一键检查当前月：夜→白连班（红框+⛔）、最长连续上班超 7 天（⚠️）、某天无人上班（⛔）、节假日无人值班（⚠️）。</li>
+        <li>一键检查当前月：夜→白连班（红框+⛔）、最长连续上班超 7 天（⚠️）、某天无人上班（⛔）、节假日无人值班（⚠️）、轮转人员夜班偏多（⚠️）。</li>
         <li>「🔧 自动修复连班」：把「夜班→次日白班」连班的次日批量改为休息（可 Ctrl+Z 撤销）。</li>
         <li>修改任意违规格子后红框自动清除；「清除红框标记」可一键清空。</li>
       </ul>
@@ -551,7 +563,8 @@
       <h4>💾 数据</h4>
       <ul>
         <li>所有数据自动保存在本机浏览器（localStorage），关闭页面不丢失。</li>
-        <li>「⬇ 导出 ▾ → 排班表 CSV」导出当月排班（Excel 可开）；「→ 完整备份 JSON」备份全部数据。</li>
+        <li>「⬇ 导出 ▾」：排班表 CSV（含真实日期+星期行，Excel 可直接看）/ 月度统计 CSV（白/夜/加班/留守/请假/出勤，月底报工用）/ 完整备份 JSON（备份全部数据）。</li>
+        <li>工具栏「部门」下拉可只查看除气/转码的排班（月度统计与导出仍为全部人员）。</li>
         <li>换电脑 / 换浏览器：导出 JSON 备份 → 新电脑「⬆ 导入 ▾ → 完整备份 JSON」恢复（会覆盖当前数据，导入前有确认）。</li>
         <li>🔒 防呆保护：删除人员 / 清手动 / 强制转班 / 留守模式 / 导入覆盖 等破坏性操作均有<b>确认提示</b>；人员<b>同名</b>会提醒、<b>工号重复</b>会拦截；CSV 支持 GBK/UTF-8 自动识别；导出/打印前会检查是否存在连班违规。</li>
       </ul>
@@ -564,6 +577,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.21</b> · 新功能：CSV 导出加真实日期+星期行；新增月度统计 CSV 导出（月底报工）；「📋 复制到下月」整月搬移手工修改；「📅 一键标记 2026 法定假日」；排班表部门筛选；人员卡片显示本月出勤；体检新增夜班均衡检查（轮转人员夜班偏多提醒）。</div>
       <div class="log-ver"><b>v1.20</b> · 防呆加固：清手动/强制转班/留守模式/JSON导入/CSV导入/示例覆盖均加确认；人员同名提醒+工号重复拦截；CSV 自动识别 GBK/UTF-8 编码；导出/打印前自动查违规；体检一键修复连班；删除人员标注不可撤销；多标签页防覆盖提示。</div>
       <div class="log-ver"><b>v1.19</b> · 连班防呆：手动点击/拖拽/复制排班时，「夜班→次日白班」0 小时间隔连班被直接拦截（只能设休或夜），循环画笔自动跳过违规班次。</div>
       <div class="log-ver"><b>v1.18</b> · 行拖动排序：排班表按住人名行上下拖动调整顺序（自动保存，可「🔄 部门排序」恢复）；CSV/备份同步顺序。</div>
@@ -594,6 +608,7 @@
   <div class="modal" style="max-width:440px">
     <h3>🏮 节假日 / 停线日（<span id="holMonth"></span>）</h3>
     <div style="font-size:12px;color:var(--muted);margin-bottom:8px">标记后表头显示 🏮、列淡黄高亮；体检会检查节假日是否有人值班。</div>
+    <div style="margin-bottom:10px"><button id="holPreset" class="sm sec" title="按国务院办公厅 2026 年放假安排，一键标记当月法定假日">📅 一键标记 2026 法定假日</button></div>
     <div id="holList" style="margin-bottom:10px"></div>
     <div class="f-row" style="align-items:center;gap:8px">
       <label style="flex:0 0 40px">日期</label><select id="holDay" style="flex:0 0 86px"></select>
@@ -683,6 +698,7 @@ const defaultState = () => ({
   idleMode: false,
   idleDay: 2, idleNight: 1,
   viewMode: 'pcn',      // month=本月 | pc=上月+本月 | pcn=上月+本月+下月
+  deptFilter: 'all',    // all=全部 | 除气 | 转码（排班表显示筛选）
   rotateMode: 'lastWeekend', // lastWeekend=每月最后周末转班 | fixed=固定日期
   rotateDay: 1,         // 固定转班日（rotateMode='fixed' 时用，1~31）
   curYear: null, curMonth: null
@@ -959,6 +975,7 @@ function renderAll(){
   $('#sheetTitle').textContent = CUR.y + '-' + String(CUR.m).padStart(2,'0') + ' · 表格跨月连续 · 双击列头复制前一天 · 统计/导出为当前月';
   $('#satLoad').value = state.satLoad; $('#sunLoad').value = state.sunLoad;
   $('#viewMode').value = state.viewMode || 'pcn';
+  $('#deptFilter').value = state.deptFilter || 'all';
   $('#rotateMode').value = state.rotateMode || 'lastWeekend';
   $('#rotateDay').value = state.rotateDay || 1;
   $('#rotateDay').disabled = (state.rotateMode||'lastWeekend') !== 'fixed';
@@ -991,17 +1008,22 @@ function loadClass(dow, load){
   if(dow===0||dow===6) return load==='busy' ? 'col-busy' : (load==='low' ? 'col-low' : 'col-sat');
   return '';
 }
-/* 排班表行顺序：默认部门分组（除气在上、转码在下）；用户拖拽后按 rowOrder 自定义 */
+/* 排班表行顺序：默认部门分组（除气在上、转码在下）；用户拖拽后按 rowOrder 自定义；deptFilter 过滤显示 */
 const deptOrder = {'除气':0, '转码':1};
 function rowOrderPeople(){
   const ro = state.rowOrder || [];
   const byId = {}; state.people.forEach(p=>byId[p.id]=p);
+  let list;
   if(ro.length){
     const ordered = ro.map(id=>byId[id]).filter(Boolean);
     state.people.forEach(p=>{ if(!ordered.includes(p)) ordered.push(p); }); // 新加人员追加末尾
-    return ordered;
+    list = ordered;
+  } else {
+    list = state.people.slice().sort((a,b)=>((deptOrder[a.dept]??9)-(deptOrder[b.dept]??9)));
   }
-  return state.people.slice().sort((a,b)=>((deptOrder[a.dept]??9)-(deptOrder[b.dept]??9)));
+  const df = state.deptFilter || 'all';
+  if(df !== 'all') list = list.filter(p=>p.dept===df);
+  return list;
 }
 function renderSheet(){
   const tb = $('#sheet'); const tt = today();
@@ -1039,12 +1061,12 @@ function renderSheet(){
     }
     h += '</tr>';
   }
-  // 每日合计行
+  // 每日合计行（跟随部门筛选显示）
   h += '<tr class="tot-row"><th>合计</th>';
   for(const c of cols){
     const grid = CUR.grids[c.key]; if(!grid) continue;
     let day=0,night=0,rest=0,ot=0,duty=0,leaveN=0;
-    for(const p of state.people){
+    for(const p of rowOrderPeople()){
       const cc = (grid[p.id]||[])[c.d-1] || '.';
       if(getLeave(p.id, c.key, c.d)){ leaveN++; continue; }
       if(cc==='d') day++; else if(cc==='n') night++; else if(cc==='.') rest++;
@@ -1085,6 +1107,13 @@ function renderPeople(){
       const shTxt = p.shiftRule==='fixed-day' ? '固定白班' : (p.shiftRule==='fixed-night' ? '固定夜班' : '月轮转');
       const shNow = sh==='day' ? '☀️白' : '🌙夜';
       const restTxt = p.restRule==='none' ? '无休' : (p.restRule==='sixOne' ? '上六休一' : '双休');
+      let workDays = 0;
+      const arrP = (CUR.grid[p.id]||[]);
+      for(let d=1; d<=CUR.dim; d++){
+        const c = arrP[d-1]||'.';
+        if(getLeave(p.id, CUR.key, d)) continue;
+        if(c!=='.') workDays++;
+      }
       html += '<div class="p-card' + (copySrc===p.id ? ' src-hl' : '') + '" data-id="' + p.id + '"><div class="row1"><span class="pname">' + esc(p.name)
         + (p.note ? '<span class="badge b-white">' + esc(p.note) + '</span>' : '') + '</span>'
         + '<span class="ops"><button class="op-copy" data-id="' + p.id + '" title="复制当月排班到其他技术员">📋</button>'
@@ -1092,7 +1121,8 @@ function renderPeople(){
         + '<button class="op-del" data-id="' + p.id + '" title="删除">🗑</button></span></div>'
         + (p.workId ? '<div class="pmeta"><span class="badge b-white">工号 ' + esc(p.workId) + '</span></div>' : '')
         + '<div class="pmeta"><span class="badge ' + (p.shiftRule==='rotate'?'b-rot':p.shiftRule==='fixed-night'?'b-night':'b-white') + '">' + shTxt + '</span>'
-        + '<span>本月 ' + shNow + '</span><span class="badge b-white">' + restTxt + '</span></div></div>';
+        + '<span>本月 ' + shNow + '</span><span class="badge b-white">' + restTxt + '</span>'
+        + '<span class="badge b-white">出勤 ' + workDays + '天</span></div></div>';
     }
   }
   box.innerHTML = html;
@@ -1414,6 +1444,7 @@ function undo(){
     else if(op.t==='clearMan'){ state.manual[op.key] = JSON.parse(op.before); }
     else if(op.t==='shift'){ state.monthShift[op.key][op.pid] = op.before; }
     else if(op.t==='copyRow'){ state.manual[op.mkey] = state.manual[op.mkey]||{}; state.manual[op.mkey][op.pid] = op.before; }
+    else if(op.t==='copyMonth'){ state.manual[op.nk] = JSON.parse(op.before); }
   }
   histIdx--; checkViol = {}; saveState(); updateHistBtns(); renderAll();
   toast('↩ 已撤销：' + tx.label);
@@ -1427,6 +1458,7 @@ function redo(){
     else if(op.t==='clearMan'){ delete state.manual[op.key]; }
     else if(op.t==='shift'){ state.monthShift[op.key][op.pid] = op.after; }
     else if(op.t==='copyRow'){ state.manual[op.mkey] = state.manual[op.mkey]||{}; state.manual[op.mkey][op.pid] = op.after; }
+    else if(op.t==='copyMonth'){ state.manual[op.nk] = JSON.parse(op.after); }
   }
   histIdx++; checkViol = {}; saveState(); updateHistBtns(); renderAll();
   toast('↪ 已重做：' + tx.label);
@@ -1695,6 +1727,31 @@ $('#genBtn').onclick = ()=>{
   if(!state.people.length){ toast('👷 请先添加技术员再自动排班'); return; }
   renderAll(); toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线（手工修改保留）');
 };
+/* 整月复制：把当前月的手工修改（含请假锁定的班次）整体复制到下月，轮转班次自动生成不受影响 */
+function copyMonthToNext(){
+  const key = CUR.key;
+  const src = state.manual[key];
+  if(!src || !Object.keys(src).length){ toast('本月没有手工修改可复制'); return; }
+  const nk = CUR.m===12 ? ym(CUR.y+1,1) : ym(CUR.y,CUR.m+1);
+  const ndim = daysInMonth(+nk.split('-')[0], +nk.split('-')[1]);
+  const tgt = state.manual[nk] || {};
+  const tgtHas = Object.values(tgt).some(s=>s && /[^_]/.test(s));
+  if(tgtHas && !confirm('下月（' + nk.replace('-','年') + '月）已有手工修改，确定覆盖为复制结果？\n此操作可 Ctrl+Z 撤销。')) return;
+  const copied = {};
+  for(const pid in src){
+    const s = src[pid]; if(!s) continue;
+    let ns = s.slice(0, ndim);
+    while(ns.length < ndim) ns += '_';
+    if(/[^_]/.test(ns)) copied[pid] = ns;
+  }
+  histBegin();
+  histPush({t:'copyMonth', key, nk, before:JSON.stringify(tgt||{}), after:JSON.stringify(copied)});
+  state.manual[nk] = copied;
+  histCommit('复制本月排班到下月');
+  saveState(); renderAll();
+  toast('📋 已把 ' + CUR.y + '年' + CUR.m + '月 手工排班复制到 ' + nk.replace('-','年') + '月（' + Object.keys(copied).length + ' 人）');
+}
+$('#copyMonthBtn').onclick = copyMonthToNext;
 $('#rotateBtn').onclick = ()=>{
   const key = CUR.key;
   const rotPeople = state.people.filter(p=>p.shiftRule==='rotate');
@@ -1732,6 +1789,11 @@ $('#clearManBtn').onclick = ()=>{
   histPush({t:'clearMan', key:CUR.key, before:snap});
   histCommit('清除本月手动修改');
   saveState(); renderAll(); toast('🧹 已清除本月手工修改，恢复自动排班（可 Ctrl+Z 撤销）');
+};
+$('#deptFilter').onchange = ()=>{
+  state.deptFilter = $('#deptFilter').value;
+  saveState(); renderSheet();
+  toast('排班表已筛选为「' + ({all:'全部',除气:'除气',转码:'转码'})[state.deptFilter] + '」（统计/导出仍为全部）');
 };
 $('#satLoad').onchange = ()=>{ state.satLoad = $('#satLoad').value; saveState(); renderAll(); toast('周六负荷已设为「' + loadTxt(state.satLoad) + '」'); };
 $('#sunLoad').onchange = ()=>{ state.sunLoad = $('#sunLoad').value; saveState(); renderAll(); toast('周日负荷已设为「' + loadTxt(state.sunLoad) + '」'); };
@@ -1819,6 +1881,31 @@ function renderHolList(key){
     saveState(); renderHolList(key); renderSheet();
   });
 }
+/* 2026 年法定节假日（国务院办公厅通知）：只含放假日，调休上班日不标记 */
+const HOLIDAYS_2026 = {
+  '2026-01': {1:'元旦',2:'元旦',3:'元旦'},
+  '2026-02': {15:'春节',16:'春节',17:'春节',18:'春节',19:'春节',20:'春节',21:'春节',22:'春节',23:'春节'},
+  '2026-04': {4:'清明节',5:'清明节',6:'清明节'},
+  '2026-05': {1:'劳动节',2:'劳动节',3:'劳动节',4:'劳动节',5:'劳动节'},
+  '2026-06': {19:'端午节',20:'端午节',21:'端午节'},
+  '2026-09': {25:'中秋节',26:'中秋节',27:'中秋节'},
+  '2026-10': {1:'国庆节',2:'国庆节',3:'国庆节',4:'国庆节',5:'国庆节',6:'国庆节',7:'国庆节'}
+};
+$('#holPreset').onclick = ()=>{
+  const key = CUR.key;
+  const h = HOLIDAYS_2026[key];
+  if(!h){ toast('该月没有内置的 2026 法定假日（内置：元旦/春节/清明/五一/端午/中秋/国庆）'); return; }
+  const names = Object.values(h).filter((v,i,a)=>a.indexOf(v)===i).join('、');
+  if(!confirm('将为 ' + CUR.y + '年' + CUR.m + '月 标记法定假日：' + names + '（共 ' + Object.keys(h).length + ' 天）。\n已手工标记的其他名称不会被覆盖。确定添加？')) return;
+  state.holidays[key] = state.holidays[key] || {};
+  let n = 0;
+  for(const d in h){
+    if(state.holidays[key][d] && state.holidays[key][d] !== h[d]) continue; // 已有其他名称（如停线日）不覆盖
+    state.holidays[key][d] = h[d]; n++;
+  }
+  saveState(); renderHolList(key); renderSheet();
+  toast('🏮 已标记 ' + CUR.y + '年' + CUR.m + '月 ' + n + ' 天法定假日');
+};
 $('#holAdd').onclick = ()=>{
   const key = CUR.key;
   const d = +$('#holDay').value, name = $('#holName').value.trim();
@@ -1896,6 +1983,29 @@ function runChecks(){
     }
     if(on===0) issues.push({lvl:'warn', txt: (+dd) + ' 日 ' + hol[dd] + ' 无人值班（建议留守 1-2 人）', p:null, d:+dd});
   }
+  // 5) 夜班次数均衡（仅「月轮转」人员，按部门均值 +5 天为阈值；固定班属岗位设定不参与）
+  {
+    const nightCnt = {};
+    for(const p of people){
+      let nc=0;
+      const arr = grid[p.id]||[];
+      for(let d=1; d<=dim; d++){
+        const c = arr[d-1];
+        if((c==='n'||c==='N'||c==='y') && !getLeave(p.id, key, d)) nc++;
+      }
+      nightCnt[p.id]=nc;
+    }
+    for(const dept of ['除气','转码']){
+      const rot = people.filter(p=>p.dept===dept && p.shiftRule==='rotate');
+      if(rot.length < 2) continue;
+      const vals = rot.map(p=>nightCnt[p.id]||0);
+      const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+      for(const p of rot){
+        const nc = nightCnt[p.id]||0;
+        if(nc >= avg + 5) issues.push({lvl:'warn', txt: nameOf(p.id) + '：本月夜班 ' + nc + ' 天，' + dept + '轮转均值 ' + avg.toFixed(1) + ' 天（夜班偏多 ' + Math.round(nc-avg) + ' 天，建议关注均衡）', p:p.id, d:null});
+      }
+    }
+  }
   $('#checkMonth').textContent = CUR.y + '年' + CUR.m + '月';
   const box = $('#checkList');
   if(!issues.length){ box.innerHTML = '<div class="p-empty"><div class="big" style="color:#1a7f37">✅ 体检通过</div>未发现连班、连续上班超限或班次空缺问题</div>'; }
@@ -1961,8 +2071,12 @@ function exportCSV(){
   if(!state.people.length){ toast('👷 暂无可导出的技术员'); return; }
   const v = countViolations();
   if(v > 0 && !confirm('⚠️ 当前排班有 ' + v + ' 处违规（连班/无人上班），建议先「🔍 体检」处理。\n确定仍要导出？')) return;
-  const rows = [['技术员','部门','班次规则','休息规则', ...Array.from({length:dim},(_,i)=>'第'+(i+1)+'天')]];
-  const csvPeople = rowOrderPeople(); // 与排班表显示顺序一致（含用户拖拽排序）
+  // 表头：真实日期（M/D）+ 星期行，方便 Excel 直接查看/报工
+  const dateHead = Array.from({length:dim},(_,i)=> CUR.m + '/' + (i+1));
+  const dowHead  = Array.from({length:dim},(_,i)=>'周' + WEEK[dowOf(CUR.y,CUR.m,i+1)]);
+  const rows = [['技术员','部门','班次规则','休息规则', ...dateHead]];
+  rows.push(['星期','','','', ...dowHead]);
+  const csvPeople = rowOrderPeople(); // 与排班表显示顺序一致（含用户拖拽排序；部门筛选不影响导出，保证数据完整）
   for(const p of csvPeople){
     const arr = grid[p.id]||[];
     rows.push([p.name, p.dept, SHIFT_TXT[p.shiftRule]||'月轮转', REST_TXT[p.restRule]||'无休', ...arr.map((c,i)=>{
@@ -1983,6 +2097,33 @@ function exportJSON(){
       idleDay:state.idleDay, idleNight:state.idleNight, curYear:state.curYear, curMonth:state.curMonth } };
   downloadBlob(JSON.stringify(data,null,2), 'application/json', '排班备份_' + CUR.key + '.json');
   toast('💾 已导出完整备份 JSON（含所有月份数据）');
+}
+/* 月度统计导出：每人白班/夜班/加班/留守/请假/休息/出勤，按部门分组（与页面统计一致） */
+function exportStatsCSV(){
+  const dim = CUR.dim, grid = CUR.grid;
+  if(!state.people.length){ toast('👷 暂无可导出的统计'); return; }
+  const rows = [['部门','技术员','白班','夜班','加班','留守','请假','休息','出勤']];
+  for(const dept of ['除气','转码']){
+    const ps = state.people.filter(p=>p.dept===dept);
+    if(!ps.length) continue;
+    let dsum=0,nsum=0,osum=0,xsum=0,lsum=0,rsum=0;
+    for(const p of ps){
+      let day=0,night=0,ot=0,duty=0,leaveN=0,rest=0;
+      const arr = grid[p.id]||[];
+      for(let d=1; d<=dim; d++){
+        const c = arr[d-1]||'.';
+        if(getLeave(p.id, CUR.key, d)){ leaveN++; continue; }
+        if(c==='d') day++; else if(c==='n') night++;
+        else if(c==='D'||c==='N') ot++; else if(c==='x'||c==='y') duty++; else rest++;
+      }
+      dsum+=day; nsum+=night; osum+=ot; xsum+=duty; lsum+=leaveN; rsum+=rest;
+      rows.push([dept, p.name, day, night, ot, duty, leaveN, rest, day+night+ot+duty]);
+    }
+    rows.push([dept + ' 合计', '', dsum, nsum, osum, xsum, lsum, rsum, dsum+nsum+osum+xsum]);
+  }
+  const csv = '\ufeff' + rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  downloadBlob(csv, 'text/csv;charset=utf-8', '月度统计_' + CUR.key + '.csv');
+  toast('📊 已导出月度统计 CSV（' + CUR.y + '年' + CUR.m + '月）');
 }
 /* ---------- CSV 解析 ---------- */
 function parseCSVText(text){
@@ -2070,11 +2211,11 @@ function applyCSVImport(rows){
   const deptIdx = findCol(['部门']);
   const shiftIdx = findCol(['班次规则','班次']);
   const restIdx = findCol(['休息规则','休息']);
-  // 日期列：第N天 / 纯数字
+  // 日期列：第N天 / 纯数字 / M/D（本工具导出格式）
   let dateIdxs = [];
   head.forEach((h,i)=>{
     if(i===nameIdx||i===deptIdx||i===shiftIdx||i===restIdx) return;
-    if(/^第\d+天$/.test(h) || /^\d+$/.test(h)) dateIdxs.push(i);
+    if(/^第\d+天$/.test(h) || /^\d+$/.test(h) || /^\d{1,2}\/\d{1,2}$/.test(h)) dateIdxs.push(i);
   });
   // 无表头兜底：首列姓名、次列部门（若匹配）、其余为日期
   let dataStart = 0;
@@ -2095,7 +2236,7 @@ function applyCSVImport(rows){
   const need = Math.min(dim, dateIdxs.length);
   for(let r=dataStart; r<rows.length; r++){
     const row = rows[r]; const name = String(row[nameIdx]||'').trim();
-    if(!name || /^(合计|总计|小计|部门|技术员)$/.test(name)) continue;
+    if(!name || /^(合计|总计|小计|部门|技术员|星期)$/.test(name)) continue;
     const chars = dateIdxs.map(i=>txtToCell(row[i]||'', null)).slice(0, dim);
     while(chars.length < dim) chars.push('_'); // 未提供日期 = 未手动设置
     let shiftRule = shiftIdx>=0 ? txtToShift(row[shiftIdx]) : '';
@@ -2161,7 +2302,9 @@ document.addEventListener('click', e=>{
   if(!e.target.closest('.dd')) $$('.dd').forEach(d=>d.classList.remove('open'));
 });
 $$('#exportMenu button').forEach(b=>b.onclick = ()=>{
-  if(b.dataset.act==='csv') exportCSV(); else exportJSON();
+  if(b.dataset.act==='csv') exportCSV();
+  else if(b.dataset.act==='stats') exportStatsCSV();
+  else exportJSON();
   b.closest('.dd').classList.remove('open');
 });
 $$('#importMenu button').forEach(b=>b.onclick = ()=>{
