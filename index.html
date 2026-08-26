@@ -68,6 +68,11 @@
   /* ===== 排班表 ===== */
   .sheet-scroll{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:10px;background:#fff}
   .print-title{display:none}
+  /* 表上部横向滚动条：与 sheet-scroll 同步滚动（内容超宽时显示） */
+  .h-scroll-bar{overflow-x:auto;overflow-y:hidden;max-height:12px;display:none;margin-bottom:4px;padding-bottom:0}
+  .h-scroll-bar::-webkit-scrollbar{height:8px}
+  .h-scroll-bar .h-scroll-inner{height:1px}
+  .h-scroll-bar.has{display:block}
   table.sheet{border-collapse:separate;border-spacing:0;font-size:12px;width:max-content;min-width:100%}
   table.sheet th,table.sheet td{border-right:1px solid #eef1f5;border-bottom:1px solid #eef1f5;padding:0;text-align:center;vertical-align:middle}
   table.sheet thead th{position:sticky;top:22px;z-index:5;background:linear-gradient(180deg,#f6f9fc,#eef3f8);
@@ -208,6 +213,7 @@
     .toolbar button,.toolbar select{font-size:12px;padding:6px 9px}
     #rotateDay{width:46px!important;padding:5px 4px!important}
     .sheet-scroll{max-height:62vh}
+    .h-scroll-bar{display:none} /* 手机触屏可自然横滑，省空间 */
     .cell{width:30px;height:30px}
     .cell .c-txt{font-size:11px;line-height:30px}
     table.sheet tbody th{min-width:100px}
@@ -262,6 +268,7 @@
   #checkList .ci.warn{border-color:#fde68a;background:#fffbeb}
   @media print{
     header,.toolbar,.side,.legend,.stats-panel,.modal-mask,.cell-menu,#toast{display:none!important}
+    .h-scroll-bar{display:none!important}
     body{background:#fff}
     .wrap{padding:0;max-width:none}
     .sheet-panel{flex:1 1 100%}
@@ -399,6 +406,7 @@
   <section class="panel sheet-panel">
     <h2><span class="t">📋 排班表 <span id="sheetTitle" style="font-size:12px;color:var(--muted);font-weight:600"></span></span>
       <span style="display:inline-flex;gap:6px;align-items:center"><button id="resetRowBtn" class="sm" style="display:none" title="恢复默认部门排序（除气在上、转码在下）">🔄 部门排序</button></span></h2>
+    <div class="h-scroll-bar" id="hScrollBar"><div class="h-scroll-inner"></div></div>
     <div class="sheet-scroll" id="sheetScroll">
       <div id="printTitle" class="print-title"></div>
       <table class="sheet" id="sheet"></table>
@@ -543,6 +551,7 @@
         <li>工具栏「视图」切换显示范围：本月 / <b>本月+下月（默认）</b> / 上月+本月 / 上月+本月+下月。</li>
         <li>跨月视图下相邻月底与月初连在一起，可直接观察<b>转班那几天</b>的人员衔接。</li>
         <li>表头显示真实日期与星期，月初列标出月份（如「9月」）；双击任一日期列 = 把<b>前一天</b>的排班复制到该日（跨月自动衔接）。</li>
+        <li>表格较宽时，排班表<b>上下均有横向滚动条</b>（表上部滚动条与主表同步联动），右侧日期一目了然。</li>
         <li>统计 / 图表 / CSV 导出均针对<b>当前中心月</b>（CSV 文件名会标注「跨月」以提示当前视图）；<b>打印</b>内容跟随视图——跨月视图打印前会询问「按当前视图打印」还是「切到本月打印单月」。</li>
       </ul>
     </div>
@@ -585,6 +594,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.28</b> · 表上部横向滚动条：排班表较宽（跨月视图）时，表格上方新增与主表同步联动的滚动条，方便查看右侧日期；内容未超宽时自动隐藏，手机窄屏不显示。</div>
       <div class="log-ver"><b>v1.27</b> · 周模板复制：表头新增「第 N 周」分组标签（每月 1-7 / 8-14 / 15-21 / 22-28 / 29~月末），点击即把该周排班整体复制到本月后续所有周（含手工修改与休息；模板周含连班/超6连班的人员自动跳过；边界防呆自动生效；可 Ctrl+Z 撤销）。</div>
       <div class="log-ver"><b>v1.26</b> · 六休一防呆：手动排班时上六休一人员连续上班将超过 6 天（任意连续 7 天窗口最多 6 个工作日，含跨月、请假视为休）的格子自动改为休并提示，与连班防呆一致支持撤销。</div>
       <div class="log-ver"><b>v1.25</b> · 美化修复：① 加班/留守徽标加深配色（白字对比度达标）；② 图例「手动修改」改为蓝点示意；③ 统计表请假列改灰色（与排班表请假色统一）；④ 侧栏操作指引精简为 4 步（细节并入帮助）；⑤ 打印输出增加「年月排班表」标题；⑥ 清理死代码（未用变量/类/空元素）。</div>
@@ -1140,6 +1150,7 @@ function renderSheet(){
   }
   h += '</tr></tbody>';
   tb.innerHTML = h;
+  syncHSBar();
   // 仅在切换月份/视图时自动滚动到今日列，避免打断用户滚动位置
   if(scrollToKey !== CUR.key + '|' + (state.viewMode||'')){
     scrollToKey = CUR.key + '|' + (state.viewMode||'');
@@ -1147,6 +1158,21 @@ function renderSheet(){
     if(el && el.scrollIntoView) el.scrollIntoView({block:'nearest', inline:'center'});
   }
 }
+/* 表上部横向滚动条：内容超宽时显示，与主表容器双向同步滚动 */
+const hsb = $('#hScrollBar'), hsi = $('#hScrollBar .h-scroll-inner'), hss = $('#sheetScroll');
+function syncHSBar(){
+  const sheet = $('#sheet');
+  if(sheet && sheet.scrollWidth > hss.clientWidth){
+    hsi.style.width = sheet.scrollWidth + 'px';
+    hsb.classList.add('has');
+    hsb.scrollLeft = hss.scrollLeft;
+  } else {
+    hsb.classList.remove('has');
+  }
+}
+hss.addEventListener('scroll', ()=>{ hsb.scrollLeft = hss.scrollLeft; });
+hsb.addEventListener('scroll', ()=>{ hss.scrollLeft = hsb.scrollLeft; });
+window.addEventListener('resize', ()=>{ syncHSBar(); });
 function renderPeople(){
   const box = $('#peopleList');
   if(!state.people.length){
