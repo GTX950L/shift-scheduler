@@ -13,7 +13,6 @@
     --c-night:#e0e7ff; --c-night-t:#312e81;/* 夜班 */
     --c-rest:#ecfdf5; --c-rest-t:#065f46;  /* 休 */
     --c-ot:#fee2e2;   --c-ot-t:#991b1b;    /* 加班 */
-    --c-duty:#e0f2fe; --c-duty-t:#0c4a6e;  /* 留守 */
     --c-weekend:#f8fafc;
     --shadow-sm:0 1px 3px rgba(16,32,64,.06);
   }
@@ -106,22 +105,18 @@
   .cell.rest{background:linear-gradient(180deg,#f3fbf6 0%,var(--c-rest) 100%);color:var(--c-rest-t)}
   .cell.ot{background:linear-gradient(180deg,#fff1f2 0%,var(--c-ot) 100%);color:var(--c-ot-t);box-shadow:inset 0 0 0 1px rgba(239,68,68,.35)}
   .cell.ot .c-badge{background:linear-gradient(135deg,#ef4444,#b91c1c)}
-  .cell.duty{background:linear-gradient(180deg,#f0f9ff 0%,var(--c-duty) 100%);color:var(--c-duty-t);box-shadow:inset 0 0 0 1px rgba(14,165,233,.3)}
-  .cell.duty .c-badge{background:linear-gradient(135deg,#0284c7,#0369a1)}
   .cell.man::after{content:'';position:absolute;left:1px;top:1px;width:4px;height:4px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 1px rgba(255,255,255,.7)}
   .cell.today{box-shadow:inset 0 0 0 2px var(--brand),inset 0 0 0 3px rgba(255,255,255,.9)}
   th.col-sat,th.col-sun{background:linear-gradient(180deg,#fdf6f6,#f8ecec)!important}
   th.col-busy{background:linear-gradient(180deg,#ffecee,#fbdadd)!important;color:#9f1239!important}
-  th.col-low{background:linear-gradient(180deg,#eef7fe,#dceefe)!important;color:#075985!important}
   th.col-now{outline:2px solid var(--brand);outline-offset:-2px;z-index:6;background:linear-gradient(180deg,#e8f1fb,#dcebf7)!important}
   td.dow-sat,td.dow-sun{background:var(--c-weekend)}
   td.dow-busy{background:rgba(255,228,230,.45)}
-  td.dow-low{background:rgba(224,242,254,.4)}
   tr.tot-row th{font-weight:700;color:#24344d;background:#f8fafc}
   tr.tot-row td{font-size:10px;padding:2px 0;line-height:1.4;background:#f8fafc;border-top:1px solid #e2e8f0}
   tr.tot-row .t-num{font-weight:800}
   .t-day{color:var(--c-day-t)} .t-night{color:var(--c-night-t)} .t-rest{color:var(--c-rest-t)}
-  .t-ot{color:var(--c-ot-t)} .t-duty{color:var(--c-duty-t)} .t-leave{color:#78716c}
+  .t-ot{color:var(--c-ot-t)} .t-leave{color:#78716c}
   /* ===== 图例 ===== */
   .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;font-size:12px;color:var(--muted)}
   .legend .lg{display:inline-flex;align-items:center;gap:5px}
@@ -294,7 +289,7 @@
 <header>
   <div>
     <h1>🗓️ 技术员排班助手</h1>
-    <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节 · 留守模式</p>
+    <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
   </div>
   <div class="hd-right">
     <div class="month-nav">
@@ -309,25 +304,22 @@
 <nav class="toolbar" id="toolbar">
   <div class="grp">
     <label>画笔</label>
-    <select id="brush" title="画笔：点击/拖拽填充单元格；循环模式=点击依次 休→白→夜。快捷键 1~6 快速切换，←→ 切换月份">
+    <select id="brush" title="画笔：点击/拖拽填充单元格；循环模式=点击依次 休→白→夜。快捷键 1~5 快速切换，←→ 切换月份">
       <option value="cycle">🔁 循环切换</option>
       <option value="day">☀️ 白班</option>
       <option value="night">🌙 夜班</option>
       <option value="rest">🟢 休</option>
       <option value="ot">🔺 加班</option>
-      <option value="duty">🟦 留守</option>
     </select>
     <label>周六</label>
     <select id="satLoad" title="周六任务量：繁忙时自动把双休人员叫回上班（标记加班）">
       <option value="normal">正常</option>
       <option value="busy">繁忙 🔥</option>
-      <option value="low">低负荷 💤</option>
     </select>
     <label>周日</label>
     <select id="sunLoad" title="周日任务量：繁忙时自动把双休人员叫回上班（标记加班）">
       <option value="normal">正常</option>
       <option value="busy">繁忙 🔥</option>
-      <option value="low">低负荷 💤</option>
     </select>
   </div>
   <div class="sep"></div>
@@ -358,7 +350,6 @@
     <button id="copyMonthBtn" class="sec" title="把本月手工修改（含请假/调班）整体复制到下月，轮转班次自动生成">📋 到下月</button>
     <button id="clearNextBtn" class="sec" title="一键清除下月（中心月+1）的所有手工排班，恢复未排班状态（可 Ctrl+Z 撤销）">🧹 清下月</button>
     <button id="rotateBtn" class="sec" title="把本月所有“月轮转”人员的班次强制取反（手动控制转班时机）">🔁 转班</button>
-    <button id="idleBtn" class="sec" title="低负荷时只保留每班最低人数（白班2人/夜班1人，名单轮换），其余休息">💤 留守</button>
     <button id="clearManBtn" class="sec" title="清除本月所有手工修改，恢复自动排班结果">🧹 清手动</button>
   </div>
   <div class="sep"></div>
@@ -424,8 +415,8 @@
       <div style="font-size:12.5px;color:#374151;line-height:1.7">
         <b>① 添加技术员</b>：设置姓名、工号（选填）、部门、班次规则（固定白班 / 固定夜班 / 月轮转）、休息规则（上六休一可选周六/周日休）。<br>
         <b>② 点「⚡ 自动排班」</b>生成当月排班基线，并自动体检（有问题直接弹报告）。<br>
-        <b>③ 微调</b>：点击格子循环切换 休→白→夜；<kbd>Shift</kbd>+点击 加班；<kbd>Alt</kbd>+点击 留守；按住拖拽批量填充；<kbd>右键</kbd>菜单（休/请假/清除手动）；<kbd>Ctrl+Z/Y</kbd> 撤销/重做。<br>
-        <b>④ 更多功能</b>：周模板（点表头「第N周」，按周一~周日分组）、复制排班（人员卡片「📋」）、调整行序（拖人名行）、周末负荷（周六/周日下拉）、留守模式、转班、节假日、导入旧表——详见「❓ 帮助」。
+        <b>③ 微调</b>：点击格子循环切换 休→白→夜；<kbd>Shift</kbd>+点击 加班；按住拖拽批量填充；<kbd>右键</kbd>菜单（休/请假/清除手动）；<kbd>Ctrl+Z/Y</kbd> 撤销/重做。<br>
+        <b>④ 更多功能</b>：周模板（点表头「第N周」，按周一~周日分组）、复制排班（人员卡片「📋」）、调整行序（拖人名行）、周末负荷（周六/周日下拉）、转班、节假日、导入旧表——详见「❓ 帮助」。
       </div>
     </section>
   </aside>
@@ -504,15 +495,15 @@
         <li>先「＋ 添加」技术员：姓名、工号（选填）、部门（除气/转码）、班次规则、休息规则；上六休一可再选休息日（周六/周日）。</li>
         <li>点「⚡ 自动排班」生成当月基线；之后随时可再点，<b>手工改过的格子不会被覆盖</b>（格子左上角蓝点 = 手动修改）。</li>
         <li>切到尚未排班的月份会自动提示「一键排班」；点「自动排班」后<b>自动体检</b>——无问题提示通过，有问题直接弹出报告。</li>
-        <li>格子上方标记：<kbd>🔵蓝点</kbd>手动修改 <kbd>「加」</kbd>加班 <kbd>「留」</kbd>留守（加班/留守徽标在格子上方）。</li>
+        <li>格子上方标记：<kbd>🔵蓝点</kbd>手动修改 <kbd>「加」</kbd>加班。</li>
       </ul>
     </div>
     <div class="help-sec">
       <h4>✍️ 手工微调</h4>
       <ul>
-        <li>选择「画笔」后点击 / 按住拖拽批量填充：白班 / 夜班 / 休 / 加班 / 留守。</li>
+        <li>选择「画笔」后点击 / 按住拖拽批量填充：白班 / 夜班 / 休 / 加班。</li>
         <li>「🔁 循环切换」画笔：点击依次 休 → 白班 → 夜班 → 休。</li>
-        <li>快捷键：<kbd>1</kbd>~<kbd>6</kbd> 切换画笔（循环/白/夜/休/加班/留守）；<kbd>Shift</kbd>+点击=加班，<kbd>Alt</kbd>+点击=留守，<kbd>右键</kbd>=弹出菜单（休 / 请假 / 清除手动）。</li>
+        <li>快捷键：<kbd>1</kbd>~<kbd>5</kbd> 切换画笔（循环/白/夜/休/加班）；<kbd>Shift</kbd>+点击=加班，<kbd>右键</kbd>=弹出菜单（休 / 请假 / 清除手动）。</li>
         <li><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd>（或工具栏 ↩ ↪）撤销 / 重做；<kbd>←</kbd><kbd>→</kbd> 或 <kbd>PgUp</kbd><kbd>PgDn</kbd> 切换中心月份。</li>
         <li><b>复制排班</b>：右侧技术员卡片点「📋」→ 再点另一张卡片，把源人员<b>当月排班整体复制</b>给目标（含休息日，可 Ctrl+Z 撤销）；点空白处取消。</li>
         <li><b>整月复制</b>：工具栏「📋 复制到下月」把本月全部手工修改（请假/调班/锁定班次）复制到下月，轮转班次自动生成，可 Ctrl+Z 撤销。</li>
@@ -540,9 +531,7 @@
       <h4>⚖️ 周末与人力</h4>
       <ul>
         <li>周六 / 周日负荷设为「繁忙」：自动排班时双休人员该日改为上班并标记<b>加班</b>。</li>
-        <li>设为「低负荷」：按部门保底留人——除气白班2人（固定班优先，如周洪发）+ 转码白班1人/夜班1人，其余休息；可配合「留守模式」使用。</li>
-        <li>设为「繁忙」：双休人员被叫回加班；上六休一者的休息日（周六/周日错峰）不被覆盖。</li>
-        <li>「留守模式」：每天只保留白班2人 + 夜班1人（名单轮换），其余休息，适合无任务时线上留守。</li>
+        <li>上六休一者的休息日（周六/周日错峰）不被繁忙覆盖，保证每周休 1 天。</li>
         <li><b>六休一防呆</b>：手动排班时，上六休一人员若设置后会产生第 7 个连续工作日（任意连续 7 天窗口最多 6 天上班，含跨月、请假视为休），该格会自动改为休并提示。</li>
       </ul>
     </div>
@@ -579,10 +568,10 @@
       <h4>💾 数据</h4>
       <ul>
         <li>所有数据自动保存在本机浏览器（localStorage），关闭页面不丢失。</li>
-        <li>「⬇ 导出 ▾」：排班表 CSV（含真实日期+星期行，Excel 可直接看）/ 月度统计 CSV（白/夜/加班/留守/请假/出勤，月底报工用）/ 完整备份 JSON（备份全部数据）。</li>
+        <li>「⬇ 导出 ▾」：排班表 CSV（含真实日期+星期行，Excel 可直接看）/ 月度统计 CSV（白/夜/加班/请假/出勤，月底报工用）/ 完整备份 JSON（备份全部数据）。</li>
         <li>工具栏「部门」下拉可只查看除气/转码的排班（月度统计与导出仍为全部人员）。</li>
         <li>换电脑 / 换浏览器：导出 JSON 备份 → 新电脑「⬆ 导入 ▾ → 完整备份 JSON」恢复（会覆盖当前数据，导入前有确认）。</li>
-        <li>🔒 防呆保护：删除人员 / 清手动 / 强制转班 / 留守模式 / 导入覆盖 等破坏性操作均有<b>确认提示</b>；人员<b>同名</b>会提醒、<b>工号重复</b>会拦截；CSV 支持 GBK/UTF-8 自动识别；导出/打印前会检查是否存在连班违规。</li>
+        <li>🔒 防呆保护：删除人员 / 清手动 / 强制转班 / 导入覆盖 等破坏性操作均有<b>确认提示</b>；人员<b>同名</b>会提醒、<b>工号重复</b>会拦截；CSV 支持 GBK/UTF-8 自动识别；导出/打印前会检查是否存在连班违规。</li>
         <li>⏪ <b>自动快照</b>：删除人员 / 导入 / 示例覆盖等不可撤销操作前自动保存完整数据（最近 5 份），工具栏「⏪ 快照」可一键恢复（恢复前也会再存一份当前数据）。</li>
         <li>⚡ <b>自动闭环</b>：切到尚未排班的月份会自动引导「⚡ 自动排班」；点「自动排班」后自动体检——无问题提示通过，有问题直接弹出报告。</li>
       </ul>
@@ -595,6 +584,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.33</b> · 移除留守/低负荷 + P1 修复（数据版本 v8）：① 删除「💤 留守」按钮与周末「低负荷」选项（含格子留守标记/统计/导出留守列/画笔6号/Alt快捷键），旧数据中的留守格自动转普通班次；② 「📋 到下月」现在连同请假记录一起搬移（可撤销）；③ 双击列头「复制前一天」改用实际排班（保留手工修改/请假），不再丢改动。</div>
       <div class="log-ver"><b>v1.32</b> · 工具栏布局优化：分组由 7 组精简为 5 组（画笔/负荷 → 视图/转班/部门 → 排班操作 → 撤销检查 → 导出打印帮助）；按钮文字精简（复制到下月→到下月、本月转班→转班、留守模式→留守）；「❓ 帮助」「📜 更新记录」合并为「📖 帮助 ▾」下拉。</div>
       <div class="log-ver"><b>v1.31</b> · 范例更新为 9 月排班（源自《複本 62.68.77除气转码9月排班表.xlsx》）：20 人名单/工号不变，9月排班全月锁定（转班已于 8/31 完成）；休息日按新表错峰（周六休15人/周日休5人）；孙子恒由固定夜班改为固定白班。</div>
       <div class="log-ver"><b>v1.30</b> · 周模板改为按日历周分组：表头「第 N 周」按<b>周一到周日</b>划分（此前为月内 1-7/8-14…固定分组）；跨月周完整显示并标记「·跨」，可作为模板并复制到后续完整周（跨月连续）；被视图截断的不完整周显示为灰色、不可作模板。</div>
@@ -689,7 +679,7 @@
       <p>为除气 / 转码两部门的两班倒排班而设计，三步即可完成一个月排班：</p>
       <div class="steps">
         <div class="step"><div class="n">1</div><div class="s">添加技术员</div><div class="d">姓名、部门、班次规则、休息规则</div></div>
-        <div class="step"><div class="n">2</div><div class="s">设置周末负荷</div><div class="d">任务少选「低负荷」保底留人，任务多选「繁忙」</div></div>
+        <div class="step"><div class="n">2</div><div class="s">设置周末负荷</div><div class="d">周末任务多选「繁忙」，自动叫回双休人员加班</div></div>
         <div class="step"><div class="n">3</div><div class="s">一键自动排班</div><div class="d">生成基线后再手工微调</div></div>
       </div>
       <p style="margin-top:10px">也可以直接体验 / 导入旧排班表：</p>
@@ -721,20 +711,14 @@ function toast(msg){
 /* ================= 状态 ================= */
 const LS_KEY = 'shift-scheduler-v1';
 const defaultState = () => ({
-  v: 7,                 // 数据版本（v7: 视图默认「本月+下月」cn）
+  v: 8,                 // 数据版本（v8: 移除留守/低负荷功能，x/y 转普通班次）
   people: [],            // {id,name,workId,dept,shiftRule:'fixed-day'|'fixed-night'|'rotate',initialShift:'day'|'night',restRule:'none'|'sixOne'|'weekend',restOffset,note}
   monthShift: {},        // {'2026-08': {pid:'day'|'night'}} 各月实际班次
-  manual: {},            // {'2026-08': {pid:'...'}} 手动覆盖字符串(_=未设置 .=休 d/n=班 D/N=加班 x/y=留守)
+  manual: {},            // {'2026-08': {pid:'...'}} 手动覆盖字符串(_=未设置 .=休 d/n=班 D/N=加班)
   leave: {},             // {'2026-08': {pid: {'3':'事假'}}} 请假登记（日期->原因）
   holidays: {},          // {'2026-08': {'1':'国庆节'}} 节假日/停线日
   rowOrder: [],          // 排班表自定义行顺序（pid 数组）；空=按部门分组（除气在上、转码在下）
   satLoad: 'normal', sunLoad: 'normal',
-  weekendLow: {          // 「低负荷」日每部门保底人数（day=白班岗 night=夜班岗；固定班优先保留）
-    sat:  {'除气':{day:2,night:0}, '转码':{day:1,night:1}},
-    sun:  {'除气':{day:0,night:0}, '转码':{day:0,night:0}}
-  },
-  idleMode: false,
-  idleDay: 2, idleNight: 1,
   viewMode: 'cn',       // month=本月 | cn=本月+下月(默认) | pc=上月+本月 | pcn=上月+本月+下月
   deptFilter: 'all',    // all=全部 | 除气 | 转码（排班表显示筛选）
   rotateMode: 'lastWeekend', // lastWeekend=每月最后周末转班 | fixed=固定日期
@@ -760,10 +744,6 @@ function loadState(){
         state.v = 3;
       }
       if(state.v < 4){ state.leave = state.leave||{}; state.holidays = state.holidays||{}; state.v = 4; }
-      if(state.v < 5){
-        state.weekendLow = { sat:{'除气':{day:2,night:0},'转码':{day:1,night:1}}, sun:{'除气':{day:0,night:0},'转码':{day:0,night:0}} };
-        state.v = 5;
-      }
       // v5→v6：restOffset 语义由"每月第几天偏移"改为"星期几"（0=周日 6=周六）
       if(state.v < 6){
         for(const p of (state.people||[])){
@@ -778,10 +758,25 @@ function loadState(){
         if(state.viewMode === 'pcn') state.viewMode = 'cn';
         state.v = 7;
       }
+      migrateV8(state);
       return;
     }
   }catch(e){}
   state = defaultState();
+}
+/* v8 迁移：移除留守/低负荷功能 —— 旧 manual 中的 x/y（白/夜留守）转普通班次（x→d, y→n）；
+   周末负荷 'low' 归 'normal'；清理已废弃字段。JSON 导入旧备份后也调用。 */
+function migrateV8(s){
+  if((s.v||0) >= 8) return;
+  if(s.manual){
+    for(const k in s.manual){
+      for(const pid in s.manual[k]) s.manual[k][pid] = String(s.manual[k][pid]).replace(/x/g,'d').replace(/y/g,'n');
+    }
+  }
+  if(s.satLoad === 'low') s.satLoad = 'normal';
+  if(s.sunLoad === 'low') s.sunLoad = 'normal';
+  delete s.weekendLow; delete s.idleMode; delete s.idleDay; delete s.idleNight;
+  s.v = 8;
 }
 function saveState(){
   try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){ toast('⚠️ 保存失败：浏览器存储不可用'); }
@@ -838,7 +833,6 @@ function isRuleRest(p, y, m, d){
 }
 
 /* ================= 自动排班核心 ================= */
-const CHAR = { '.':'rest', 'd':'day', 'n':'night', 'D':'ot', 'N':'ot', 'x':'duty', 'y':'duty' };
 function dayLoad(y,m,d){
   const dow = dowOf(y,m,d);
   if(dow===6) return state.satLoad;
@@ -870,49 +864,13 @@ function genMonth(y, m){
       grid[p.id][d-1] = (rot && d>=rstart) ? (base==='n'?'d':'n') : base;
     }
   }
-  // 2) 周末负荷：繁忙=双休/六休一休息者叫回加班；低负荷=按部门保底留人（线上留人）
+  // 2) 周末负荷：繁忙=双休休息者叫回加班（上六休一者的休息日周六/周日错峰不被覆盖，保证每周休1天）
   for(let d=1; d<=dim; d++){
     const load = dayLoad(y,m,d);
     if(load === 'busy'){
       for(const p of people){
-        // 繁忙只叫回「双休」规则者；「上六休一」者的休息日（周六/周日错峰）不被覆盖，保证每周休1天
         if(p.restRule==='weekend' && grid[p.id][d-1]==='.'){
           grid[p.id][d-1] = state.monthShift[key][p.id]==='night' ? 'N' : 'D';
-        }
-      }
-    } else if(load === 'low' && d !== rstart){
-      // 转班日(月末周六)不应用低负荷保底：保证白夜切换在周末完成，不被裁人/补人干扰
-      const cfg = (state.weekendLow||{})[(dowOf(y,m,d)===6?'sat':'sun')] || {};
-      for(const dept of ['除气','转码']){
-        const dc = cfg[dept] || {day:0, night:0};
-        if(!dc.day && !dc.night) continue;
-        const fixed = p => (p.shiftRule==='fixed-day'||p.shiftRule==='fixed-night') ? 0 : 1;
-        // 当天已上班者（尊重休息规则/周六日错峰/连班保护）
-        const dayPool = [], nightPool = [];
-        for(const p of people){
-          if(p.dept !== dept) continue;
-          const c = grid[p.id][d-1];
-          if(c==='d'||c==='D'||c==='x') dayPool.push(p);
-          else if(c==='n'||c==='N'||c==='y') nightPool.push(p);
-        }
-        dayPool.sort((a,b)=>fixed(a)-fixed(b));
-        nightPool.sort((a,b)=>fixed(a)-fixed(b));
-        // 先保留当天上班者（超额裁休）
-        dayPool.forEach((p,i)=>{ if(i >= dc.day) grid[p.id][d-1] = '.'; });
-        nightPool.forEach((p,i)=>{ if(i >= dc.night) grid[p.id][d-1] = '.'; });
-        // 保底不足时从"本月该班次"的人员中补（保证线上留人；当天休息日者排最后，尽量不动）
-        if(dayPool.length < dc.day || nightPool.length < dc.night){
-          const backD = [], backN = [];
-          for(const p of people){
-            if(p.dept !== dept) continue;
-            if(dayPool.includes(p) || nightPool.includes(p)) continue;
-            (state.monthShift[key][p.id]==='night' ? backN : backD).push(p);
-          }
-          const restLast = a => (isRuleRest(a,y,m,d)?1:0);
-          backD.sort((a,b)=> (restLast(a)-restLast(b)) || (fixed(a)-fixed(b)));
-          backN.sort((a,b)=> (restLast(a)-restLast(b)) || (fixed(a)-fixed(b)));
-          for(let i=0; i<dc.day-dayPool.length && i<backD.length; i++) grid[backD[i].id][d-1] = 'd';
-          for(let i=0; i<dc.night-nightPool.length && i<backN.length; i++) grid[backN[i].id][d-1] = 'n';
         }
       }
     }
@@ -942,58 +900,11 @@ function genMonth(y, m){
       if(prevIsNight && nextIsDay) arr[d] = '.';
     }
   }
-  // 2.6) 低负荷补人复查：连班保护可能把保底的人改休，此时从"本月该班次且当天休"者补，
-  //      优先选前一天非夜班者补白班（避免再次连班），保证线上留人
-  if((state.weekendLow||{}).sat || (state.weekendLow||{}).sun){
-    const pk = prevKey(key), py2 = +pk.split('-')[0], pm2 = +pk.split('-')[1];
-    const prevGrid = (CUR.autoGrids && CUR.autoGrids[pk]) || {}; // 视图不含上月时不递归计算（d=1优先级判断退化）
-    const pdim2 = daysInMonth(py2, pm2); // 上月天数（d=1 时取上月最后一天判断连班）
-    const fixed = p => (p.shiftRule==='fixed-day'||p.shiftRule==='fixed-night') ? 0 : 1;
-    for(let d=1; d<=dim; d++){
-      if(dayLoad(y,m,d) !== 'low' || d === rstart) continue; // 转班日跳过保底补人
-      const cfg = (state.weekendLow||{})[(dowOf(y,m,d)===6?'sat':'sun')] || {};
-      for(const dept of ['除气','转码']){
-        const dc = cfg[dept] || {day:0, night:0};
-        if(!dc.day && !dc.night) continue;
-        const dayOn = people.filter(p=>p.dept===dept && (grid[p.id][d-1]==='d'||grid[p.id][d-1]==='D'||grid[p.id][d-1]==='x'));
-        const nightOn = people.filter(p=>p.dept===dept && (grid[p.id][d-1]==='n'||grid[p.id][d-1]==='N'||grid[p.id][d-1]==='y'));
-        if(dayOn.length < dc.day){
-          const cand = people.filter(p=>p.dept===dept && !dayOn.includes(p) && !nightOn.includes(p) && (state.monthShift[key][p.id]||'day')==='day');
-          const prevNight = p => { const pc = d>1 ? grid[p.id][d-2] : ((prevGrid[p.id]||[])[pdim2-1]||'.'); return pc==='n'||pc==='N'||pc==='y'; };
-          cand.sort((a,b)=> ((isRuleRest(a,y,m,d)?1:0)-(isRuleRest(b,y,m,d)?1:0)) || (fixed(a)-fixed(b)) || ((prevNight(a)?1:0)-(prevNight(b)?1:0)));
-          for(let i=0; i<dc.day-dayOn.length && i<cand.length; i++) grid[cand[i].id][d-1] = 'd';
-        }
-        if(nightOn.length < dc.night){
-          const cand = people.filter(p=>p.dept===dept && !dayOn.includes(p) && !nightOn.includes(p) && state.monthShift[key][p.id]==='night');
-          const prevDay = p => { const pc = d>1 ? grid[p.id][d-2] : ((prevGrid[p.id]||[])[pdim2-1]||'.'); return pc==='d'||pc==='D'||pc==='x'; };
-          cand.sort((a,b)=> ((isRuleRest(a,y,m,d)?1:0)-(isRuleRest(b,y,m,d)?1:0)) || (fixed(a)-fixed(b)) || ((prevDay(a)?1:0)-(prevDay(b)?1:0)));
-          for(let i=0; i<dc.night-nightOn.length && i<cand.length; i++) grid[cand[i].id][d-1] = 'n';
-        }
-      }
-    }
-  }
-  // 3) 留守模式：每班只保留最低人数，轮换
-  if(state.idleMode){
-    const dayPool = people.filter(p=>state.monthShift[key][p.id]==='day');
-    const nightPool = people.filter(p=>state.monthShift[key][p.id]==='night');
-    for(let d=1; d<=dim; d++){
-      const keepD = {}, keepN = {};
-      for(let i=0;i<Math.min(state.idleDay, dayPool.length);i++){
-        const p = dayPool[(d-1+i) % dayPool.length]; keepD[p.id]=1;
-      }
-      for(let i=0;i<Math.min(state.idleNight, nightPool.length);i++){
-        const p = nightPool[(d-1+i) % nightPool.length]; keepN[p.id]=1;
-      }
-      for(const p of people){
-        grid[p.id][d-1] = keepD[p.id] ? 'x' : (keepN[p.id] ? 'y' : '.');
-      }
-    }
-  }
-  // 4) 返回纯自动结果（手动覆盖由 renderAll 合并到 CUR.grids，保证实时增量更新）
+  // 3) 返回纯自动结果（手动覆盖由 renderAll 合并到 CUR.grids，保证实时增量更新）
   return grid;
 }
 /* 把某月手动覆盖合并进 grid（复制一份，不修改入参）。
-   manual 字符：'_'=未设置(跟随自动) '.'=强制休 d/n=班 D/N=加班 x/y=留守 */
+   manual 字符：'_'=未设置(跟随自动) '.'=强制休 d/n=班 D/N=加班 */
 function mergeManualInto(grid, key){
   const man = state.manual[key] || {};
   const out = {};
@@ -1041,8 +952,6 @@ function renderAll(){
   $('#rotateMode').value = state.rotateMode || 'lastWeekend';
   $('#rotateDay').value = state.rotateDay || 1;
   $('#rotateDay').disabled = (state.rotateMode||'lastWeekend') !== 'fixed';
-  $('#idleBtn').classList.toggle('on', !!state.idleMode);
-  $('#idleBtn').textContent = state.idleMode ? '💤 留守：开' : '💤 留守';
   const rb = $('#resetRowBtn');
   if(rb) rb.style.display = (state.rowOrder && state.rowOrder.length) ? '' : 'none';
   updateHistBtns();
@@ -1050,7 +959,7 @@ function renderAll(){
 }
 function cellInfo(c){
   const map = { '.':['rest',''], 'd':['day','白'], 'n':['night','夜'],
-    'D':['ot','白'], 'N':['ot','夜'], 'x':['duty','白'], 'y':['duty','夜'] };
+    'D':['ot','白'], 'N':['ot','夜'] };
   return map[c] || ['rest',''];
 }
 function cellHTML(c, pid, mkey, d, manual, isToday, extra){
@@ -1060,14 +969,13 @@ function cellHTML(c, pid, mkey, d, manual, isToday, extra){
   const viol = checkViol[mkey+'|'+pid+'|'+d];
   const clsF = lv ? 'leave' : cls;
   const txtF = lv ? '假' : txt;
-  const desc = lv ? ('请假·' + lv) : (c==='d'?'白班 08:00–20:00':c==='n'?'夜班 20:00–08:00':c==='D'?'白班·加班':c==='N'?'夜班·加班':c==='x'?'白班·留守':c==='y'?'夜班·留守':'休息');
-  const badge = (c==='D'||c==='N') ? '<span class="c-badge">加</span>' :
-                (c==='x'||c==='y') ? '<span class="c-badge">留</span>' : '';
+  const desc = lv ? ('请假·' + lv) : (c==='d'?'白班 08:00–20:00':c==='n'?'夜班 20:00–08:00':c==='D'?'白班·加班':c==='N'?'夜班·加班':'休息');
+  const badge = (c==='D'||c==='N') ? '<span class="c-badge">加</span>' : '';
   return '<td class="cell ' + clsF + (extra?' '+extra:'') + (manual?' man':'') + (isToday?' today':'') + (viol?' viol':'') + '" data-p="' + pid + '" data-m="' + mkey + '" data-d="' + d + '" title="' + esc(p?p.name:'') + ' · ' + mkey.replace('-','年') + '月' + d + '日 · ' + desc + (viol?' ⚠️违规':'') + '">'
     + '<span class="c-txt">' + txtF + '</span>' + badge + '</td>';
 }
 function loadClass(dow, load){
-  if(dow===0||dow===6) return load==='busy' ? 'col-busy' : (load==='low' ? 'col-low' : 'col-sat');
+  if(dow===0||dow===6) return load==='busy' ? 'col-busy' : 'col-sat';
   return '';
 }
 /* 排班表行顺序：默认部门分组（除气在上、转码在下）；用户拖拽后按 rowOrder 自定义；deptFilter 过滤显示。
@@ -1115,7 +1023,7 @@ function renderSheet(){
     const hol = (state.holidays[c.key] || {})[c.d];
     h += '<th class="' + (c.d===1?'col-first ':'') + loadClass(c.dow,c.load) + (hol?' col-hol':'') + (c.isToday?' col-now':'') + '" data-m="' + c.key + '" data-d="' + c.d + '" title="' + c.y + '年' + c.m + '月' + c.d + '日' + (hol?' 🏮' + hol:'') + '（双击复制前一天）">'
       + (c.d===1 ? '<div class="m-head">' + c.m + '月</div>' : '')
-      + '<div>' + c.d + (hol?' 🏮':'') + '</div><div class="dow">' + (hol?hol+' · ':'') + '周' + WEEK[c.dow] + (c.load==='busy'?'🔥':c.load==='low'?'💤':'') + '</div></th>';
+      + '<div>' + c.d + (hol?' 🏮':'') + '</div><div class="dow">' + (hol?hol+' · ':'') + '周' + WEEK[c.dow] + (c.load==='busy'?'🔥':'') + '</div></th>';
   }
   h += '</tr></thead><tbody>';
   // 每人一行：默认按部门分组（除气在上、转码在下，组内保持录入顺序）；用户拖拽后按自定义顺序
@@ -1129,7 +1037,7 @@ function renderSheet(){
       const ms = man[p.id] || '';
       const isMan = !!(ms[c.d-1] && ms[c.d-1] !== '_' && !lockBase(p.id, c.key, c.d));
       const hol2 = (state.holidays[c.key] || {})[c.d];
-      const extra = (c.dow===0||c.dow===6) ? (c.load==='busy'?'dow-busy':c.load==='low'?'dow-low':'dow-sat') : '';
+      const extra = (c.dow===0||c.dow===6) ? (c.load==='busy'?'dow-busy':'dow-sat') : '';
       h += cellHTML(cell, p.id, c.key, c.d, isMan, c.isToday, extra + (hol2?' dow-hol':''));
     }
     h += '</tr>';
@@ -1138,18 +1046,17 @@ function renderSheet(){
   h += '<tr class="tot-row"><th>合计</th>';
   for(const c of cols){
     const grid = CUR.grids[c.key]; if(!grid) continue;
-    let day=0,night=0,rest=0,ot=0,duty=0,leaveN=0;
+    let day=0,night=0,rest=0,ot=0,leaveN=0;
     for(const p of rowOrderPeople()){
       const cc = (grid[p.id]||[])[c.d-1] || '.';
       if(getLeave(p.id, c.key, c.d)){ leaveN++; continue; }
       if(cc==='d') day++; else if(cc==='n') night++; else if(cc==='.') rest++;
-      else if(cc==='D'||cc==='N') ot++; else if(cc==='x'||cc==='y') duty++;
+      else if(cc==='D'||cc==='N') ot++;
     }
     const parts = [];
     if(day) parts.push('<span class="t-day">白' + day + '</span>');
     if(night) parts.push('<span class="t-night">夜' + night + '</span>');
     if(ot) parts.push('<span class="t-ot">加' + ot + '</span>');
-    if(duty) parts.push('<span class="t-duty">留' + duty + '</span>');
     if(leaveN) parts.push('<span class="t-leave">假' + leaveN + '</span>');
     if(rest) parts.push('<span class="t-rest">休' + rest + '</span>');
     h += '<td class="t-num">' + parts.join(' ') + '</td>';
@@ -1268,27 +1175,27 @@ function renderStats(){
     box.innerHTML = '<div class="p-empty"><div class="big">暂无数据</div>添加技术员并自动排班后，这里显示每人月度汇总</div>';
     return;
   }
-  let html = '<thead><tr><th>技术员</th><th>白班</th><th>夜班</th><th>加班</th><th>留守</th><th>请假</th><th>休息</th><th>出勤</th></tr></thead><tbody>';
+  let html = '<thead><tr><th>技术员</th><th>白班</th><th>夜班</th><th>加班</th><th>请假</th><th>休息</th><th>出勤</th></tr></thead><tbody>';
   const depts = ['除气','转码'];
   for(const dept of depts){
     const ps = state.people.filter(p=>p.dept===dept);
     if(!ps.length) continue;
-    html += '<tr><td style="font-weight:700;color:#1e4d8c">🏭 ' + dept + '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
-    let dsum=0,nsum=0,osum=0,xsum=0,lsum=0,rsum=0;
+    html += '<tr><td style="font-weight:700;color:#1e4d8c">🏭 ' + dept + '</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+    let dsum=0,nsum=0,osum=0,lsum=0,rsum=0;
     for(const p of ps){
-      let day=0,night=0,ot=0,duty=0,leaveN=0,rest=0;
+      let day=0,night=0,ot=0,leaveN=0,rest=0;
       const arr = grid[p.id]||[];
       for(let d=1; d<=dim; d++){
         const c = arr[d-1]||'.';
         if(getLeave(p.id, CUR.key, d)){ leaveN++; continue; }
         if(c==='d') day++; else if(c==='n') night++;
-        else if(c==='D'||c==='N') ot++; else if(c==='x'||c==='y') duty++; else rest++;
+        else if(c==='D'||c==='N') ot++; else rest++;
       }
-      dsum+=day; nsum+=night; osum+=ot; xsum+=duty; lsum+=leaveN; rsum+=rest;
-      const work = day+night+ot+duty;
-      html += '<tr><td>' + esc(p.name) + '</td><td>' + day + '</td><td>' + night + '</td><td style="color:var(--c-ot-t)">' + (ot||'') + '</td><td style="color:var(--c-duty-t)">' + (duty||'') + '</td><td style="color:#78716c">' + (leaveN||'') + '</td><td style="color:var(--c-rest-t)">' + rest + '</td><td><b>' + work + '</b></td></tr>';
+      dsum+=day; nsum+=night; osum+=ot; lsum+=leaveN; rsum+=rest;
+      const work = day+night+ot;
+      html += '<tr><td>' + esc(p.name) + '</td><td>' + day + '</td><td>' + night + '</td><td style="color:var(--c-ot-t)">' + (ot||'') + '</td><td style="color:#78716c">' + (leaveN||'') + '</td><td style="color:var(--c-rest-t)">' + rest + '</td><td><b>' + work + '</b></td></tr>';
     }
-    html += '<tr style="background:#f6f9fc;font-weight:700"><td>' + dept + ' 合计</td><td>' + dsum + '</td><td>' + nsum + '</td><td style="color:var(--c-ot-t)">' + osum + '</td><td style="color:var(--c-duty-t)">' + xsum + '</td><td style="color:#78716c">' + lsum + '</td><td style="color:var(--c-rest-t)">' + rsum + '</td><td><b>' + (dsum+nsum+osum+xsum) + '</b></td></tr>';
+    html += '<tr style="background:#f6f9fc;font-weight:700"><td>' + dept + ' 合计</td><td>' + dsum + '</td><td>' + nsum + '</td><td style="color:var(--c-ot-t)">' + osum + '</td><td style="color:#78716c">' + lsum + '</td><td style="color:var(--c-rest-t)">' + rsum + '</td><td><b>' + (dsum+nsum+osum) + '</b></td></tr>';
   }
   html += '</tbody>';
   box.innerHTML = html;
@@ -1308,7 +1215,6 @@ function renderChart(){
       const c = (grid[p.id]||[])[d-1]||'.';
       if(c==='d') day++; else if(c==='n') night++;
       else if(c==='D') dayOt++; else if(c==='N') nightOt++;
-      else if(c==='x') day++; else if(c==='y') night++;
     }
     daily.push({day,night,dayOt,nightOt});
     max = Math.max(max, day+dayOt, night+nightOt);
@@ -1328,7 +1234,7 @@ function renderChart(){
     const x = (d-1)*cw + 1;
     const dow = dowOf(CUR.y,CUR.m,d), load = dayLoad(CUR.y,CUR.m,d);
     if(dow===0||dow===6){
-      const col = load==='busy' ? '#fecdd3' : (load==='low' ? '#bae6fd' : '#f8fafc');
+      const col = load==='busy' ? '#fecdd3' : '#f8fafc';
       svg += '<rect x="' + (x-1) + '" y="0" width="' + (cw-1) + '" height="' + ch + '" fill="' + col + '" opacity=".5"/>';
     }
     const di = daily[d-1];
@@ -1352,24 +1258,23 @@ function renderKpis(){
   const rot = ps.filter(p=>p.shiftRule==='rotate').length;
   const fd = ps.filter(p=>p.shiftRule==='fixed-day').length;
   const fn = ps.filter(p=>p.shiftRule==='fixed-night').length;
-  const dim = CUR.dim; let otN=0, dutyN=0, leaveN=0;
+  const dim = CUR.dim; let otN=0, leaveN=0;
   for(const p of ps){ for(let d=1; d<=dim; d++){ const c=(CUR.grid[p.id]||[])[d-1]||'.';
     if(getLeave(p.id, CUR.key, d)){ leaveN++; continue; }
-    if(c==='D'||c==='N') otN++; else if(c==='x'||c==='y') dutyN++; } }
+    if(c==='D'||c==='N') otN++; } }
   const html = '<div class="kpi"><div class="v">' + ps.length + '</div><div class="k">技术员</div></div>'
     + '<div class="kpi"><div class="v">' + rot + '</div><div class="k">月轮转</div></div>'
     + '<div class="kpi"><div class="v">' + fd + '/' + fn + '</div><div class="k">固定白/夜</div></div>'
     + '<div class="kpi"><div class="v">' + otN + '</div><div class="k">加班格数</div></div>'
-    + '<div class="kpi"><div class="v">' + dutyN + '</div><div class="k">留守格数</div></div>'
     + '<div class="kpi"><div class="v">' + leaveN + '</div><div class="k">请假格数</div></div>';
   $('#kpiRow').innerHTML = html;
 }
 function renderLegend(){
   const items = [
     ['day','白班 08:00–20:00'],['night','夜班 20:00–08:00'],['rest','休'],
-    ['ot','加班'],['duty','留守'],['leave','请假'],['man','手动修改(蓝点)']
+    ['ot','加班'],['leave','请假'],['man','手动修改(蓝点)']
   ];
-  const map = {day:'var(--c-day)',night:'var(--c-night)',rest:'var(--c-rest)',ot:'var(--c-ot)',duty:'var(--c-duty)',leave:'#e7e5e4'};
+  const map = {day:'var(--c-day)',night:'var(--c-night)',rest:'var(--c-rest)',ot:'var(--c-ot)',leave:'#e7e5e4'};
   let html = '';
   for(const [k,t] of items){
     html += '<span class="lg">' + (k==='man'
@@ -1567,6 +1472,7 @@ function undo(){
     else if(op.t==='shift'){ state.monthShift[op.key][op.pid] = op.before; }
     else if(op.t==='copyRow'){ state.manual[op.mkey] = state.manual[op.mkey]||{}; state.manual[op.mkey][op.pid] = op.before; }
     else if(op.t==='copyMonth'){ state.manual[op.nk] = JSON.parse(op.before); }
+    else if(op.t==='copyMonthLeave'){ state.leave[op.nk] = JSON.parse(op.before); }
   }
   histIdx--; checkViol = {}; saveState(); updateHistBtns(); renderAll();
   toast('↩ 已撤销：' + tx.label);
@@ -1581,6 +1487,7 @@ function redo(){
     else if(op.t==='shift'){ state.monthShift[op.key][op.pid] = op.after; }
     else if(op.t==='copyRow'){ state.manual[op.mkey] = state.manual[op.mkey]||{}; state.manual[op.mkey][op.pid] = op.after; }
     else if(op.t==='copyMonth'){ state.manual[op.nk] = JSON.parse(op.after); }
+    else if(op.t==='copyMonthLeave'){ state.leave[op.nk] = JSON.parse(op.after); }
   }
   histIdx++; checkViol = {}; saveState(); updateHistBtns(); renderAll();
   toast('↪ 已重做：' + tx.label);
@@ -1607,10 +1514,10 @@ function paintCell(pid, mkey, day, ch){
       else { next = cur; blockToast('🔒 防呆：前后班次限制，此处只能保持「休」'); }
     }
     if(next !== cur) setManual(pid, mkey, day, next);
-  } else if(ch==='ot' || ch==='duty'){
+  } else if(ch==='ot'){
     const cur = currentCellChar(pid, mkey, day);
     const base = (state.monthShift[mkey]&&state.monthShift[mkey][pid]) || 'day';
-    const target = ch==='ot' ? (base==='night'?'N':'D') : (base==='night'?'y':'x');
+    const target = base==='night' ? 'N' : 'D';
     setManual(pid, mkey, day, cur===target ? base : target); // 再点一次取消
   } else {
     setManual(pid, mkey, day, ch);
@@ -1624,15 +1531,15 @@ function updateCellDOM(td){
   const c = lv ? 'L' : currentCellChar(pid, mkey, d);
   const [cls,txt] = lv ? ['leave','假'] : cellInfo(c);
   const p = state.people.find(x=>x.id===pid);
-  const desc = lv ? ('请假·' + lv) : (c==='d'?'白班 08:00–20:00':c==='n'?'夜班 20:00–08:00':c==='D'?'白班·加班':c==='N'?'夜班·加班':c==='x'?'白班·留守':c==='y'?'夜班·留守':'休息');
+  const desc = lv ? ('请假·' + lv) : (c==='d'?'白班 08:00–20:00':c==='n'?'夜班 20:00–08:00':c==='D'?'白班·加班':c==='N'?'夜班·加班':'休息');
   delete checkViol[mkey+'|'+pid+'|'+d]; // 修改即视为已处理
   const viol = checkViol[mkey+'|'+pid+'|'+d];
-  const keep = ['man','today','dow-sat','dow-sun','dow-busy','dow-low','dow-hol'];
+  const keep = ['man','today','dow-sat','dow-sun','dow-busy','dow-hol'];
   td.className = 'cell ' + cls + keep.filter(k=>td.classList.contains(k)).map(k=>' '+k).join('') + (viol?' viol':'');
   td.title = esc(p?p.name:'') + ' · ' + mkey.replace('-','年') + '月' + d + '日 · ' + desc + (viol?' ⚠️违规':'');
   const t = td.querySelector('.c-txt'); if(t) t.textContent = txt;
   let b = td.querySelector('.c-badge');
-  const badgeTxt = (!lv && (c==='D'||c==='N')) ? '加' : (!lv && (c==='x'||c==='y')) ? '留' : '';
+  const badgeTxt = (!lv && (c==='D'||c==='N')) ? '加' : '';
   if(badgeTxt){ if(!b){ b = document.createElement('span'); b.className='c-badge'; td.appendChild(b); } b.textContent = badgeTxt; }
   else if(b){ b.remove(); }
   const ms = state.manual[mkey] && state.manual[mkey][pid];
@@ -1641,7 +1548,7 @@ function updateCellDOM(td){
 function brushValue(){
   const b = $('#brush').value;
   if(b==='day') return 'd'; if(b==='night') return 'n'; if(b==='rest') return '.';
-  if(b==='ot') return 'ot'; if(b==='duty') return 'duty';
+  if(b==='ot') return 'ot';
   return null; // cycle
 }
 let painted = false;
@@ -1651,7 +1558,6 @@ $('#sheet').addEventListener('mousedown', e=>{
   histBegin();
   const pid = td.dataset.p, mkey = td.dataset.m, d = +td.dataset.d;
   if(e.shiftKey){ paintCell(pid, mkey, d, 'ot'); }
-  else if(e.altKey){ paintCell(pid, mkey, d, 'duty'); }
   else { const bv = brushValue(); paintCell(pid, mkey, d, bv); painting = bv; }
   updateCellDOM(td); painted = true;
 });
@@ -1659,7 +1565,7 @@ $('#sheet').addEventListener('mouseover', e=>{
   if(painting===null) return;
   const td = e.target.closest('td.cell'); if(!td) return;
   const pid = td.dataset.p, mkey = td.dataset.m, d = +td.dataset.d;
-  paintCell(pid, mkey, d, painting === 'ot' ? 'ot' : painting === 'duty' ? 'duty' : painting);
+  paintCell(pid, mkey, d, painting === 'ot' ? 'ot' : painting);
   updateCellDOM(td); painted = true;
 });
 document.addEventListener('mouseup', ()=>{
@@ -1705,10 +1611,10 @@ document.addEventListener('keydown', e=>{
   if((e.ctrlKey||e.metaKey) && !e.shiftKey && (k==='z'||k==='Z')){ e.preventDefault(); undo(); return; }
   if((e.ctrlKey||e.metaKey) && (k==='y'||k==='Y')){ e.preventDefault(); redo(); return; }
   if((e.ctrlKey||e.metaKey) && e.shiftKey && (k==='z'||k==='Z')){ e.preventDefault(); redo(); return; }
-  const brushMap = {'1':'cycle','2':'day','3':'night','4':'rest','5':'ot','6':'duty'};
+  const brushMap = {'1':'cycle','2':'day','3':'night','4':'rest','5':'ot'};
   if(brushMap[k]){
     $('#brush').value = brushMap[k];
-    toast('画笔：' + ({cycle:'🔁 循环切换',day:'☀️ 白班',night:'🌙 夜班',rest:'🟢 休',ot:'🔺 加班',duty:'🟦 留守'})[brushMap[k]]);
+    toast('画笔：' + ({cycle:'🔁 循环切换',day:'☀️ 白班',night:'🌙 夜班',rest:'🟢 休',ot:'🔺 加班'})[brushMap[k]]);
   }
   else if(k==='ArrowLeft'||k==='PageUp'){ e.preventDefault(); shiftMonth(-1); }
   else if(k==='ArrowRight'||k==='PageDown'){ e.preventDefault(); shiftMonth(1); }
@@ -1723,7 +1629,10 @@ $('#sheet').addEventListener('dblclick', e=>{
   let py, pm, pd;
   if(d>1){ py=mo.y; pm=mo.m; pd=d-1; }
   else { const pm2 = mo.m===1 ? 12 : mo.m-1; const py2 = mo.m===1 ? mo.y-1 : mo.y; py=py2; pm=pm2; pd=daysInMonth(py2,pm2); }
-  const prevGrid = genMonth(py, pm);
+  // 取前一天的实际排班（合并后）：视图内直接用 CUR.grids（含手工修改/请假），否则自动+手工合并
+  const pk2 = ym(py, pm);
+  let prevGrid = (CUR.grids && CUR.grids[pk2]) || null;
+  if(!prevGrid) prevGrid = mergeManualInto(genMonth(py, pm), pk2);
   histBegin();
   let n = 0;
   for(const p of state.people){
@@ -1870,29 +1779,41 @@ $('#genBtn').onclick = ()=>{
     toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线，体检通过 ✅（手工修改保留）');
   }
 };
-/* 整月复制：把当前月的手工修改（含请假锁定的班次）整体复制到下月，轮转班次自动生成不受影响 */
+/* 整月复制：把当前月的手工修改（班次/调班/强制休）与请假记录整体复制到下月，轮转班次自动生成不受影响 */
 function copyMonthToNext(){
   const key = CUR.key;
   const src = state.manual[key];
-  if(!src || !Object.keys(src).length){ toast('本月没有手工修改可复制'); return; }
+  if((!src || !Object.keys(src).length) && !Object.keys(state.leave[key]||{}).length){ toast('本月没有手工修改或请假可复制'); return; }
   const nk = CUR.m===12 ? ym(CUR.y+1,1) : ym(CUR.y,CUR.m+1);
   const ndim = daysInMonth(+nk.split('-')[0], +nk.split('-')[1]);
   const tgt = state.manual[nk] || {};
   const tgtHas = Object.values(tgt).some(s=>s && /[^_]/.test(s));
-  if(tgtHas && !confirm('下月（' + nk.replace('-','年') + '月）已有手工修改，确定覆盖为复制结果？\n此操作可 Ctrl+Z 撤销。')) return;
+  const tgtLeaveHas = Object.keys(state.leave[nk]||{}).length > 0;
+  if((tgtHas || tgtLeaveHas) && !confirm('下月（' + nk.replace('-','年') + '月）已有手工修改或请假，确定覆盖为复制结果？\n此操作可 Ctrl+Z 撤销。')) return;
   const copied = {};
-  for(const pid in src){
+  for(const pid in (src||{})){
     const s = src[pid]; if(!s) continue;
     let ns = s.slice(0, ndim);
     while(ns.length < ndim) ns += '_';
     if(/[^_]/.test(ns)) copied[pid] = ns;
   }
+  // 请假随班次一起搬移（结构：state.leave[key] = {pid: {day:原因}}）
+  const srcLeave = state.leave[key] || {};
+  const copiedLeave = {};
+  for(const pid in srcLeave){
+    const lm = srcLeave[pid];
+    if(!lm || !Object.keys(lm).length) continue;
+    copiedLeave[pid] = {};
+    for(const d in lm) copiedLeave[pid][d] = lm[d];
+  }
   histBegin();
   histPush({t:'copyMonth', key, nk, before:JSON.stringify(tgt||{}), after:JSON.stringify(copied)});
+  histPush({t:'copyMonthLeave', nk, before:JSON.stringify(state.leave[nk]||{}), after:JSON.stringify(copiedLeave)});
   state.manual[nk] = copied;
+  state.leave[nk] = copiedLeave;
   histCommit('复制本月排班到下月');
   saveState(); renderAll();
-  toast('📋 已把 ' + CUR.y + '年' + CUR.m + '月 手工排班复制到 ' + nk.replace('-','年') + '月（' + Object.keys(copied).length + ' 人）');
+  toast('📋 已把 ' + CUR.y + '年' + CUR.m + '月 手工排班复制到 ' + nk.replace('-','年') + '月（' + Object.keys(copied).length + ' 人' + (Object.keys(copiedLeave).length ? '，含 ' + Object.keys(copiedLeave).length + ' 人请假' : '') + '）');
 }
 $('#copyMonthBtn').onclick = copyMonthToNext;
 /* 一键清除下月：删除下月手工排班锁定，恢复未排班状态（入历史，可 Ctrl+Z 撤销） */
@@ -1988,16 +1909,6 @@ $('#rotateBtn').onclick = ()=>{
   saveState(); renderAll();
   toast('🔁 本月已强制转班（' + n + '人）');
 };
-$('#idleBtn').onclick = ()=>{
-  const next = !state.idleMode;
-  if(next){
-    if(!state.people.length){ toast('👷 请先添加技术员再开启留守模式'); return; }
-    if(!confirm('确定开启留守模式？每天只保留白班 ' + state.idleDay + ' 人 + 夜班 ' + state.idleNight + ' 人（名单轮换），其余人员全部休息。\n可再次点击本按钮关闭。')) return;
-  }
-  state.idleMode = next;
-  saveState(); renderAll();
-  toast(state.idleMode ? '💤 留守模式已开启：每天保留白班' + state.idleDay + '人 + 夜班' + state.idleNight + '人' : '💤 留守模式已关闭');
-};
 $('#clearManBtn').onclick = ()=>{
   if(!state.manual[CUR.key] || !Object.keys(state.manual[CUR.key]).length){ toast('本月没有手工修改'); return; }
   if(!confirm('确定清除本月（' + CUR.y + '年' + CUR.m + '月）所有手工修改，恢复自动排班结果？\n此操作可 Ctrl+Z 撤销。')) return;
@@ -2035,7 +1946,7 @@ $('#rotateDay').onchange = ()=>{
   saveState(); renderAll();
   toast('🔁 固定转班日已设为每月 ' + v + ' 号');
 };
-function loadTxt(v){ return v==='busy' ? '繁忙' : (v==='low' ? '低负荷' : '正常'); }
+function loadTxt(v){ return v==='busy' ? '繁忙' : '正常'; }
 
 /* ================= 撤销 / 重做 / 体检 / 节假日 ================= */
 $('#undoBtn').onclick = undo;
@@ -2236,7 +2147,7 @@ function computeChecks(){
       const c = (grid[p.id]||[])[(+dd)-1];
       if(c && c!=='.' && !getLeave(p.id, key, +dd)) on++;
     }
-    if(on===0) issues.push({lvl:'warn', txt: (+dd) + ' 日 ' + hol[dd] + ' 无人值班（建议留守 1-2 人）', p:null, d:+dd});
+    if(on===0) issues.push({lvl:'warn', txt: (+dd) + ' 日 ' + hol[dd] + ' 无人值班（建议安排 1-2 人）', p:null, d:+dd});
   }
   return issues;
 }
@@ -2270,7 +2181,6 @@ const REST_TXT = { 'none':'无休', 'sixOne':'上六休一', 'weekend':'双休' 
 function cellToTxt(c){
   if(c==='d') return '白班'; if(c==='n') return '夜班';
   if(c==='D') return '白班(加班)'; if(c==='N') return '夜班(加班)';
-  if(c==='x') return '白班(留守)'; if(c==='y') return '夜班(留守)';
   return '休';
 }
 /* 导出/打印前轻量体检：返回 err 级违规数（连班 / 无人上班），仅用于拦阻提示，不弹报告 */
@@ -2331,33 +2241,33 @@ function exportCSV(){
 function exportJSON(){
   const data = { app:'shift-scheduler', version:1, savedAt:new Date().toISOString(),
     state:{ people:state.people, monthShift:state.monthShift, manual:state.manual, leave:state.leave, holidays:state.holidays, rowOrder:state.rowOrder,
-      satLoad:state.satLoad, sunLoad:state.sunLoad, idleMode:state.idleMode,
-      idleDay:state.idleDay, idleNight:state.idleNight, curYear:state.curYear, curMonth:state.curMonth } };
+      satLoad:state.satLoad, sunLoad:state.sunLoad,
+      curYear:state.curYear, curMonth:state.curMonth } };
   downloadBlob(JSON.stringify(data,null,2), 'application/json', '排班备份_' + CUR.key + '.json');
   toast('💾 已导出完整备份 JSON（含所有月份数据）');
 }
-/* 月度统计导出：每人白班/夜班/加班/留守/请假/休息/出勤，按部门分组（与页面统计一致） */
+/* 月度统计导出：每人白班/夜班/加班/请假/休息/出勤，按部门分组（与页面统计一致） */
 function exportStatsCSV(){
   const dim = CUR.dim, grid = CUR.grid;
   if(!state.people.length){ toast('👷 暂无可导出的统计'); return; }
-  const rows = [['部门','技术员','白班','夜班','加班','留守','请假','休息','出勤']];
+  const rows = [['部门','技术员','白班','夜班','加班','请假','休息','出勤']];
   for(const dept of ['除气','转码']){
     const ps = state.people.filter(p=>p.dept===dept);
     if(!ps.length) continue;
-    let dsum=0,nsum=0,osum=0,xsum=0,lsum=0,rsum=0;
+    let dsum=0,nsum=0,osum=0,lsum=0,rsum=0;
     for(const p of ps){
-      let day=0,night=0,ot=0,duty=0,leaveN=0,rest=0;
+      let day=0,night=0,ot=0,leaveN=0,rest=0;
       const arr = grid[p.id]||[];
       for(let d=1; d<=dim; d++){
         const c = arr[d-1]||'.';
         if(getLeave(p.id, CUR.key, d)){ leaveN++; continue; }
         if(c==='d') day++; else if(c==='n') night++;
-        else if(c==='D'||c==='N') ot++; else if(c==='x'||c==='y') duty++; else rest++;
+        else if(c==='D'||c==='N') ot++; else rest++;
       }
-      dsum+=day; nsum+=night; osum+=ot; xsum+=duty; lsum+=leaveN; rsum+=rest;
-      rows.push([dept, p.name, day, night, ot, duty, leaveN, rest, day+night+ot+duty]);
+      dsum+=day; nsum+=night; osum+=ot; lsum+=leaveN; rsum+=rest;
+      rows.push([dept, p.name, day, night, ot, leaveN, rest, day+night+ot]);
     }
-    rows.push([dept + ' 合计', '', dsum, nsum, osum, xsum, lsum, rsum, dsum+nsum+osum+xsum]);
+    rows.push([dept + ' 合计', '', dsum, nsum, osum, lsum, rsum, dsum+nsum+osum]);
   }
   const csv = '\ufeff' + rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
   downloadBlob(csv, 'text/csv;charset=utf-8', '月度统计_' + CUR.key + '.csv');
@@ -2386,9 +2296,7 @@ function txtToCell(t, base){
   const ot = /加|ot|加班/.test(s);
   const night = /夜|晚|night/.test(s);
   const day = /白|日|day/.test(s);
-  const duty = /留|守|duty/.test(s);
   const b = night && !day ? 'n' : 'd';
-  if(duty) return b==='n' ? 'y' : 'x';
   if(ot) return b==='n' ? 'N' : 'D';
   return b;
 }
@@ -2423,7 +2331,7 @@ function lastWorkShift(chars){
   return 'day';
 }
 function inferRest(chars, y, m, dim){
-  // 把加班/留守视为其底层休息日（被叫回/轮班留守），参与推断
+  // 把加班视为其底层休息日（被叫回），参与推断
   const base = chars.map(c=>(c==='D'||c==='N'||c==='x'||c==='y') ? '.' : c);
   // 双休：全部周六日均非上班
   let wkWork = 0, wkTotal = 0;
@@ -2529,8 +2437,8 @@ function importJSONData(data){
   state.holidays = s.holidays || {};
   state.rowOrder = Array.isArray(s.rowOrder) ? s.rowOrder : [];
   state.satLoad = s.satLoad || 'normal'; state.sunLoad = s.sunLoad || 'normal';
-  state.idleMode = !!s.idleMode; state.idleDay = s.idleDay||2; state.idleNight = s.idleNight||1;
   state.curYear = s.curYear || today().y; state.curMonth = s.curMonth || today().m;
+  migrateV8(state); // 旧备份可能含 x/y 留守字符或 low 负荷，恢复时统一迁移
   histReset(); saveState(); renderAll();
   toast('💾 备份已恢复（' + state.people.length + ' 人）');
 }
@@ -2676,7 +2584,7 @@ function loadSample(){
   state.rowOrder = []; // 示例加载恢复默认部门排序
   const t = today(); state.curYear = t.y; state.curMonth = t.m;
   state.manual['2026-09'] = sampleManual9(); // 9月锁定《複本 62.68.77除气转码9月排班表》
-  state.satLoad = 'low'; state.sunLoad = 'busy'; // 周六任务少(保底留人) 周日任务多
+  state.satLoad = 'normal'; state.sunLoad = 'busy'; // 周六正常、周日任务多
   state.sampleVer = SAMPLE_VER; // 示例版本标记（供旧示例自动升级判定）
   histReset(); saveState(); renderAll();
   const wm = $('#welcomeModal'); if(wm) wm.classList.remove('show');
