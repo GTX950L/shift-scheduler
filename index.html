@@ -70,8 +70,11 @@
   .print-title{display:none}
   table.sheet{border-collapse:separate;border-spacing:0;font-size:12px;width:max-content;min-width:100%}
   table.sheet th,table.sheet td{border-right:1px solid #eef1f5;border-bottom:1px solid #eef1f5;padding:0;text-align:center;vertical-align:middle}
-  table.sheet thead th{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,#f6f9fc,#eef3f8);
+  table.sheet thead th{position:sticky;top:22px;z-index:5;background:linear-gradient(180deg,#f6f9fc,#eef3f8);
     font-weight:650;color:#374151;font-size:11px;padding:5px 2px;line-height:1.25}
+  table.sheet thead th.week{position:sticky;top:0;z-index:6;height:22px;background:linear-gradient(180deg,#f0f6fd,#e3edf8);
+    color:#1e4d8c;font-weight:700;font-size:10px;padding:0;cursor:pointer;border-right:1px solid #eef1f5}
+  table.sheet thead th.week:hover{background:linear-gradient(180deg,#dcebf9,#cfe3f5);color:#0c4a6e}
   table.sheet thead th.dow{font-size:10px;color:var(--muted)}
   table.sheet thead th.col-first{border-left:3px solid #24507e}
   table.sheet thead th .m-head{color:#1e4d8c;font-weight:800;font-size:11px;background:rgba(47,109,181,.09);border-radius:6px;padding:0 5px;margin:0 auto 1px;width:fit-content}
@@ -266,6 +269,9 @@
     @page{size:A4 landscape;margin:8mm}
     .print-title{display:block;font-size:16px;font-weight:800;color:#16273d;text-align:center;margin-bottom:8px}
     table.sheet{font-size:9px}
+    table.sheet thead th{position:static}
+    table.sheet thead th.week{position:static;height:auto;padding:2px 0}
+    table.sheet th.corner{position:static}
     .cell{width:22px;height:22px}
     .cell .c-txt{font-size:9px;line-height:22px}
     table.sheet tbody th{min-width:90px}
@@ -411,7 +417,7 @@
         <b>① 添加技术员</b>：设置姓名、工号（选填）、部门、班次规则（固定白班 / 固定夜班 / 月轮转）、休息规则（上六休一可选周六/周日休）。<br>
         <b>② 点「⚡ 自动排班」</b>生成当月排班基线，并自动体检（有问题直接弹报告）。<br>
         <b>③ 微调</b>：点击格子循环切换 休→白→夜；<kbd>Shift</kbd>+点击 加班；<kbd>Alt</kbd>+点击 留守；按住拖拽批量填充；<kbd>右键</kbd>菜单（休/请假/清除手动）；<kbd>Ctrl+Z/Y</kbd> 撤销/重做。<br>
-        <b>④ 更多功能</b>：复制排班（人员卡片「📋」）、调整行序（拖人名行）、周末负荷（周六/周日下拉）、留守模式、转班、节假日、导入旧表——详见「❓ 帮助」。
+        <b>④ 更多功能</b>：周模板（点表头「第N周」复制到后续周）、复制排班（人员卡片「📋」）、调整行序（拖人名行）、周末负荷（周六/周日下拉）、留守模式、转班、节假日、导入旧表——详见「❓ 帮助」。
       </div>
     </section>
   </aside>
@@ -502,6 +508,7 @@
         <li><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd>（或工具栏 ↩ ↪）撤销 / 重做；<kbd>←</kbd><kbd>→</kbd> 或 <kbd>PgUp</kbd><kbd>PgDn</kbd> 切换中心月份。</li>
         <li><b>复制排班</b>：右侧技术员卡片点「📋」→ 再点另一张卡片，把源人员<b>当月排班整体复制</b>给目标（含休息日，可 Ctrl+Z 撤销）；点空白处取消。</li>
         <li><b>整月复制</b>：工具栏「📋 复制到下月」把本月全部手工修改（请假/调班/锁定班次）复制到下月，轮转班次自动生成，可 Ctrl+Z 撤销。</li>
+        <li><b>周模板复制</b>：表头按周分组（每月 1-7 / 8-14 / 15-21 / 22-28 / 29~月末），点「第 N 周」即把该周 7 天排班整体复制到本月后续所有周（含手工修改与休息；模板周含连班/超 6 连班的人员自动跳过；可 Ctrl+Z 撤销）。</li>
         <li><b>调整行顺序</b>：排班表按住<b>人名行</b>上下拖动即可换位（自动保存，跨月视图同样生效）；点表头「🔄 部门排序」恢复默认（除气在上、转码在下）。</li>
       </ul>
     </div>
@@ -578,6 +585,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.27</b> · 周模板复制：表头新增「第 N 周」分组标签（每月 1-7 / 8-14 / 15-21 / 22-28 / 29~月末），点击即把该周排班整体复制到本月后续所有周（含手工修改与休息；模板周含连班/超6连班的人员自动跳过；边界防呆自动生效；可 Ctrl+Z 撤销）。</div>
       <div class="log-ver"><b>v1.26</b> · 六休一防呆：手动排班时上六休一人员连续上班将超过 6 天（任意连续 7 天窗口最多 6 个工作日，含跨月、请假视为休）的格子自动改为休并提示，与连班防呆一致支持撤销。</div>
       <div class="log-ver"><b>v1.25</b> · 美化修复：① 加班/留守徽标加深配色（白字对比度达标）；② 图例「手动修改」改为蓝点示意；③ 统计表请假列改灰色（与排班表请假色统一）；④ 侧栏操作指引精简为 4 步（细节并入帮助）；⑤ 打印输出增加「年月排班表」标题；⑥ 清理死代码（未用变量/类/空元素）。</div>
       <div class="log-ver"><b>v1.24</b> · 验收修复：① 修复「部门筛选后导出 CSV 只含该部门」——导出始终为全部人员；② 修复「筛选视图下拖拽排序丢失其他部门行序」——行序基于全部人员；③ 操作指引补充新功能（部门筛选/复制到下月/快照/自动体检/法定假日/统计导出）；④ README 数据版本号同步 v7。</div>
@@ -1077,8 +1085,16 @@ function renderSheet(){
         isToday:(tt.y===mo.y && tt.m===mo.m && tt.day===d)});
     }
   }
-  // 表头
-  let h = '<thead><tr><th class="corner">技术员 / 日期</th>';
+  // 表头第一行：周分组（第N周，点击复制到本月后续周）；第二行：日期列
+  let h = '<thead><tr><th class="corner" rowspan="2">技术员 / 日期</th>';
+  for(const mo of months){
+    for(let s=1; s<=mo.dim; s+=7){
+      const e = Math.min(s+6, mo.dim);
+      const wn = Math.floor((s-1)/7) + 1;
+      h += '<th class="week" colspan="' + (e-s+1) + '" data-m="' + mo.key + '" data-w="' + wn + '" title="点击把第 ' + wn + ' 周（' + mo.y + '年' + mo.m + '月' + s + '~' + e + '日）的排班复制到本月后续周（可 Ctrl+Z 撤销）">第' + wn + '周</th>';
+    }
+  }
+  h += '</tr><tr>';
   for(const c of cols){
     const hol = (state.holidays[c.key] || {})[c.d];
     h += '<th class="' + (c.d===1?'col-first ':'') + loadClass(c.dow,c.load) + (hol?' col-hol':'') + (c.isToday?' col-now':'') + '" data-m="' + c.key + '" data-d="' + c.d + '" title="' + c.y + '年' + c.m + '月' + c.d + '日' + (hol?' 🏮' + hol:'') + '（双击复制前一天）">'
@@ -1667,7 +1683,7 @@ document.addEventListener('keydown', e=>{
 });
 /* 双击列头：把前一天（跨月自动衔接）的排班复制到该日 */
 $('#sheet').addEventListener('dblclick', e=>{
-  const th = e.target.closest('thead th'); if(!th || th.classList.contains('corner')) return;
+  const th = e.target.closest('thead th'); if(!th || th.classList.contains('corner') || th.classList.contains('week')) return;
   const mkey = th.dataset.m, d = +th.dataset.d;
   // 在该月内找前一天；若 d===1 则取上月末
   const idx = CUR.months.findIndex(mo=>mo.key===mkey);
@@ -1684,6 +1700,11 @@ $('#sheet').addEventListener('dblclick', e=>{
   }
   histCommit('复制前一天排班');
   renderSheet(); toast('已把 ' + py + '年' + pm + '月' + pd + '日 的排班复制到 ' + mkey.replace('-','年') + '月' + d + '日（' + n + '人，连班防呆拦截的格子已跳过）');
+});
+/* 点击表头「第N周」：把该周排班复制到本月后续周 */
+$('#sheet').addEventListener('click', e=>{
+  const th = e.target.closest('thead th.week'); if(!th) return;
+  copyWeekTemplate(th.dataset.m, +th.dataset.w);
 });
 
 /* ================= 交互：人员管理 ================= */
@@ -1842,6 +1863,42 @@ function copyMonthToNext(){
   toast('📋 已把 ' + CUR.y + '年' + CUR.m + '月 手工排班复制到 ' + nk.replace('-','年') + '月（' + Object.keys(copied).length + ' 人）');
 }
 $('#copyMonthBtn').onclick = copyMonthToNext;
+/* 周模板复制：把月内第 w 周（1-7/8-14/15-21/22-28/29~末）复制到本月后续所有周。
+   源值取合并后排班（含手工修改与休息）；模板周含连班/超6连班的人员整行跳过；
+   逐格写入复用防呆（边界连班拦截、六休一自动改休）；入历史可 Ctrl+Z 撤销。 */
+function copyWeekTemplate(mkey, w){
+  const mo = CUR.months.find(x=>x.key===mkey); if(!mo) return;
+  const dim = mo.dim;
+  const weeks = [];
+  for(let s=1; s<=dim; s+=7) weeks.push({s, e:Math.min(s+6,dim)});
+  const src = weeks[w-1]; if(!src) return;
+  if(w >= weeks.length){ toast('⚠️ 这是本月最后一周，后面没有可复制的周'); return; }
+  if(!state.people.length){ toast('👷 请先添加技术员'); return; }
+  if(!confirm('将把第 ' + w + ' 周（' + mo.m + '月' + src.s + '~' + src.e + '日）的排班复制到本月第 ' + (w+1) + '~' + weeks.length + ' 周（含手工修改与休息，可 Ctrl+Z 撤销）。确定？')) return;
+  histBegin();
+  const grid = CUR.grids[mkey];
+  let cells = 0, skip = 0;
+  for(const p of state.people){
+    const pid = p.id;
+    const srcVals = [];
+    for(let d=src.s; d<=src.e; d++) srcVals.push((grid[pid]||[])[d-1]||'.');
+    // 模板行校验：连续上班>6 或 夜→白连班 → 该人整行跳过（保证复制结果一致合规）
+    let run = 0, rowOk = true;
+    for(const v of srcVals){ if(v!=='.'){ run++; if(run>6){ rowOk=false; break; } } else run=0; }
+    if(rowOk){ for(let i=0;i<srcVals.length-1;i++){ if(isNightC(srcVals[i]) && isDayC(srcVals[i+1])){ rowOk=false; break; } } }
+    if(!rowOk){ skip++; continue; }
+    for(let ww=w; ww<weeks.length; ww++){
+      const tgt = weeks[ww];
+      const len = Math.min(srcVals.length, tgt.e-tgt.s+1);
+      for(let i=0;i<len;i++){
+        if(setManual(pid, mkey, tgt.s+i, srcVals[i])) cells++;
+      }
+    }
+  }
+  histCommit('周模板复制');
+  saveState(); renderAll();
+  toast('📋 已把第 ' + w + ' 周复制到本月后续周（' + cells + ' 格' + (skip ? '，' + skip + ' 人因模板含违规跳过' : '') + '，可 Ctrl+Z 撤销）');
+}
 $('#rotateBtn').onclick = ()=>{
   const key = CUR.key;
   const rotPeople = state.people.filter(p=>p.shiftRule==='rotate');
