@@ -556,10 +556,13 @@
       </ul>
     </div>
     <div class="help-sec">
-      <h4>📄 导入旧排班表（改新表流程）</h4>
+      <h4>📄 导入旧排班表（智能识别）</h4>
       <ul>
-        <li>工具栏「⬆ 导入 ▾ → 排班表 CSV」选择旧表（本工具导出的格式，或 姓名+日期列 的通用表格）。</li>
-        <li>导入后旧排班会<b>按人员锁定</b>（格子左上角蓝点），人员按姓名<b>合并</b>：同名更新属性、新名新增。</li>
+        <li>工具栏「⬆ 导入 ▾ → 排班表 CSV」选择旧表。支持多种格式：本工具导出的 CSV、带标题行/双行表头的手工排班表（如「资材部-9月-6休1排班表」）、姓名+日期列的通用表。</li>
+        <li><b>自动识别</b>：标题行 / 表头行 / 星期行 / 负责人行自动跳过，无需手动指定哪一行是表头。</li>
+        <li><b>日期列</b>：支持 第N天 / N / 8/1 / 2026/8/1 / 8月1日 / 8-1；跨月表（如 8/1~9/30）自动拆分写入对应月份。</li>
+        <li><b>单元格文本</b>：休/休息/空、白班/白/日/早班、夜班/夜/晚/中班、加班/加/OT、班/上/√/出勤（按该行班次自动推断白/夜）、请假（事假/病假/年假 自动登记到请假记录）。</li>
+        <li>导入后旧排班会<b>按人员锁定</b>（格子左上角蓝点），人员按姓名<b>合并</b>：同名更新属性、新名新增（工号一并带入）。</li>
         <li>旧表不想用了想重新排：导入完成后按提示点「确定」清空旧排班 → 点「⚡ 自动排班」生成新表 → 再手工微调。</li>
         <li>想保留旧表只改部分：直接点格子修改，或「🧹 清手动」后重新自动排班。</li>
       </ul>
@@ -584,6 +587,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.34</b> · 智能导入（兼容多种排班表）：① 自动定位表头行（标题/双行表头/星期行/负责人行自动跳过）；② 日期列支持 第N天 / N / 8/1 / 2026/8/1 / 8月1日 / 8-1，跨月表自动拆分到对应月份；③ 单元格识别 休/白班/夜班/加班/班/请假 等常见写法，「班」按月份段+行内班次自动推断白/夜；④ 请假文本自动登记到请假记录；⑤ 月份班次取众数，月末转班不被最后几天误导；⑥ 导入保留工号。</div>
       <div class="log-ver"><b>v1.33</b> · 移除留守/低负荷 + P1 修复（数据版本 v8）：① 删除「💤 留守」按钮与周末「低负荷」选项（含格子留守标记/统计/导出留守列/画笔6号/Alt快捷键），旧数据中的留守格自动转普通班次；② 「📋 到下月」现在连同请假记录一起搬移（可撤销）；③ 双击列头「复制前一天」改用实际排班（保留手工修改/请假），不再丢改动。</div>
       <div class="log-ver"><b>v1.32</b> · 工具栏布局优化：分组由 7 组精简为 5 组（画笔/负荷 → 视图/转班/部门 → 排班操作 → 撤销检查 → 导出打印帮助）；按钮文字精简（复制到下月→到下月、本月转班→转班、留守模式→留守）；「❓ 帮助」「📜 更新记录」合并为「📖 帮助 ▾」下拉。</div>
       <div class="log-ver"><b>v1.31</b> · 范例更新为 9 月排班（源自《複本 62.68.77除气转码9月排班表.xlsx》）：20 人名单/工号不变，9月排班全月锁定（转班已于 8/31 完成）；休息日按新表错峰（周六休15人/周日休5人）；孙子恒由固定夜班改为固定白班。</div>
@@ -2290,15 +2294,122 @@ function parseCSVText(text){
   if(cur!=='' || row.length){ row.push(cur); rows.push(row); }
   return rows.filter(r=>r.some(c=>c.trim()!==''));
 }
-function txtToCell(t, base){
-  const s = String(t).toLowerCase();
-  if(!s || /休|空|^$/.test(s)) return '.';
-  const ot = /加|ot|加班/.test(s);
-  const night = /夜|晚|night/.test(s);
-  const day = /白|日|day/.test(s);
-  const b = night && !day ? 'n' : 'd';
-  if(ot) return b==='n' ? 'N' : 'D';
-  return b;
+/* ================= 智能导入（兼容多种排班表格式） =================
+   支持的表格形态：
+   - 本工具导出的 CSV（表头含 技术员/部门/班次规则/休息规则 + M/D 日期列 + 星期行）
+   - 带标题行/多行表头的手工排班表（如「资材部-9月-6休1排班表」：标题行 + 工号/日期表头 + 星期行）
+   - 姓名+日期列的通用表（日期可写 第N天 / N / M/D / YYYY/M/D / M月D日 / M-D）
+   - 跨月表自动拆分（如 8/1~9/30 → 分别写入 8 月、9 月）
+   单元格文本：休/休息/空、白班/白/日/早班、夜班/夜/晚/中班、加班/加/OT、班/上/√/出勤（按行内班次推断）、请假（自动登记到请假记录） */
+function smartParseDate(t){
+  const s = String(t||'').trim().toLowerCase();
+  if(!s) return null;
+  let m = s.match(/^第?(\d{1,2})天?$/);
+  if(m) return {type:'dayN', n:+m[1]};
+  m = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+  if(m) return {type:'date', y:+m[1], m:+m[2], d:+m[3]};
+  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})$/);
+  if(m) return {type:'date', y:null, m:+m[1], d:+m[2]};
+  m = s.match(/^(\d{1,2})月(\d{1,2})日?$/);
+  if(m) return {type:'date', y:null, m:+m[1], d:+m[2]};
+  return null;
+}
+/* 星期行识别：首列含"星期"，或多数单元格为 周X/星期X/公式残留 */
+function smartIsWeekRow(row){
+  const s = String(row[0]||'').trim();
+  if(/星期|周几/.test(s)) return true;
+  let wk = 0;
+  for(const c of row){ const v = String(c||'').trim();
+    if(/^周?[日一二三四五六]$/.test(v) || /^(星期|礼拜)[日一二三四五六]$/.test(v) || /^=[A-Z]+\d+$/.test(v)) wk++; }
+  return wk >= 3;
+}
+/* 智能定位表头行与各列角色：扫描前 8 行，取含姓名/工号关键字且日期列 ≥2 的行作表头 */
+function smartFindHeader(rows){
+  const nameKws = ['姓名','名字','技术员','人员','职员','员工'];
+  let headRow = -1;
+  for(let r=0; r<Math.min(rows.length,8); r++){
+    const row = rows[r].map(c=>String(c||'').trim());
+    const hasName = row.some(h=>nameKws.some(k=>h.includes(k)));
+    const hasWork = row.some(h=>/工号|编号|员工号|^id$/i.test(h));
+    const dates = row.filter(h=>smartParseDate(h)).length;
+    if((hasName || hasWork) && dates >= 2){ headRow = r; break; }
+  }
+  if(headRow<0){ for(let r=0; r<Math.min(rows.length,5); r++){ if(rows[r].some(h=>nameKws.some(k=>String(h).includes(k)))){ headRow=r; break; } } }
+  if(headRow<0) headRow = 0;
+  // 列名搜索范围：表头行 及其上下各 1 行（兼容双行表头，如「工号/日期」第2行 + 「姓名」第3行）
+  const find = names => {
+    for(const r of [headRow, headRow+1, headRow-1]){
+      if(r<0 || r>=rows.length) continue;
+      const row = rows[r].map(c=>String(c||'').trim());
+      const i = row.findIndex(h=>names.some(n=>h.toLowerCase().includes(n.toLowerCase())));
+      if(i>=0) return i;
+    }
+    return -1;
+  };
+  const nameIdx = find(nameKws);
+  const workIdIdx = find(['工号','编号','员工号']);
+  const deptIdx = find(['部门','组别','班组','车间','线别']);
+  const shiftIdx = find(['班次','班制','轮转']);
+  const restIdx = find(['休息','休法','排休']);
+  const head = rows[headRow].map(c=>String(c||'').trim());
+  const skip = new Set([nameIdx,workIdIdx,deptIdx,shiftIdx,restIdx].filter(i=>i>=0));
+  const dateCols = [];
+  head.forEach((h,i)=>{ if(skip.has(i)) return; const p = smartParseDate(h); if(p) dateCols.push({i, p}); });
+  if(!dateCols.length && nameIdx>=0){ // 兜底：姓名列之后找连续 第N天/纯数字
+    for(let i=nameIdx+1;i<head.length;i++){ const p = smartParseDate(head[i]); if(p && p.type==='dayN') dateCols.push({i, p}); }
+  }
+  let dataStart = headRow+1;
+  if(dataStart < rows.length && smartIsWeekRow(rows[dataStart])) dataStart++;
+  return {headRow, nameIdx, workIdIdx, deptIdx, shiftIdx, restIdx, dateCols, dataStart};
+}
+/* 智能单元格：返回 {ch, leave}；ch: '_'未设 '.'休 'd'白 'n'夜 'D'白加 'N'夜加 'w'班(待行级推断) */
+function smartCell(t){
+  const s = String(t||'').trim().toLowerCase();
+  if(!s || /^[\s\-—/]*$/.test(s)) return {ch:'_', leave:null};
+  if(/假/.test(s) || /leave|sick|annual/i.test(s)){
+    let r = '其他';
+    if(/事假/.test(s)) r='事假'; else if(/病假/.test(s)||/sick/.test(s)) r='病假'; else if(/年假/.test(s)||/annual/.test(s)) r='年假';
+    return {ch:'_', leave:r};
+  }
+  if(/休|rest|off|空|无/.test(s)) return {ch:'.', leave:null};
+  if(/加|ot|加班|延/.test(s)){ const n=/夜|晚|night/.test(s); return {ch:n?'N':'D', leave:null}; }
+  const night = /夜|晚|night|中班/.test(s);
+  const day = /白|日|day|早班|常白/.test(s);
+  if(night && !day) return {ch:'n', leave:null};
+  if(day && !night) return {ch:'d', leave:null};
+  if(/班|上|√|✓|出勤|在岗|值班|当班|^[1-9]$/.test(s)) return {ch:'w', leave:null};
+  return {ch:'_', leave:null};
+}
+/* 日期列分组到月份（跨月拆分）；无年份时以当前中心月为基准推断 */
+function buildDateGroups(dateCols){
+  const groups = {}; // '2026-08' -> {day -> colIdx}
+  for(const dc of dateCols){
+    const p = dc.p;
+    let y, m, d;
+    if(p.type==='dayN'){ y = CUR.y; m = CUR.m; d = p.n; }
+    else {
+      y = (p.y != null) ? p.y : CUR.y; m = p.m; d = p.d;
+      if(p.y == null && dateCols.length && dateCols[0].p.type==='date' && dateCols[0].p.y==null){
+        const fm = dateCols[0].p.m; // 表起点月份
+        if(fm > CUR.m && fm - CUR.m > 1) y = CUR.y - 1;      // 表从上年末开始
+        else if(fm === 12 && CUR.m <= 2) y = CUR.y - 1;
+      }
+    }
+    if(m<1||m>12||d<1||d>31) continue;
+    const key = ym(y,m);
+    groups[key] = groups[key] || {};
+    groups[key][d] = dc.i;
+  }
+  // 跨年衔接：…12月 后接 1月 段 → 1月段视为下一年
+  const keys = Object.keys(groups);
+  for(let i=1;i<keys.length;i++){
+    const a = keys[i-1].split('-').map(Number), b = keys[i].split('-').map(Number);
+    if(a[0]===b[0] && a[1]===12 && b[1]===1){
+      const nk = ym(b[0]+1, 1);
+      groups[nk] = groups[keys[i]]; delete groups[keys[i]];
+    }
+  }
+  return groups;
 }
 function txtToShift(t){
   const s = String(t);
@@ -2330,6 +2441,13 @@ function lastWorkShift(chars){
   }
   return 'day';
 }
+/* 该月主要班次（众数）：月末转班时避免被最后几天的换班误导 */
+function modeShift(chars){
+  let d=0, n=0;
+  for(const c of chars){ if(c==='d'||c==='D') d++; else if(c==='n'||c==='N') n++; }
+  if(d===0 && n===0) return lastWorkShift(chars);
+  return d>=n ? 'day' : 'night';
+}
 function inferRest(chars, y, m, dim){
   // 把加班视为其底层休息日（被叫回），参与推断
   const base = chars.map(c=>(c==='D'||c==='N'||c==='x'||c==='y') ? '.' : c);
@@ -2350,76 +2468,96 @@ function inferRest(chars, y, m, dim){
 let importMode = 'merge'; // 人员合并策略（CSV 固定按姓名合并；JSON 全量覆盖）
 function applyCSVImport(rows){
   if(!rows.length){ toast('⚠️ 文件为空或格式无法识别'); return; }
-  const dim = CUR.dim, key = CUR.key;
-  const head = rows[0].map(c=>String(c).trim());
-  const findCol = names => head.findIndex(h=>names.some(n=>h.includes(n)));
-  let nameIdx = findCol(['技术员','姓名','名字','人员']);
-  const deptIdx = findCol(['部门']);
-  const shiftIdx = findCol(['班次规则','班次']);
-  const restIdx = findCol(['休息规则','休息']);
-  // 日期列：第N天 / 纯数字 / M/D（本工具导出格式）
-  let dateIdxs = [];
-  head.forEach((h,i)=>{
-    if(i===nameIdx||i===deptIdx||i===shiftIdx||i===restIdx) return;
-    if(/^第\d+天$/.test(h) || /^\d+$/.test(h) || /^\d{1,2}\/\d{1,2}$/.test(h)) dateIdxs.push(i);
-  });
-  // 无表头兜底：首列姓名、次列部门（若匹配）、其余为日期
-  let dataStart = 0;
-  if(nameIdx<0){
-    nameIdx = 0;
-    if(deptIdx<0 && /除气|转码/.test(head[1]||'')) dataStart = 1;
-  } else dataStart = 1;
-  if(!dateIdxs.length){
-    // 从姓名列之后找连续非文本列
-    for(let i=nameIdx+1;i<head.length;i++){
-      if(/^第\d+天$/.test(head[i])||/^\d+$/.test(head[i])) dateIdxs.push(i);
-    }
-  }
-  if(nameIdx<0 || !dateIdxs.length){ toast('⚠️ 无法识别表头：需要「姓名」列和日期列（第1天/1 等）'); return; }
+  const H = smartFindHeader(rows);
+  if(H.nameIdx<0 || !H.dateCols.length){ toast('⚠️ 无法识别表头：需要「姓名/技术员」列和日期列（如 第1天 / 1 / 8/1 / 2026/8/1）'); return; }
+  const groups = buildDateGroups(H.dateCols);
+  const monthKeys = Object.keys(groups).sort();
+  if(!monthKeys.length){ toast('⚠️ 未能解析出有效日期列'); return; }
+  const dims = {};
+  monthKeys.forEach(k=>dims[k]=daysInMonth(+k.split('-')[0], +k.split('-')[1]));
   // 防呆：导入会按姓名合并/更新人员并锁定排班，且不可撤销（Ctrl+Z 无效）
-  if(state.people.length && !confirm('⚠️ 将导入 ' + (rows.length-dataStart) + ' 行数据：按姓名合并/更新人员并锁定当月排班（不可撤销，Ctrl+Z 无效）。\n建议先「⬇ 导出 → 完整备份 JSON」留存当前数据。确定继续？')) return;
+  if(state.people.length && !confirm('⚠️ 将导入 ' + (rows.length-H.dataStart) + ' 行数据：按姓名合并/更新人员并锁定排班（' + monthKeys.length + ' 个月' + (monthKeys.length>1 ? '，跨月自动拆分' : '') + '），不可撤销（Ctrl+Z 无效）。\n建议先「⬇ 导出 → 完整备份 JSON」留存当前数据。确定继续？')) return;
   pushSnapshot('导入排班 CSV');
-  let added=0, updated=0, merged=0, cells=0;
-  const need = Math.min(dim, dateIdxs.length);
-  for(let r=dataStart; r<rows.length; r++){
-    const row = rows[r]; const name = String(row[nameIdx]||'').trim();
-    if(!name || /^(合计|总计|小计|部门|技术员|星期)$/.test(name)) continue;
-    const chars = dateIdxs.map(i=>txtToCell(row[i]||'', null)).slice(0, dim);
-    while(chars.length < dim) chars.push('_'); // 未提供日期 = 未手动设置
-    let shiftRule = shiftIdx>=0 ? txtToShift(row[shiftIdx]) : '';
-    if(!shiftRule) shiftRule = inferShift(chars);
-    let restRule = restIdx>=0 ? txtToRest(row[restIdx]) : '';
-    if(!restRule) restRule = inferRest(chars, CUR.y, CUR.m, dim);
-    const dept = (deptIdx>=0 ? String(row[deptIdx]||'').trim() : '') || '除气';
-    const initialShift = lastWorkShift(chars);
+  let added=0, updated=0, cells=0, leaveN=0, skipped=0;
+  const mergedSet = new Set();
+  const skipNames = /^(合计|总计|小计|部门|技术员|星期|负责人|标题)$/;
+  for(let r=H.dataStart; r<rows.length; r++){
+    const row = rows[r];
+    const name = String(row[H.nameIdx]||'').trim();
+    if(!name || skipNames.test(name)){ skipped++; continue; }
+    // 1) 逐月解析单元格（跨月拆分；请假单独收集）
+    const perMonth = {};
+    monthKeys.forEach(k=>perMonth[k]={chs:[], leaves:{}});
+    for(const k of monthKeys){
+      const g = groups[k], dim = dims[k];
+      for(let d=1; d<=dim; d++){
+        const ci = g[d];
+        const cell = (ci!=null) ? smartCell(row[ci]) : {ch:'_', leave:null};
+        if(cell.leave) perMonth[k].leaves[d] = cell.leave;
+        perMonth[k].chs.push(cell.ch);
+      }
+    }
+    // 2) 行级「班」推断：按月份段，段内显式白/夜标注决定（模板表 8月段"班"=白、9月段"班"=夜）
+    for(const k of monthKeys){
+      const chs = perMonth[k].chs;
+      let nC=0, dC=0;
+      for(const c of chs){ if(c==='n'||c==='N') nC++; else if(c==='d'||c==='D') dC++; }
+      let wv;
+      if(nC>0 && dC===0) wv = 'n';
+      else if(dC>0 && nC===0) wv = 'd';
+      else if(nC+dC===0){ // 整段无标注 → 用该行全部月份推断班次
+        const all = [].concat(...monthKeys.map(kk=>perMonth[kk].chs));
+        wv = (inferShift(all)==='fixed-night') ? 'n' : 'd';
+      } else wv = (nC>=dC) ? 'n' : 'd';
+      perMonth[k].chs = chs.map(c=>c==='w'?wv:c);
+    }
+    // 3) 人员属性（班次/休息规则：优先规则列，否则从排班推断）
+    const allChars = [].concat(...monthKeys.map(k=>perMonth[k].chs));
+    let shiftRule = H.shiftIdx>=0 ? txtToShift(row[H.shiftIdx]) : '';
+    if(!shiftRule) shiftRule = inferShift(allChars);
+    let restRule = H.restIdx>=0 ? txtToRest(row[H.restIdx]) : '';
+    if(!restRule){ const mk = monthKeys[0]; restRule = inferRest(perMonth[mk].chs, +mk.split('-')[0], +mk.split('-')[1], dims[mk]); }
+    const dept = (H.deptIdx>=0 ? String(row[H.deptIdx]||'').trim() : '') || '除气';
+    const workId = H.workIdIdx>=0 ? String(row[H.workIdIdx]||'').trim() : '';
     let p = state.people.find(x=>x.name===name);
     if(p){
-      Object.assign(p, {dept, shiftRule, initialShift, restRule});
+      Object.assign(p, {dept, shiftRule, restRule});
+      if(workId) p.workId = workId;
       updated++;
     } else {
-      p = {id:'imp'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), name, dept, shiftRule, initialShift, restRule, note:''};
+      p = {id:'imp'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), name, dept, shiftRule, initialShift:modeShift(perMonth[monthKeys[0]].chs), restRule, note:'', workId:workId||undefined};
       state.people.push(p);
       added++;
     }
-    state.monthShift[key] = state.monthShift[key] || {};
-    state.monthShift[key][p.id] = initialShift;
-    const locked = chars.join('');
-    if(/[^._nNdDxXyY]/.test(locked)) continue; // 安全校验
-    if(/[^_]/.test(locked)){ // 存在任何已设置格子才锁定
-      state.manual[key] = state.manual[key] || {};
-      state.manual[key][p.id] = locked;
-      merged++;
+    // 4) 逐月写入 manual / monthShift / leave
+    for(const k of monthKeys){
+      const chs = perMonth[k].chs;
+      state.monthShift[k] = state.monthShift[k] || {};
+      state.monthShift[k][p.id] = modeShift(chs);
+      const locked = chs.join('');
+      if(/[^._dDnN]/.test(locked)) continue; // 安全校验（只允许标准字符）
+      if(/[^_]/.test(locked)){
+        state.manual[k] = state.manual[k] || {};
+        state.manual[k][p.id] = locked;
+        mergedSet.add(p.id + '@' + k);
+        cells += chs.filter(c=>c!=='.'&&c!=='_').length;
+      }
+      const lvs = perMonth[k].leaves;
+      if(Object.keys(lvs).length){
+        state.leave[k] = state.leave[k] || {};
+        state.leave[k][p.id] = state.leave[k][p.id] || {};
+        for(const dd in lvs){ state.leave[k][p.id][dd] = lvs[dd]; leaveN++; }
+      }
     }
-    cells += chars.filter(c=>c!=='.'&&c!=='_').length;
   }
   state.rowOrder = []; // 导入后恢复部门排序（人员结构已变）
   histReset(); saveState(); renderAll();
-  const msg = '📄 导入完成：新增 ' + added + ' 人，更新 ' + updated + ' 人，锁定排班 ' + merged + ' 人（' + cells + ' 个上班格）';
-  toast(msg);
+  const monthTxt = monthKeys.map(k=>k.replace('-','年') + '月').join('、');
+  toast('📄 导入完成：新增 ' + added + ' 人，更新 ' + updated + ' 人，锁定 ' + mergedSet.size + ' 人·月（' + cells + ' 个班次' + (leaveN? '，' + leaveN + ' 条请假' : '') + '，覆盖 ' + monthTxt + (skipped? '；跳过 ' + skipped + ' 行非人员行' : '') + '）');
   // 引导"改成新表"的下一步操作
   setTimeout(()=>{
     if(confirm('已导入旧排班（当前显示的是导入的旧表）。\n\n是否立即清空并重新自动排班生成新表？\n（选「取消」则保留旧表，可手工微调）')){
-      delete state.manual[CUR.key];
+      for(const k of monthKeys) delete state.manual[k];
       saveState(); renderAll();
       toast('🧹 旧排班已清空，请点「⚡ 自动排班」生成新表');
     }
