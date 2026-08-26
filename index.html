@@ -317,9 +317,6 @@
       <option value="ot">🔺 加班</option>
       <option value="duty">🟦 留守</option>
     </select>
-  </div>
-  <div class="sep"></div>
-  <div class="grp">
     <label>周六</label>
     <select id="satLoad" title="周六任务量：繁忙时自动把双休人员叫回上班（标记加班）">
       <option value="normal">正常</option>
@@ -348,9 +345,6 @@
       <option value="fixed">固定日期</option>
     </select>
     <input type="number" id="rotateDay" min="1" max="31" step="1" title="固定转班日（1~31），选「固定日期」时生效" style="width:52px;text-align:center">
-  </div>
-  <div class="sep"></div>
-  <div class="grp">
     <label title="排班表按部门筛选显示（统计/导出仍为全部人员）">部门</label>
     <select id="deptFilter" title="排班表按部门筛选显示；统计/导出仍包含全部人员">
       <option value="all">全部</option>
@@ -361,13 +355,10 @@
   <div class="sep"></div>
   <div class="grp">
     <button id="genBtn" title="按人员规则 + 周末负荷 + 转班日自动生成本月排班（保留手工修改）">⚡ 自动排班</button>
-    <button id="copyMonthBtn" class="sec" title="把本月手工修改（含请假/调班）整体复制到下月，轮转班次自动生成">📋 复制到下月</button>
+    <button id="copyMonthBtn" class="sec" title="把本月手工修改（含请假/调班）整体复制到下月，轮转班次自动生成">📋 到下月</button>
     <button id="clearNextBtn" class="sec" title="一键清除下月（中心月+1）的所有手工排班，恢复未排班状态（可 Ctrl+Z 撤销）">🧹 清下月</button>
-    <button id="rotateBtn" class="sec" title="把本月所有“月轮转”人员的班次强制取反（手动控制转班时机）">🔁 本月转班</button>
-  </div>
-  <div class="sep"></div>
-  <div class="grp">
-    <button id="idleBtn" class="sec" title="低负荷时只保留每班最低人数（白班2人/夜班1人，名单轮换），其余休息">💤 留守模式</button>
+    <button id="rotateBtn" class="sec" title="把本月所有“月轮转”人员的班次强制取反（手动控制转班时机）">🔁 转班</button>
+    <button id="idleBtn" class="sec" title="低负荷时只保留每班最低人数（白班2人/夜班1人，名单轮换），其余休息">💤 留守</button>
     <button id="clearManBtn" class="sec" title="清除本月所有手工修改，恢复自动排班结果">🧹 清手动</button>
   </div>
   <div class="sep"></div>
@@ -399,8 +390,14 @@
       </div>
     </div>
     <button id="printBtn" class="sec" title="打印 / 存为 PDF（横向 A4）">🖨 打印</button>
-    <button id="logBtn" class="sec" title="更新记录">📜 更新记录</button>
-    <button id="helpBtn" class="sec" title="使用说明">❓ 帮助</button>
+    <div class="dd">
+      <button id="helpBtn" class="sec" title="使用说明 / 更新记录">📖 帮助 ▾</button>
+      <div class="dd-menu" id="helpMenu">
+        <div class="dd-title">帮助与记录</div>
+        <button data-a="help">❓ 使用说明</button>
+        <button data-a="log">📜 更新记录</button>
+      </div>
+    </div>
   </div>
 </nav>
 <input type="file" id="fileInput" accept=".csv,.json,.txt" style="display:none">
@@ -598,6 +595,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.32</b> · 工具栏布局优化：分组由 7 组精简为 5 组（画笔/负荷 → 视图/转班/部门 → 排班操作 → 撤销检查 → 导出打印帮助）；按钮文字精简（复制到下月→到下月、本月转班→转班、留守模式→留守）；「❓ 帮助」「📜 更新记录」合并为「📖 帮助 ▾」下拉。</div>
       <div class="log-ver"><b>v1.31</b> · 范例更新为 9 月排班（源自《複本 62.68.77除气转码9月排班表.xlsx》）：20 人名单/工号不变，9月排班全月锁定（转班已于 8/31 完成）；休息日按新表错峰（周六休15人/周日休5人）；孙子恒由固定夜班改为固定白班。</div>
       <div class="log-ver"><b>v1.30</b> · 周模板改为按日历周分组：表头「第 N 周」按<b>周一到周日</b>划分（此前为月内 1-7/8-14…固定分组）；跨月周完整显示并标记「·跨」，可作为模板并复制到后续完整周（跨月连续）；被视图截断的不完整周显示为灰色、不可作模板。</div>
       <div class="log-ver"><b>v1.29</b> · ① 移除体检中的轮转夜班均衡监测（夜班偏多提醒不再出现）；② 新增「🧹 清下月」一键清除下月手工排班（与「复制到下月」对称，可 Ctrl+Z 撤销）；③ 表头周标签强化（蓝底加粗 + 📋 图标），周模板复制入口更醒目。</div>
@@ -1044,7 +1042,7 @@ function renderAll(){
   $('#rotateDay').value = state.rotateDay || 1;
   $('#rotateDay').disabled = (state.rotateMode||'lastWeekend') !== 'fixed';
   $('#idleBtn').classList.toggle('on', !!state.idleMode);
-  $('#idleBtn').textContent = state.idleMode ? '💤 留守模式：开' : '💤 留守模式';
+  $('#idleBtn').textContent = state.idleMode ? '💤 留守：开' : '💤 留守';
   const rb = $('#resetRowBtn');
   if(rb) rb.style.display = (state.rowOrder && state.rowOrder.length) ? '' : 'none';
   updateHistBtns();
@@ -2604,10 +2602,15 @@ $('#printBtn').onclick = ()=>{
   }
   setTimeout(()=>window.print(), 60);
 };
-$('#helpBtn').onclick = ()=> $('#helpModal').classList.add('show');
+/* 📖 帮助 ▾ 下拉：使用说明 / 更新记录 */
+$('#helpBtn').onclick = ()=> $('#helpMenu').parentElement.classList.toggle('open');
+$$('#helpMenu button').forEach(b=>b.onclick = ()=>{
+  if(b.dataset.a==='help') $('#helpModal').classList.add('show');
+  else $('#logModal').classList.add('show');
+  b.closest('.dd').classList.remove('open');
+});
 $('#helpClose').onclick = ()=> $('#helpModal').classList.remove('show');
 $('#helpModal').addEventListener('click', e=>{ if(e.target.id==='helpModal') e.target.classList.remove('show'); });
-$('#logBtn').onclick = ()=> $('#logModal').classList.add('show');
 $('#logClose').onclick = ()=> $('#logModal').classList.remove('show');
 $('#logModal').addEventListener('click', e=>{ if(e.target.id==='logModal') e.target.classList.remove('show'); });
 $('#personModal').addEventListener('click', e=>{ if(e.target.id==='personModal') e.target.classList.remove('show'); });
