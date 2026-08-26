@@ -527,6 +527,7 @@
         <li>设为「低负荷」：按部门保底留人——除气白班2人（固定班优先，如周洪发）+ 转码白班1人/夜班1人，其余休息；可配合「留守模式」使用。</li>
         <li>设为「繁忙」：双休人员被叫回加班；上六休一者的休息日（周六/周日错峰）不被覆盖。</li>
         <li>「留守模式」：每天只保留白班2人 + 夜班1人（名单轮换），其余休息，适合无任务时线上留守。</li>
+        <li><b>六休一防呆</b>：手动排班时，上六休一人员若设置后会产生第 7 个连续工作日（任意连续 7 天窗口最多 6 天上班，含跨月、请假视为休），该格会自动改为休并提示。</li>
       </ul>
     </div>
     <div class="help-sec">
@@ -577,6 +578,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.26</b> · 六休一防呆：手动排班时上六休一人员连续上班将超过 6 天（任意连续 7 天窗口最多 6 个工作日，含跨月、请假视为休）的格子自动改为休并提示，与连班防呆一致支持撤销。</div>
       <div class="log-ver"><b>v1.25</b> · 美化修复：① 加班/留守徽标加深配色（白字对比度达标）；② 图例「手动修改」改为蓝点示意；③ 统计表请假列改灰色（与排班表请假色统一）；④ 侧栏操作指引精简为 4 步（细节并入帮助）；⑤ 打印输出增加「年月排班表」标题；⑥ 清理死代码（未用变量/类/空元素）。</div>
       <div class="log-ver"><b>v1.24</b> · 验收修复：① 修复「部门筛选后导出 CSV 只含该部门」——导出始终为全部人员；② 修复「筛选视图下拖拽排序丢失其他部门行序」——行序基于全部人员；③ 操作指引补充新功能（部门筛选/复制到下月/快照/自动体检/法定假日/统计导出）；④ README 数据版本号同步 v7。</div>
       <div class="log-ver"><b>v1.23</b> · 自动功能：① 高危操作（删除人员/导入/示例覆盖）前自动保存数据快照（最近5份），工具栏「⏪ 快照」一键恢复；② 「⚡ 自动排班」后自动体检，有问题直接弹报告；③ 切到未排班月份自动引导一键排班。</div>
@@ -1426,6 +1428,31 @@ function backToBackBlock(pid, mkey, day, ch){
   if(isNightC(ch) && isDayC(nextCell(pid, mkey, day))) return 'nextDay';
   return null;
 }
+/* 六休一防呆：把 day 设为 ch 后，经过该日的最长连续上班天数（双向、含跨月；请假视为休）。
+   返回 >6 即表示会产生第 7 个连续工作日，调用方应自动改为休。 */
+function workStreakTotal(pid, mkey, day, ch){
+  const isWork = (k, dd) => { const c = cellAt(pid, k, dd); return (c!=='.' && !getLeave(pid, k, dd)); };
+  const [y,m] = mkey.split('-').map(Number);
+  const dim = daysInMonth(y,m);
+  // 前向：含 day（按新值 ch），从 day-1 往前数连续上班；回溯到月初仍连续则跨上月末
+  let s = (ch!=='.') ? 1 : 0;
+  let d = day-1;
+  for(; d>=1 && s<7; d--){ if(isWork(mkey,d)) s++; else break; }
+  if(d===0 && s<7){
+    const pk = m===1 ? ym(y-1,12) : ym(y,m-1);
+    const pd = daysInMonth(+pk.split('-')[0], +pk.split('-')[1]);
+    for(let dd=pd; dd>=1 && s<7; dd--){ if(isWork(pk,dd)) s++; else break; }
+  }
+  // 后向：从 day+1 往后数连续上班；回溯到月末仍连续则跨下月初
+  let s2 = 0;
+  let d2 = day+1;
+  for(; d2<=dim && s2<7; d2++){ if(isWork(mkey,d2)) s2++; else break; }
+  if(d2>dim && s2<7){
+    const nk = m===12 ? ym(y+1,1) : ym(y,m+1);
+    for(let dd=1; dd<=31 && s2<7; dd++){ if(isWork(nk,dd)) s2++; else break; }
+  }
+  return s + s2;
+}
 function blockToast(msg){
   const now = Date.now();
   if(now - lastBlockToast > 700){ lastBlockToast = now; toast(msg); }
@@ -1438,6 +1465,12 @@ function setManual(pid, mkey, day, ch, silent){
         ? '🔒 防呆拦截：前一天是夜班，此处只能设「休」或「夜」（0 小时间隔禁止）'
         : '🔒 防呆拦截：后一天是白班，此处不能设「夜」（0 小时间隔禁止）');
       return false;
+    }
+    // 六休一防呆：任意连续 7 天窗口最多 6 个工作日，第 7 天自动改为休
+    const p6 = state.people.find(x=>x.id===pid);
+    if(p6 && p6.restRule==='sixOne' && workStreakTotal(pid, mkey, day, ch) > 6){
+      ch = '.';
+      blockToast('🔒 六休一防呆：连续上班将超过 6 天，该格已自动改为休');
     }
   }
   const dim = daysInMonth(...mkey.split('-').map(Number));
