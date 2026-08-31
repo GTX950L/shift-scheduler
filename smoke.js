@@ -1,4 +1,4 @@
-/* shift-scheduler v1.35 冒烟测试：Playwright headless chromium
+/* shift-scheduler v1.36 冒烟测试：Playwright headless chromium
    覆盖：加载无错 / 示例数据 / 自动排班 / 排班表渲染 / 手动蓝点 / 撤销 /
         请假登记 / 复制到下月+清下月(请假对称) / 视图切换 / 更新记录 / 工具下拉 / CSV 导出
    运行：NODE_PATH=.../node_modules node smoke.js  （需已起 http.server 8002） */
@@ -111,21 +111,32 @@ const { chromium } = require('playwright');
     const colMonth = await page.evaluate(() => document.querySelectorAll('#sheet thead tr:nth-child(2) th:not(.corner)').length);
     ok('11. 视图切换为单月', colMonth >= 28 && colMonth <= 31, '本月视图 ' + colMonth + ' 列');
 
-    // 12. 更新记录含 v1.35
+    // 12. 更新记录含 v1.36
     await page.click('#helpBtn');
     await page.waitForTimeout(300);
     await page.click('#helpMenu button[data-a="log"]');
     await page.waitForTimeout(400);
-    const hasV135 = await page.evaluate(() => document.getElementById('logModal').textContent.includes('v1.35'));
+    const hasV135 = await page.evaluate(() => document.getElementById('logModal').textContent.includes('v1.36'));
     await page.click('#logClose');
-    ok('12. 更新记录含 v1.35', hasV135, '新版本条目已写入');
+    ok('12. 更新记录含 v1.36', hasV135, '新版本条目已写入');
 
-    // 13. 工具下拉（跨项目导航）
+    // 13. 工具下拉（跨项目导航，fixed 定位不被 header 裁切）
     await page.click('#toolsBtn');
     await page.waitForTimeout(300);
-    const toolsTxt = await page.evaluate(() => document.getElementById('toolsMenu').textContent);
-    const hasLinks = toolsTxt.includes('设备问题共性分析') && toolsTxt.includes('Cpk 过程能力分析') && toolsTxt.includes('GitHub 仓库');
-    ok('13. 工具下拉跨项目导航', hasLinks, '含三个入口');
+    const toolsInfo = await page.evaluate(() => {
+      const m = document.getElementById('toolsMenu');
+      const r = m.getBoundingClientRect();
+      const links = [...m.querySelectorAll('a')];
+      return {
+        txt: m.textContent,
+        visible: getComputedStyle(m).display !== 'none',
+        inViewport: r.top >= 0 && r.bottom <= window.innerHeight,
+        allLinksVisible: links.every(a => a.getBoundingClientRect().height > 0),
+      };
+    });
+    const hasLinks = toolsInfo.txt.includes('equipment-failure-commonality') && toolsInfo.txt.includes('cpk-jmp-studio')
+      && toolsInfo.txt.includes('wps-img-fixer') && toolsInfo.txt.includes('GitHub 主页');
+    ok('13. 工具下拉跨项目导航', hasLinks && toolsInfo.visible && toolsInfo.inViewport && toolsInfo.allLinksVisible, '含四个入口且完整可见');
 
     // 14. CSV 导出触发下载
     const [download] = await Promise.all([

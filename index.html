@@ -245,6 +245,15 @@
   .dd-menu button:hover{background:#f1f5f9;color:#1e4d8c;transform:none;box-shadow:none}
   .dd-menu .dd-title{font-size:10.5px;color:var(--muted);font-weight:700;padding:4px 10px 2px;letter-spacing:.3px}
   .dd-menu .dd-sep{height:1px;background:var(--border);margin:4px 6px}
+  /* 🔗 工具下拉 (header 内, fixed 定位避开 overflow:hidden 裁切) */
+  .drop{position:relative}
+  .drop-menu{position:fixed;min-width:248px;background:#fff;border:1px solid var(--border);
+       border-radius:12px;box-shadow:0 10px 32px rgba(16,32,64,.16);padding:6px;display:none;z-index:1000}
+  .drop.open .drop-menu{display:block;animation:pop .15s ease}
+  .drop-menu a{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;
+       color:#24344d;text-decoration:none;transition:background .12s}
+  .drop-menu a:hover{background:#f0f6fd}
+  .drop-menu a .d{font-size:11px;color:var(--muted);font-weight:400;margin-left:auto;white-space:nowrap}
   /* ===== 右键菜单 / 请假 / 违规 / 节假日 ===== */
   .cell-menu{position:fixed;z-index:90;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 32px rgba(16,32,64,.18);padding:6px;min-width:160px;display:none}
   .cell-menu.show{display:block;animation:pop .12s ease}
@@ -290,7 +299,7 @@
 <header>
   <div>
     <h1>🗓️ 技术员排班助手</h1>
-    <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节 · <span style="font-weight:800;color:#ffd97a">v1.35</span></p>
+    <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节 · <span style="font-weight:800;color:#ffd97a">v1.36</span></p>
   </div>
   <div class="hd-right">
     <div class="month-nav">
@@ -299,15 +308,13 @@
       <button class="sec sm" id="nextMonth" title="下一月">▶</button>
       <button class="sec sm" id="todayBtn" title="回到本月">今天</button>
     </div>
-    <div class="dd">
-      <button class="sec sm" id="toolsBtn" title="相关工具：设备问题共性分析 / Cpk 过程能力分析 / GitHub 仓库">🔗 工具 ▾</button>
-      <div class="dd-menu" id="toolsMenu" style="min-width:226px">
-        <div class="dd-title">我的其他工具</div>
-        <button data-href="https://gtx950l.github.io/equipment-failure-commonality/" title="设备问题共性分析 · 桑基图 · GitHub Pages 在线版">📊 设备问题共性分析</button>
-        <button data-href="https://gtx950l.github.io/cpk-jmp-studio/" title="Cpk/SPC 过程能力分析 · 离线单文件 HTML">⚙️ Cpk 过程能力分析</button>
-        <div class="dd-sep"></div>
-        <div class="dd-title">本项目</div>
-        <button data-href="https://github.com/GTX950L/shift-scheduler" title="排班助手 GitHub 仓库">🐙 GitHub 仓库</button>
+    <div class="drop" id="toolsDrop">
+      <button class="sec sm" id="toolsBtn" title="相关工具：设备问题共性分析 / Cpk 过程能力分析 / WPS 图片修复 / GitHub 主页">🔗 工具 ▾</button>
+      <div class="drop-menu" id="toolsMenu" style="min-width:248px">
+        <a href="https://gtx950l.github.io/equipment-failure-commonality/" target="_blank" rel="noopener" title="设备问题共性分析 · 桑基图 · GitHub Pages 在线版">📊 equipment-failure-commonality<span class="d">故障共性</span></a>
+        <a href="https://gtx950l.github.io/cpk-jmp-studio/" target="_blank" rel="noopener" title="Cpk/SPC 过程能力分析 · 离线单文件 HTML">📈 cpk-jmp-studio<span class="d">能力分析</span></a>
+        <a href="https://gtx950l.github.io/wps-img-fixer/wps_img_fixer.html" target="_blank" rel="noopener" title="WPS 单元格内嵌图片修复 · 离线单文件 HTML">🖼️ wps-img-fixer<span class="d">图片修复</span></a>
+        <a href="https://github.com/GTX950L?tab=repositories" target="_blank" rel="noopener" title="全部开源项目列表">🏠 GitHub 主页<span class="d">全部项目</span></a>
       </div>
     </div>
   </div>
@@ -599,6 +606,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.36</b> · 跨项目导航统一（2026-09-01）：① 工具下拉补 wps-img-fixer（图片修复）入口，四个项目（排班/设备共性/Cpk/WPS图片）全链闭环互跳；② 下拉菜单改 fixed 定位——修复 v1.35 引入的 header overflow:hidden 裁切问题（此前菜单被裁只剩一条，需滚动才可见）；③ 菜单项样式统一为英文名+中文副标（对齐 wps-img-fixer 风格）。</div>
       <div class="log-ver"><b>v1.35</b> · 一致性修复（2026-09-01）：① 完整备份补齐 转班模式/固定转班日/视图模式/部门筛选/示例版本（此前恢复后这些设置丢失）；② 「🧹 清下月」同步清除下月请假，与「📋 到下月」对称（可撤销）；③ 自动排班跨月连班保护不再依赖视图（本月/本月+下月视图同样生效）；④ 示例确认弹窗措辞更新为 9月范例；⑤ header 新增「🔗 工具」跨项目导航 + 版本号。</div>
       <div class="log-ver"><b>v1.34</b> · 智能导入（兼容多种排班表）：① 自动定位表头行（标题/双行表头/星期行/负责人行自动跳过）；② 日期列支持 第N天 / N / 8/1 / 2026/8/1 / 8月1日 / 8-1，跨月表自动拆分到对应月份；③ 单元格识别 休/白班/夜班/加班/班/请假 等常见写法，「班」按月份段+行内班次自动推断白/夜；④ 请假文本自动登记到请假记录；⑤ 月份班次取众数，月末转班不被最后几天误导；⑥ 导入保留工号。</div>
       <div class="log-ver"><b>v1.33</b> · 移除留守/低负荷 + P1 修复（数据版本 v8）：① 删除「💤 留守」按钮与周末「低负荷」选项（含格子留守标记/统计/导出留守列/画笔6号/Alt快捷键），旧数据中的留守格自动转普通班次；② 「📋 到下月」现在连同请假记录一起搬移（可撤销）；③ 双击列头「复制前一天」改用实际排班（保留手工修改/请假），不再丢改动。</div>
@@ -2619,12 +2627,20 @@ function importJSONData(data){
 let fileAct = null; // 待执行的导入动作
 $('#importBtn').onclick = ()=> $('#importMenu').parentElement.classList.toggle('open');
 $('#exportBtn').onclick = ()=> $('#exportMenu').parentElement.classList.toggle('open');
-/* 🔗 工具下拉：跨项目导航（新窗口打开，互不干扰当前排班数据） */
-$('#toolsBtn').onclick = ()=> $('#toolsMenu').parentElement.classList.toggle('open');
-$$('#toolsMenu button').forEach(b=>b.onclick = ()=>{
-  if(b.dataset.href) window.open(b.dataset.href, '_blank', 'noopener');
-  b.closest('.dd').classList.remove('open');
-});
+/* 🔗 工具下拉：跨项目导航 (fixed 定位, 避开 header overflow:hidden 裁切) */
+$('#toolsBtn').onclick = e=>{
+  e.stopPropagation();
+  const drop=$('#toolsDrop'), menu=$('#toolsMenu');
+  const willOpen=!drop.classList.contains('open');
+  drop.classList.toggle('open');
+  if(willOpen){
+    const r=$('#toolsBtn').getBoundingClientRect();
+    menu.style.top=(r.bottom+9)+'px';
+    menu.style.right=(window.innerWidth-r.right)+'px';
+  }
+};
+document.addEventListener('click', ()=>$('#toolsDrop').classList.remove('open'));
+window.addEventListener('resize', ()=>$('#toolsDrop').classList.remove('open'));
 document.addEventListener('click', e=>{
   if(!e.target.closest('.dd')) $$('.dd').forEach(d=>d.classList.remove('open'));
 });

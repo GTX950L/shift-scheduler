@@ -1,6 +1,6 @@
 {
   "name": "shift-scheduler",
-  "version": "1.35.0",
+  "version": "1.36.0",
   "description": "技术员排班助手：除气/转码两部门两班倒月度排班，月轮转、连班保护、周末加班、请假登记、排班体检、CSV 导出。纯单文件 HTML，离线可用。",
   "private": true,
   "scripts": {
