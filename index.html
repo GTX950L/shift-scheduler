@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="技术员排班助手：除气/转码两部门两班倒月度排班，月轮转、连班保护、周末加班、请假登记、排班体检、CSV 导出，纯单文件 HTML 离线可用">
 <title>技术员排班助手</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗓️</text></svg>">
 <style>
@@ -289,7 +290,7 @@
 <header>
   <div>
     <h1>🗓️ 技术员排班助手</h1>
-    <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
+    <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节 · <span style="font-weight:800;color:#ffd97a">v1.35</span></p>
   </div>
   <div class="hd-right">
     <div class="month-nav">
@@ -297,6 +298,17 @@
       <span class="m-label" id="monthLabel" title="点击选择月份"></span>
       <button class="sec sm" id="nextMonth" title="下一月">▶</button>
       <button class="sec sm" id="todayBtn" title="回到本月">今天</button>
+    </div>
+    <div class="dd">
+      <button class="sec sm" id="toolsBtn" title="相关工具：设备问题共性分析 / Cpk 过程能力分析 / GitHub 仓库">🔗 工具 ▾</button>
+      <div class="dd-menu" id="toolsMenu" style="min-width:226px">
+        <div class="dd-title">我的其他工具</div>
+        <button data-href="https://gtx950l.github.io/equipment-failure-commonality/" title="设备问题共性分析 · 桑基图 · GitHub Pages 在线版">📊 设备问题共性分析</button>
+        <button data-href="https://gtx950l.github.io/cpk-jmp-studio/" title="Cpk/SPC 过程能力分析 · 离线单文件 HTML">⚙️ Cpk 过程能力分析</button>
+        <div class="dd-sep"></div>
+        <div class="dd-title">本项目</div>
+        <button data-href="https://github.com/GTX950L/shift-scheduler" title="排班助手 GitHub 仓库">🐙 GitHub 仓库</button>
+      </div>
     </div>
   </div>
 </header>
@@ -587,6 +599,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.35</b> · 一致性修复（2026-09-01）：① 完整备份补齐 转班模式/固定转班日/视图模式/部门筛选/示例版本（此前恢复后这些设置丢失）；② 「🧹 清下月」同步清除下月请假，与「📋 到下月」对称（可撤销）；③ 自动排班跨月连班保护不再依赖视图（本月/本月+下月视图同样生效）；④ 示例确认弹窗措辞更新为 9月范例；⑤ header 新增「🔗 工具」跨项目导航 + 版本号。</div>
       <div class="log-ver"><b>v1.34</b> · 智能导入（兼容多种排班表）：① 自动定位表头行（标题/双行表头/星期行/负责人行自动跳过）；② 日期列支持 第N天 / N / 8/1 / 2026/8/1 / 8月1日 / 8-1，跨月表自动拆分到对应月份；③ 单元格识别 休/白班/夜班/加班/班/请假 等常见写法，「班」按月份段+行内班次自动推断白/夜；④ 请假文本自动登记到请假记录；⑤ 月份班次取众数，月末转班不被最后几天误导；⑥ 导入保留工号。</div>
       <div class="log-ver"><b>v1.33</b> · 移除留守/低负荷 + P1 修复（数据版本 v8）：① 删除「💤 留守」按钮与周末「低负荷」选项（含格子留守标记/统计/导出留守列/画笔6号/Alt快捷键），旧数据中的留守格自动转普通班次；② 「📋 到下月」现在连同请假记录一起搬移（可撤销）；③ 双击列头「复制前一天」改用实际排班（保留手工修改/请假），不再丢改动。</div>
       <div class="log-ver"><b>v1.32</b> · 工具栏布局优化：分组由 7 组精简为 5 组（画笔/负荷 → 视图/转班/部门 → 排班操作 → 撤销检查 → 导出打印帮助）；按钮文字精简（复制到下月→到下月、本月转班→转班、留守模式→留守）；「❓ 帮助」「📜 更新记录」合并为「📖 帮助 ▾」下拉。</div>
@@ -849,8 +862,9 @@ function rotateStartDay(y, m, dim){
   for(let d=dim; d>=1; d--){ if(dowOf(y,m,d)===6) return d; }
   return 1;
 }
-/* 生成某月自动排班（不覆盖 manual） */
-function genMonth(y, m){
+/* 生成某月自动排班（不覆盖 manual）
+   noCross=true 时跳过跨月连班保护（仅内部重算上月时使用，防止递归） */
+function genMonth(y, m, noCross){
   const key = ym(y,m), dim = daysInMonth(y,m);
   const people = state.people.slice();
   // 每人当月班次（含轮转继承）
@@ -884,7 +898,13 @@ function genMonth(y, m){
   //      白班 → 夜班（16 小时间隔）则允许，不处理。置于周末繁忙之后，繁忙叫回的加班也受保护。
   {
     const pk = prevKey(key);
-    const pg = (CUR.grids && CUR.grids[pk]) || (CUR.autoGrids && CUR.autoGrids[pk]) || null;
+    let pg = (CUR.grids && CUR.grids[pk]) || (CUR.autoGrids && CUR.autoGrids[pk]) || null;
+    if(!pg && !noCross){
+      // 上月不在当前视图缓存（本月 / 本月+下月视图）：独立重算上月合并排班后再检查。
+      // 重算时传 noCross=true —— 上月自身不再回退更早月份，避免无限递归。
+      const [py2, pm2] = pk.split('-').map(Number);
+      pg = mergeManualInto(genMonth(py2, pm2, true), pk);
+    }
     if(pg){
       const pdim = daysInMonth(+pk.split('-')[0], +pk.split('-')[1]);
       for(const p of people){
@@ -1473,6 +1493,7 @@ function undo(){
     if(op.t==='cell') setManual(op.pid, op.mkey, op.day, op.before, true);
     else if(op.t==='leave') setLeave(op.pid, op.mkey, op.day, op.before);
     else if(op.t==='clearMan'){ state.manual[op.key] = JSON.parse(op.before); }
+    else if(op.t==='clearLeave'){ state.leave[op.key] = JSON.parse(op.before); }
     else if(op.t==='shift'){ state.monthShift[op.key][op.pid] = op.before; }
     else if(op.t==='copyRow'){ state.manual[op.mkey] = state.manual[op.mkey]||{}; state.manual[op.mkey][op.pid] = op.before; }
     else if(op.t==='copyMonth'){ state.manual[op.nk] = JSON.parse(op.before); }
@@ -1488,6 +1509,7 @@ function redo(){
     if(op.t==='cell') setManual(op.pid, op.mkey, op.day, op.after, true);
     else if(op.t==='leave') setLeave(op.pid, op.mkey, op.day, op.after);
     else if(op.t==='clearMan'){ delete state.manual[op.key]; }
+    else if(op.t==='clearLeave'){ delete state.leave[op.key]; }
     else if(op.t==='shift'){ state.monthShift[op.key][op.pid] = op.after; }
     else if(op.t==='copyRow'){ state.manual[op.mkey] = state.manual[op.mkey]||{}; state.manual[op.mkey][op.pid] = op.after; }
     else if(op.t==='copyMonth'){ state.manual[op.nk] = JSON.parse(op.after); }
@@ -1607,7 +1629,7 @@ $('#cellMenu').addEventListener('click', e=>{
   $('#cellMenu').classList.remove('show');
   updateCellDOM(cmCell); renderSheet(); renderStats();
 });
-/* 键盘快捷键：1-6 切换画笔，←→ / PageUp/Down 切换月份 */
+/* 键盘快捷键：1-5 切换画笔（循环/白/夜/休/加班），←→ / PageUp/Down 切换月份 */
 document.addEventListener('keydown', e=>{
   const tag = (e.target.tagName||'').toLowerCase();
   if(tag==='input'||tag==='select'||tag==='textarea'||e.target.isContentEditable) return;
@@ -1820,19 +1842,23 @@ function copyMonthToNext(){
   toast('📋 已把 ' + CUR.y + '年' + CUR.m + '月 手工排班复制到 ' + nk.replace('-','年') + '月（' + Object.keys(copied).length + ' 人' + (Object.keys(copiedLeave).length ? '，含 ' + Object.keys(copiedLeave).length + ' 人请假' : '') + '）');
 }
 $('#copyMonthBtn').onclick = copyMonthToNext;
-/* 一键清除下月：删除下月手工排班锁定，恢复未排班状态（入历史，可 Ctrl+Z 撤销） */
+/* 一键清除下月：删除下月手工排班锁定与请假，恢复未排班状态（入历史，可 Ctrl+Z 撤销）
+   与「📋 到下月」对称——后者连请假一起搬移，前者应一并清掉 */
 $('#clearNextBtn').onclick = ()=>{
   const nk = CUR.m===12 ? ym(CUR.y+1,1) : ym(CUR.y,CUR.m+1);
   const man = state.manual[nk];
   const has = man && Object.values(man).some(s=>s && /[^_]/.test(s));
-  if(!has){ toast('下月（' + nk.replace('-','年') + '月）没有排班可清除'); return; }
-  if(!confirm('确定清除下月（' + nk.replace('-','年') + '月）的所有手工排班？\n下月将恢复未排班状态，可重新「⚡ 自动排班」。此操作可 Ctrl+Z 撤销。')) return;
+  const leaveHas = Object.keys(state.leave[nk]||{}).length > 0;
+  if(!has && !leaveHas){ toast('下月（' + nk.replace('-','年') + '月）没有排班或请假可清除'); return; }
+  if(!confirm('确定清除下月（' + nk.replace('-','年') + '月）的所有手工排班与请假？\n下月将恢复未排班状态，可重新「⚡ 自动排班」。此操作可 Ctrl+Z 撤销。')) return;
   histBegin();
-  histPush({t:'clearMan', key:nk, before:JSON.stringify(state.manual[nk])});
+  histPush({t:'clearMan', key:nk, before:JSON.stringify(state.manual[nk]||{})});
+  histPush({t:'clearLeave', key:nk, before:JSON.stringify(state.leave[nk]||{})});
   delete state.manual[nk];
+  delete state.leave[nk];
   histCommit('清除下月排班');
   saveState(); renderAll();
-  toast('🧹 已清除下月（' + nk.replace('-','年') + '月）排班，可重新自动排班');
+  toast('🧹 已清除下月（' + nk.replace('-','年') + '月）排班与请假，可重新自动排班');
 };
 /* 周模板复制（日历周版）：把视图内第 w 周（周一~周日）复制到后续所有完整周。
    模板必须是完整 7 天周（周一~周日全在视图内）；跨月周可作模板，复制目标跨月连续；
@@ -2158,7 +2184,8 @@ function computeChecks(){
 function runChecks(){
   const issues = computeChecks();
   $('#checkMonth').textContent = CUR.y + '年' + CUR.m + '月';
-  $('#checkFix').disabled = !issues.length; // 无违规时禁用「自动修复连班」
+  // 仅存在违规级问题（连班/无人上班）时启用「自动修复连班」；纯提醒（warn）无需修复
+  $('#checkFix').disabled = !issues.some(i=>i.lvl==='err');
   const box = $('#checkList');
   if(!issues.length){ box.innerHTML = '<div class="p-empty"><div class="big" style="color:#1a7f37">✅ 体检通过</div>未发现连班、连续上班超限或班次空缺问题</div>'; }
   else {
@@ -2246,6 +2273,8 @@ function exportJSON(){
   const data = { app:'shift-scheduler', version:1, savedAt:new Date().toISOString(),
     state:{ people:state.people, monthShift:state.monthShift, manual:state.manual, leave:state.leave, holidays:state.holidays, rowOrder:state.rowOrder,
       satLoad:state.satLoad, sunLoad:state.sunLoad,
+      rotateMode:state.rotateMode, rotateDay:state.rotateDay,
+      viewMode:state.viewMode, deptFilter:state.deptFilter, sampleVer:state.sampleVer,
       curYear:state.curYear, curMonth:state.curMonth } };
   downloadBlob(JSON.stringify(data,null,2), 'application/json', '排班备份_' + CUR.key + '.json');
   toast('💾 已导出完整备份 JSON（含所有月份数据）');
@@ -2575,6 +2604,12 @@ function importJSONData(data){
   state.holidays = s.holidays || {};
   state.rowOrder = Array.isArray(s.rowOrder) ? s.rowOrder : [];
   state.satLoad = s.satLoad || 'normal'; state.sunLoad = s.sunLoad || 'normal';
+  // 恢复视图/转班/示例等设置（旧备份无这些字段时用默认值，不报错）
+  state.rotateMode = s.rotateMode || 'lastWeekend';
+  state.rotateDay = (state.rotateMode==='fixed' && s.rotateDay) ? s.rotateDay : 1;
+  state.viewMode = s.viewMode || 'cn';
+  state.deptFilter = s.deptFilter || 'all';
+  state.sampleVer = s.sampleVer || 0;
   state.curYear = s.curYear || today().y; state.curMonth = s.curMonth || today().m;
   migrateV8(state); // 旧备份可能含 x/y 留守字符或 low 负荷，恢复时统一迁移
   histReset(); saveState(); renderAll();
@@ -2584,6 +2619,12 @@ function importJSONData(data){
 let fileAct = null; // 待执行的导入动作
 $('#importBtn').onclick = ()=> $('#importMenu').parentElement.classList.toggle('open');
 $('#exportBtn').onclick = ()=> $('#exportMenu').parentElement.classList.toggle('open');
+/* 🔗 工具下拉：跨项目导航（新窗口打开，互不干扰当前排班数据） */
+$('#toolsBtn').onclick = ()=> $('#toolsMenu').parentElement.classList.toggle('open');
+$$('#toolsMenu button').forEach(b=>b.onclick = ()=>{
+  if(b.dataset.href) window.open(b.dataset.href, '_blank', 'noopener');
+  b.closest('.dd').classList.remove('open');
+});
 document.addEventListener('click', e=>{
   if(!e.target.closest('.dd')) $$('.dd').forEach(d=>d.classList.remove('open'));
 });
@@ -2740,11 +2781,11 @@ function lockBase(pid, key, d){
 }
 
 $('#wSample').onclick = ()=>{
-  if(state.people.length && !confirm('⚠️ 用 MTW10/MTW30 示例数据覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
+  if(state.people.length && !confirm('⚠️ 用 9月排班范例（《複本 62.68.77除气转码9月排班表》·20人·9月锁定）覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
   loadSample();
 };
 $('#wSampleSmall').onclick = ()=>{
-  if(state.people.length && !confirm('⚠️ 用 MTW10/MTW30 示例数据覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
+  if(state.people.length && !confirm('⚠️ 用 9月排班范例（《複本 62.68.77除气转码9月排班表》·20人·9月锁定）覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
   loadSample();
 };
 $('#wStart').onclick = ()=>{
