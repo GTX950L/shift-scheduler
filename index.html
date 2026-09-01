@@ -312,9 +312,13 @@
   .dd-menu .dd-sep{height:1px;background:var(--border);margin:4px 6px}
   /* 🔗 工具下拉 (header 内, fixed 定位避开 overflow:hidden 裁切) */
   .drop{position:relative}
+  /* 展开时提升 .drop 自身层级(>toolbar z-index:50)，否则子菜单 z-index:1000 被 header>* z-index:1 的层叠上下文限制，
+     会被下方 sticky 工具栏盖住下半部分 */
+  .drop.open{position:relative;z-index:70}
   .drop-menu{position:fixed;min-width:248px;background:var(--dd-bg);border:1px solid var(--border);
        border-radius:12px;box-shadow:var(--shadow-lg);padding:6px;display:none;z-index:1000}
   .drop.open .drop-menu{display:block;animation:pop .15s ease}
+  .drop-menu.is-open{display:block;animation:pop .15s ease}
   .drop-menu a{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;
        color:var(--heading);text-decoration:none;transition:background .12s}
   .drop-menu a:hover{background:var(--hover-bg)}
@@ -363,7 +367,7 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.37</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.38</span></h1>
     <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
   </div>
   <div class="hd-right">
@@ -672,6 +676,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.38</b> · 联动修复（2026-09-01）：修复「🔗 工具 ▾」下拉菜单被下方 sticky 工具栏(z-index:50)遮挡——fixed 定位虽避开 header overflow:hidden 裁切，但仍受 header>*{z-index:1} 形成的祖先层叠上下文限制，整体层级 z:1 < toolbar z:50。改为打开时把 #toolsMenu 移至 document.body 顶层跳出祖先 SC，z-index:1000 直接生效；同步补视口边界保护(菜单高度超出底部时向上弹出，避免滚动/窄屏截断)。四个联动项目统一修复（cpk-jmp-studio / equipment-failure-commonality / wps-img-fixer 同步应用同一方案，消除未来回归隐患）。</div>
       <div class="log-ver"><b>v1.37</b> · 风格升级（2026-09-01）：① 新增深色模式——header「🌙 深色」按钮手动切换，localStorage 记忆 + 跟随系统偏好；排班表/统计/弹窗/下拉/引导全量适配深色配色；② CSS 变量令牌化——散落的硬编码颜色/阴影/渐变收敛为 :root 设计令牌，深色模式整体降饱和、文字提亮；③ 字体栈补 PingFang SC/Noto Sans SC，加 meta theme-color 移动端主题色；④ 按钮/输入框补 focus-visible 焦点样式。</div>
       <div class="log-ver"><b>v1.36</b> · 跨项目导航统一（2026-09-01）：① 工具下拉补 wps-img-fixer（图片修复）入口，四个项目（排班/设备共性/Cpk/WPS图片）全链闭环互跳；② 下拉菜单改 fixed 定位——修复 v1.35 引入的 header overflow:hidden 裁切问题（此前菜单被裁只剩一条，需滚动才可见）；③ 菜单项样式统一为英文名+中文副标（对齐 wps-img-fixer 风格）。</div>
       <div class="log-ver"><b>v1.35</b> · 一致性修复（2026-09-01）：① 完整备份补齐 转班模式/固定转班日/视图模式/部门筛选/示例版本（此前恢复后这些设置丢失）；② 「🧹 清下月」同步清除下月请假，与「📋 到下月」对称（可撤销）；③ 自动排班跨月连班保护不再依赖视图（本月/本月+下月视图同样生效）；④ 示例确认弹窗措辞更新为 9月范例；⑤ header 新增「🔗 工具」跨项目导航 + 版本号。</div>
@@ -2694,20 +2699,28 @@ function importJSONData(data){
 let fileAct = null; // 待执行的导入动作
 $('#importBtn').onclick = ()=> $('#importMenu').parentElement.classList.toggle('open');
 $('#exportBtn').onclick = ()=> $('#exportMenu').parentElement.classList.toggle('open');
-/* 🔗 工具下拉：跨项目导航 (fixed 定位, 避开 header overflow:hidden 裁切) */
+/* 🔗 工具下拉：跨项目导航 (打开时将 menu 移到 body 跳出 header stacking context 限制) */
+const toolsDrop=$('#toolsDrop'), toolsMenu=$('#toolsMenu');
+function closeToolsMenu(){ toolsDrop.classList.remove('open'); toolsMenu.classList.remove('is-open'); }
 $('#toolsBtn').onclick = e=>{
   e.stopPropagation();
-  const drop=$('#toolsDrop'), menu=$('#toolsMenu');
-  const willOpen=!drop.classList.contains('open');
-  drop.classList.toggle('open');
+  const willOpen=!toolsDrop.classList.contains('open');
+  toolsDrop.classList.toggle('open');
   if(willOpen){
+    /* 移到 body 顶层，避开 .hd-right(被 header>*{z-index:1} 限制)导致的菜单被下方 sticky 工具栏遮挡 */
+    if(toolsMenu.parentElement!==document.body) document.body.appendChild(toolsMenu);
+    toolsMenu.classList.add('is-open');
     const r=$('#toolsBtn').getBoundingClientRect();
-    menu.style.top=(r.bottom+9)+'px';
-    menu.style.right=(window.innerWidth-r.right)+'px';
+    const mh=toolsMenu.offsetHeight; // 菜单已显示，可测量高度
+    let top=r.bottom+9;
+    // 视口底部空间不足时向上弹出，避免菜单被截断/超出屏幕
+    if(top+mh>window.innerHeight-8) top=Math.max(8, r.top-mh-9);
+    toolsMenu.style.top=top+'px';
+    toolsMenu.style.right=(window.innerWidth-r.right)+'px';
   }
 };
-document.addEventListener('click', ()=>$('#toolsDrop').classList.remove('open'));
-window.addEventListener('resize', ()=>$('#toolsDrop').classList.remove('open'));
+document.addEventListener('click', closeToolsMenu);
+window.addEventListener('resize', closeToolsMenu);
 document.addEventListener('click', e=>{
   if(!e.target.closest('.dd')) $$('.dd').forEach(d=>d.classList.remove('open'));
 });
