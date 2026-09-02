@@ -367,7 +367,7 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.39</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.40</span></h1>
     <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
   </div>
   <div class="hd-right">
@@ -438,7 +438,16 @@
     <button id="genBtn" title="按人员规则 + 周末负荷 + 转班日自动生成本月排班（保留手工修改）">⚡ 自动排班</button>
     <button id="copyMonthBtn" class="sec" title="把本月手工修改（含请假/调班）整体复制到下月，轮转班次自动生成">📋 到下月</button>
     <button id="clearNextBtn" class="sec" title="一键清除下月（中心月+1）的所有手工排班，恢复未排班状态（可 Ctrl+Z 撤销）">🧹 清下月</button>
-    <button id="rotateBtn" class="sec" title="把本月所有“月轮转”人员的班次强制取反（手动控制转班时机）">🔁 转班</button>
+    <div class="dd">
+      <button id="rotateBtn" class="sec" title="转班：月轮转全员强制转班，或指定任意人员（含固定班）从某日起转班">🔁 转班 ▾</button>
+      <div class="dd-menu" id="rotateMenu">
+        <div class="dd-title">全员转班（作用于月轮转人员）</div>
+        <button data-a="all" title="把本月所有“月轮转”人员的班次强制取反（手动控制转班时机，可撤销）">🔁 月轮转全员转班</button>
+        <div class="dd-sep"></div>
+        <div class="dd-title">人员级指定转班（仅当月生效）</div>
+        <button data-a="person" title="固定班 / 月轮转人员均可：设定某人从本月某日起白/夜互换，自动套休息日与连班防呆">📌 指定人员从某日转班…</button>
+      </div>
+    </div>
     <button id="clearManBtn" class="sec" title="清除本月所有手工修改，恢复自动排班结果">🧹 清手动</button>
   </div>
   <div class="sep"></div>
@@ -641,7 +650,7 @@
         <li>也可在工具栏改为「固定日期」并设 1~31 号（如 20 = 每月 20 日起换班）。</li>
         <li><b>连班保护（全员·防呆）</b>：任何人「夜班 → 次日白班」都是 0 小时间隔连班，自动排班会<b>自动在转班点插入一天休息</b>；「白班 → 次日夜班」（16 小时间隔）允许，不处理。周末繁忙叫回的加班同样受此保护。</li>
         <li><b>手动防呆</b>：手工点击 / 拖拽 / 复制时，若会产生「夜班→次日白班」连班会被<b>拦截</b>——夜班后一天只能设「休」或「夜」；循环画笔会自动跳过违规班次。</li>
-        <li>固定班次者不受「🔁 转班」影响（该按钮只作用于「月轮转」人员）；固定班人员某月需临时换班时，可将该人员规则改为「月轮转」再转班，或直接点格子调整该月班次。</li>
+        <li>「🔁 转班 ▾」两种方式：① 月轮转全员转班（作用于「月轮转」人员，整月强制取反）；② 📌 人员指定转班日——<b>任意人员（含固定班）</b>设定「从本月某日起换班」，仅当月生效，休息日与连班防呆自动套用；「月轮转」人员将以指定日替代「月末周末」自动转班，固定班人员不必再逐格手刷。</li>
       </ul>
     </div>
     <div class="help-sec">
@@ -676,6 +685,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.40</b> · 人员级指定转班日（2026-09-02）：「🔁 转班 ▾」新增 📌 指定人员从某日转班——任意人员（含<b>固定班</b>）可设定本月从第 N 日起白/夜互换直至月末，休息日与连班防呆自动套用（自动排班不再逐格手刷）；「月轮转」人员以指定日替代「月末周末」自动转班；仅当月生效，下月按人员规则回落；设定/取消可 Ctrl+Z 撤销，含完整备份/恢复。固定班人员月中破例（如周洪发 9/7 转夜）一键完成。</div>
       <div class="log-ver"><b>v1.39</b> · 示例模板修正（2026-09-02）：① 周洪发 9/7（周一）由白班转夜班，9/7~9/30 排夜班（周日休不变，9/6 休缓冲衔接），人员属性由「固定白班」改为「固定夜班」（徽标/统计/CSV 规则列一致）；② 恢复 8 月真实排班锁定表——修复 v1.35 跨月体检增强后暴露的 9 处「8/31 夜班 → 9/1 白班」跨月连班违规（此前 8 月末由自动规则提前 2 天转班所致），8/31 班次与 9/1 无缝衔接；③ 示例版本升至 19，旧范例用户打开页面自动升级。</div>
       <div class="log-ver"><b>v1.38</b> · 联动修复（2026-09-01）：修复「🔗 工具 ▾」下拉菜单被下方 sticky 工具栏(z-index:50)遮挡——fixed 定位虽避开 header overflow:hidden 裁切，但仍受 header>*{z-index:1} 形成的祖先层叠上下文限制，整体层级 z:1 < toolbar z:50。改为打开时把 #toolsMenu 移至 document.body 顶层跳出祖先 SC，z-index:1000 直接生效；同步补视口边界保护(菜单高度超出底部时向上弹出，避免滚动/窄屏截断)。四个联动项目统一修复（cpk-jmp-studio / equipment-failure-commonality / wps-img-fixer 同步应用同一方案，消除未来回归隐患）。</div>
       <div class="log-ver"><b>v1.37</b> · 风格升级（2026-09-01）：① 新增深色模式——header「🌙 深色」按钮手动切换，localStorage 记忆 + 跟随系统偏好；排班表/统计/弹窗/下拉/引导全量适配深色配色；② CSS 变量令牌化——散落的硬编码颜色/阴影/渐变收敛为 :root 设计令牌，深色模式整体降饱和、文字提亮；③ 字体栈补 PingFang SC/Noto Sans SC，加 meta theme-color 移动端主题色；④ 按钮/输入框补 focus-visible 焦点样式。</div>
@@ -733,6 +743,20 @@
       <button id="holAdd" class="sm" style="flex:0 0 auto">＋ 添加</button>
     </div>
     <div class="modal-ops"><button id="holClose">完成</button></div>
+  </div>
+</div>
+
+<div class="modal-mask" id="spRotModal">
+  <div class="modal" style="max-width:560px">
+    <h3>📌 人员指定转班日（<span id="spRotMonth"></span>）</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">指定后，该人员<b>从所选日期起白/夜互换直至月末</b>（休息日与连班防呆自动生效）。仅对当前月生效；<b>固定班</b>人员也可转班，「月轮转」人员将以指定日<b>替代</b>「月末周末」自动转班。下月如需延续，请在人员编辑中改班次规则。</div>
+    <div class="f-row" style="align-items:center;gap:8px;margin-bottom:8px">
+      <select id="spRotPerson" title="选择要转班的人员" style="flex:1"></select>
+      <select id="spRotDay" title="从本月第几天起换班；选「不指定」则取消该人员本月转班" style="flex:0 0 178px"></select>
+      <button id="spRotAdd" class="sm" title="为所选人员设定 / 更新转班日（可 Ctrl+Z 撤销）">✓ 设定</button>
+    </div>
+    <div id="spRotList" style="max-height:250px;overflow:auto"></div>
+    <div class="modal-ops"><button id="spRotClose">完成</button></div>
   </div>
 </div>
 
@@ -812,6 +836,7 @@ const defaultState = () => ({
   v: 8,                 // 数据版本（v8: 移除留守/低负荷功能，x/y 转普通班次）
   people: [],            // {id,name,workId,dept,shiftRule:'fixed-day'|'fixed-night'|'rotate',initialShift:'day'|'night',restRule:'none'|'sixOne'|'weekend',restOffset,note}
   monthShift: {},        // {'2026-08': {pid:'day'|'night'}} 各月实际班次
+  spRot: {},             // {'2026-08': {pid: 7}} 人员级指定转班日（仅当月：该人从第 N 日起白/夜互换；rotate 人员以指定日替代月末周末）
   manual: {},            // {'2026-08': {pid:'...'}} 手动覆盖字符串(_=未设置 .=休 d/n=班 D/N=加班)
   leave: {},             // {'2026-08': {pid: {'3':'事假'}}} 请假登记（日期->原因）
   holidays: {},          // {'2026-08': {'1':'国庆节'}} 节假日/停线日
@@ -953,14 +978,18 @@ function genMonth(y, m, noCross){
   // 1) 基线：按班次 + 休息规则（轮转人员从转班日起班次互换）
   const grid = {}; // pid -> arr[day]，单元使用单字符：.=休 d=白 n=夜 D=白加 N=夜加 x=白留 y=夜留
   const rstart = rotateStartDay(y, m, dim);
+  const spRot = state.spRot || {};
   for(const p of people){
     const sh = state.monthShift[key][p.id];
     const base = sh==='night' ? 'n' : 'd';
     const rot = p.shiftRule==='rotate';
+    // 转班起始日优先级：人员指定转班日（spRot，仅当月）> 月轮转默认月末周末 > 固定班不转
+    const spd = (spRot[key] && spRot[key][p.id]) || 0;
+    const fday = spd ? Math.min(spd, dim+1) : (rot ? rstart : dim+1);
     grid[p.id] = [];
     for(let d=1; d<=dim; d++){
       if(isRuleRest(p,y,m,d)){ grid[p.id][d-1] = '.'; continue; }
-      grid[p.id][d-1] = (rot && d>=rstart) ? (base==='n'?'d':'n') : base;
+      grid[p.id][d-1] = (d>=fday) ? (base==='n'?'d':'n') : base;
     }
   }
   // 2) 周末负荷：繁忙=双休休息者叫回加班（上六休一者的休息日周六/周日错峰不被覆盖，保证每周休1天）
@@ -1576,6 +1605,7 @@ function undo(){
     else if(op.t==='clearMan'){ state.manual[op.key] = JSON.parse(op.before); }
     else if(op.t==='clearLeave'){ state.leave[op.key] = JSON.parse(op.before); }
     else if(op.t==='shift'){ state.monthShift[op.key][op.pid] = op.before; }
+    else if(op.t==='spRot'){ applySpRot(op.pid, op.key, op.before); }
     else if(op.t==='copyRow'){ state.manual[op.mkey] = state.manual[op.mkey]||{}; state.manual[op.mkey][op.pid] = op.before; }
     else if(op.t==='copyMonth'){ state.manual[op.nk] = JSON.parse(op.before); }
     else if(op.t==='copyMonthLeave'){ state.leave[op.nk] = JSON.parse(op.before); }
@@ -1592,6 +1622,7 @@ function redo(){
     else if(op.t==='clearMan'){ delete state.manual[op.key]; }
     else if(op.t==='clearLeave'){ delete state.leave[op.key]; }
     else if(op.t==='shift'){ state.monthShift[op.key][op.pid] = op.after; }
+    else if(op.t==='spRot'){ applySpRot(op.pid, op.key, op.after); }
     else if(op.t==='copyRow'){ state.manual[op.mkey] = state.manual[op.mkey]||{}; state.manual[op.mkey][op.pid] = op.after; }
     else if(op.t==='copyMonth'){ state.manual[op.nk] = JSON.parse(op.after); }
     else if(op.t==='copyMonthLeave'){ state.leave[op.nk] = JSON.parse(op.after); }
@@ -2003,7 +2034,8 @@ function copyWeekTemplate(w){
   saveState(); renderAll();
   toast('📋 已把第 ' + w + ' 周复制到后续 ' + tgts.length + ' 个完整周（' + cells + ' 格' + (skip ? '，' + skip + ' 人因模板含违规跳过' : '') + '，可 Ctrl+Z 撤销）');
 }
-$('#rotateBtn').onclick = ()=>{
+$('#rotateBtn').onclick = ()=> $('#rotateMenu').parentElement.classList.toggle('open');
+function doRotateAll(){
   const key = CUR.key;
   const rotPeople = state.people.filter(p=>p.shiftRule==='rotate');
   if(!rotPeople.length){ toast('本月没有「月轮转」人员，无需转班'); return; }
@@ -2019,7 +2051,100 @@ $('#rotateBtn').onclick = ()=>{
   histCommit('本月强制转班');
   saveState(); renderAll();
   toast('🔁 本月已强制转班（' + n + '人）');
+}
+$$('#rotateMenu button').forEach(b=>b.onclick = ()=>{
+  if(b.dataset.a==='all') doRotateAll();
+  else if(b.dataset.a==='person') openSpRotModal();
+});
+/* ---------- 📌 人员级指定转班日（仅当月：从第 N 日起白/夜互换） ---------- */
+function applySpRot(pid, key, day){ // day=null/0 清除
+  state.spRot = state.spRot || {}; state.spRot[key] = state.spRot[key] || {};
+  if(day==null || day===0) delete state.spRot[key][pid];
+  else state.spRot[key][pid] = day;
+}
+function pushSpRotOp(pid, key, day){
+  const before = (state.spRot && state.spRot[key] && state.spRot[key][pid]) || null;
+  applySpRot(pid, key, day);
+  histPush({t:'spRot', key, pid, before, after:(day==null||day===0) ? null : day});
+}
+/* 该月该人若全月被手动锁定 → 指定转班日对锁定格不生效（提示但允许设定，未锁定格仍生效） */
+function spRotLockedWarn(pid){
+  const m = state.manual[CUR.key] && state.manual[CUR.key][pid];
+  if(!m || !/[^_]/.test(String(m))) return false;
+  toast('⚠️ ' + CUR.key.replace('-','年') + '月该人员已有手动锁定排班，转班日不覆盖锁定格（如需规则生成请先「🧹 清手动」）');
+  return true;
+}
+function spRotFlipText(pid, day){
+  const base = ensureMonthShift(pid, CUR.key);
+  return (base==='night' ? '夜班→白班' : '白班→夜班');
+}
+function renderSpRotList(){
+  const box = $('#spRotList'); const key = CUR.key;
+  const list = (state.spRot && state.spRot[key]) || {};
+  const ids = Object.keys(list).filter(pid=>state.people.some(p=>p.id===pid));
+  if(!ids.length){
+    box.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 2px">本月暂无人员指定转班日。周洪发式「月中某日转班」可在此一键设定（固定班也支持）。</div>';
+    return;
+  }
+  box.innerHTML = '';
+  for(const pid of ids){
+    const p = state.people.find(x=>x.id===pid); if(!p) continue;
+    const day = list[pid];
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:9px;margin-bottom:5px;background:var(--panel)';
+    row.innerHTML = '<b>' + esc(p.name) + '</b><span style="font-size:11px;color:var(--muted)">' + esc(p.dept) + ' · ' + (SHIFT_TXT[p.shiftRule]||'') + '</span>'
+      + '<span style="flex:1;font-size:12px">第 <b>' + day + '</b> 日起：' + spRotFlipText(pid, day) + '（至月末）</span>'
+      + '<button class="sm sec" data-clear="' + pid + '" title="取消该人员本月转班（可 Ctrl+Z 撤销）">✕ 取消</button>';
+    box.appendChild(row);
+  }
+  box.querySelectorAll('button[data-clear]').forEach(b=>b.onclick = ()=>{
+    const pid = b.dataset.clear;
+    histBegin(); pushSpRotOp(pid, CUR.key, null);
+    histCommit('取消转班：' + (state.people.find(x=>x.id===pid)||{}).name);
+    saveState(); renderAll(); renderSpRotList(); syncSpRotForm();
+    toast('↩ 已取消该人员本月转班（可 Ctrl+Z 撤销）');
+  });
+}
+/* 人员下拉变化 → 日期下拉预填已设值 */
+function syncSpRotForm(){
+  const pid = $('#spRotPerson').value;
+  const day = (state.spRot && state.spRot[CUR.key] && state.spRot[CUR.key][pid]) || 0;
+  $('#spRotDay').value = String(day);
+}
+function openSpRotModal(){
+  const key = CUR.key, dim = CUR.dim;
+  $('#spRotMonth').textContent = CUR.y + '年' + CUR.m + '月（' + dim + ' 天）';
+  const ps = $('#spRotPerson'); ps.innerHTML = '';
+  for(const p of state.people){
+    const o = document.createElement('option');
+    o.value = p.id;
+    o.textContent = p.name + '（' + p.dept + ' · ' + (SHIFT_TXT[p.shiftRule]||'') + '）';
+    ps.appendChild(o);
+  }
+  const ds = $('#spRotDay'); ds.innerHTML = '';
+  let o = document.createElement('option'); o.value = '0'; o.textContent = '不指定（按规则）'; ds.appendChild(o);
+  for(let d=1; d<=dim; d++){
+    o = document.createElement('option'); o.value = String(d);
+    o.textContent = '从第 ' + d + ' 日起换班';
+    ds.appendChild(o);
+  }
+  ps.onchange = syncSpRotForm;
+  syncSpRotForm();
+  renderSpRotList();
+  $('#spRotModal').classList.add('show');
+}
+$('#spRotAdd').onclick = ()=>{
+  const pid = $('#spRotPerson').value;
+  const day = +$('#spRotDay').value;
+  const p = state.people.find(x=>x.id===pid); if(!p) return;
+  spRotLockedWarn(pid); // 仅提示，不阻断
+  histBegin(); pushSpRotOp(pid, CUR.key, day);
+  histCommit(day ? '人员转班：' + p.name + ' 从第 ' + day + ' 日起' : '取消转班：' + p.name);
+  saveState(); renderAll(); renderSpRotList(); syncSpRotForm();
+  toast(day ? ('📌 ' + p.name + ' 从 ' + CUR.key.replace('-','年') + '月' + day + ' 日起' + spRotFlipText(pid, day) + '（至月末，可 Ctrl+Z 撤销）') : ('↩ 已取消 ' + p.name + ' 本月转班'));
 };
+$('#spRotClose').onclick = ()=> $('#spRotModal').classList.remove('show');
+$('#spRotModal').addEventListener('click', e=>{ if(e.target.id==='spRotModal') e.target.classList.remove('show'); });
 $('#clearManBtn').onclick = ()=>{
   if(!state.manual[CUR.key] || !Object.keys(state.manual[CUR.key]).length){ toast('本月没有手工修改'); return; }
   if(!confirm('确定清除本月（' + CUR.y + '年' + CUR.m + '月）所有手工修改，恢复自动排班结果？\n此操作可 Ctrl+Z 撤销。')) return;
@@ -2352,7 +2477,7 @@ function exportCSV(){
 }
 function exportJSON(){
   const data = { app:'shift-scheduler', version:1, savedAt:new Date().toISOString(),
-    state:{ people:state.people, monthShift:state.monthShift, manual:state.manual, leave:state.leave, holidays:state.holidays, rowOrder:state.rowOrder,
+    state:{ people:state.people, monthShift:state.monthShift, spRot:state.spRot, manual:state.manual, leave:state.leave, holidays:state.holidays, rowOrder:state.rowOrder,
       satLoad:state.satLoad, sunLoad:state.sunLoad,
       rotateMode:state.rotateMode, rotateDay:state.rotateDay,
       viewMode:state.viewMode, deptFilter:state.deptFilter, sampleVer:state.sampleVer,
@@ -2680,6 +2805,7 @@ function importJSONData(data){
   const s = data.state;
   state.people = s.people || [];
   state.monthShift = s.monthShift || {};
+  state.spRot = s.spRot || {};
   state.manual = s.manual || {};
   state.leave = s.leave || {};
   state.holidays = s.holidays || {};
@@ -2877,7 +3003,7 @@ function sampleManual9(){
 function loadSample(){
   pushSnapshot('填入示例数据');
   state.people = samplePeople();
-  state.manual = {}; state.monthShift = {};
+  state.manual = {}; state.monthShift = {}; state.spRot = {};
   state.rowOrder = []; // 示例加载恢复默认部门排序
   const t = today(); state.curYear = t.y; state.curMonth = t.m;
   state.manual['2026-08'] = sampleManual8(); // 8月锁定（与9月表衔接，跨月体检/上月视图无连班）
