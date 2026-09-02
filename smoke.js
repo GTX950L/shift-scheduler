@@ -29,6 +29,28 @@ const { chromium } = require('playwright');
     const pCount = await page.evaluate(() => document.querySelectorAll('.p-card').length);
     ok('2. 示例数据 20 人', pCount === 20, '实际 ' + pCount + ' 人');
 
+    // 2b. v1.39 模板回归：周洪发 9/7 白班→夜班（9/1-5白 · 9/6休缓冲 · 9/7起夜 · 9/30夜）+ 徽标=固定夜班
+    const zhou = await page.evaluate(() => {
+      const tr = document.querySelector('#sheet tbody tr[data-pid="p1"]');
+      const cls = d => { const td = tr.querySelector(`td.cell[data-m="2026-09"][data-d="${d}"]`); return td ? td.className : ''; };
+      const card = [...document.querySelectorAll('.p-card')].find(c => c.textContent.includes('周洪发'));
+      const bn = card && card.querySelector('.badge.b-night');
+      return { d5: cls(5), d6: cls(6), d7: cls(7), d13: cls(13), d30: cls(30), badge: bn ? bn.textContent.trim() : '' };
+    });
+    ok('2b. 周洪发 9/7 转夜班模板', zhou.d5.includes('day') && zhou.d6.includes('rest') && zhou.d7.includes('night') && zhou.d13.includes('rest') && zhou.d30.includes('night'),
+      '9/5=' + (zhou.d5.includes('day') ? '白' : zhou.d5) + ' 9/6=' + (zhou.d6.includes('rest') ? '休' : zhou.d6) + ' 9/7=' + (zhou.d7.includes('night') ? '夜' : zhou.d7) + ' 9/30=' + (zhou.d30.includes('night') ? '夜' : zhou.d30));
+    ok('2c. 周洪发徽标=固定夜班', zhou.badge === '固定夜班', '实际: ' + zhou.badge);
+
+    // 2d. v1.39 模板回归：9月示例体检零违规（8/31→9/1 跨月衔接已由 8 月锁表修复）
+    await page.click('#checkBtn');
+    await page.waitForTimeout(700);
+    const zCheck = await page.evaluate(() => {
+      const m = document.getElementById('checkModal');
+      return { open: m.classList.contains('show'), txt: document.getElementById('checkList').textContent };
+    });
+    if (zCheck.open) await page.click('#checkClose').catch(() => {});
+    ok('2d. 9月示例体检零违规', zCheck.open && !/发现\s*\d+\s*个违规/.test(zCheck.txt), zCheck.txt.slice(0, 60));
+
     // 3. 排班表行数（20 人 + 合计行 = 21）
     const rowN = await page.evaluate(() => document.querySelectorAll('#sheet tbody tr[data-pid]').length);
     const colN = await page.evaluate(() => document.querySelectorAll('#sheet thead tr:nth-child(2) th:not(.corner)').length);

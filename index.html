@@ -367,7 +367,7 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.38</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.39</span></h1>
     <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
   </div>
   <div class="hd-right">
@@ -637,11 +637,11 @@
     <div class="help-sec">
       <h4>🔁 转班</h4>
       <ul>
-        <li>默认「月末周末」：轮转人员每月<b>最靠近月末的周六起</b>白夜互换（周六、周日完成转班），跨月视图可直观看到衔接；范例（9 月）已按此排定（转班已于 8/31 完成，9 月内无转班）。</li>
+        <li>默认「月末周末」：轮转人员每月<b>最靠近月末的周六起</b>白夜互换（周六、周日完成转班），跨月视图可直观看到衔接；范例（9 月）已按此排定（8/31 转班完成，仅周洪发因人员调整于 9/7 白班转夜班）。</li>
         <li>也可在工具栏改为「固定日期」并设 1~31 号（如 20 = 每月 20 日起换班）。</li>
         <li><b>连班保护（全员·防呆）</b>：任何人「夜班 → 次日白班」都是 0 小时间隔连班，自动排班会<b>自动在转班点插入一天休息</b>；「白班 → 次日夜班」（16 小时间隔）允许，不处理。周末繁忙叫回的加班同样受此保护。</li>
         <li><b>手动防呆</b>：手工点击 / 拖拽 / 复制时，若会产生「夜班→次日白班」连班会被<b>拦截</b>——夜班后一天只能设「休」或「夜」；循环画笔会自动跳过违规班次。</li>
-        <li>固定班次者不受转班影响；某月想破例可用「🔁 本月转班」强制取反，再手工微调。</li>
+        <li>固定班次者不受「🔁 转班」影响（该按钮只作用于「月轮转」人员）；固定班人员某月需临时换班时，可将该人员规则改为「月轮转」再转班，或直接点格子调整该月班次。</li>
       </ul>
     </div>
     <div class="help-sec">
@@ -676,6 +676,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.39</b> · 示例模板修正（2026-09-02）：① 周洪发 9/7（周一）由白班转夜班，9/7~9/30 排夜班（周日休不变，9/6 休缓冲衔接），人员属性由「固定白班」改为「固定夜班」（徽标/统计/CSV 规则列一致）；② 恢复 8 月真实排班锁定表——修复 v1.35 跨月体检增强后暴露的 9 处「8/31 夜班 → 9/1 白班」跨月连班违规（此前 8 月末由自动规则提前 2 天转班所致），8/31 班次与 9/1 无缝衔接；③ 示例版本升至 19，旧范例用户打开页面自动升级。</div>
       <div class="log-ver"><b>v1.38</b> · 联动修复（2026-09-01）：修复「🔗 工具 ▾」下拉菜单被下方 sticky 工具栏(z-index:50)遮挡——fixed 定位虽避开 header overflow:hidden 裁切，但仍受 header>*{z-index:1} 形成的祖先层叠上下文限制，整体层级 z:1 < toolbar z:50。改为打开时把 #toolsMenu 移至 document.body 顶层跳出祖先 SC，z-index:1000 直接生效；同步补视口边界保护(菜单高度超出底部时向上弹出，避免滚动/窄屏截断)。四个联动项目统一修复（cpk-jmp-studio / equipment-failure-commonality / wps-img-fixer 同步应用同一方案，消除未来回归隐患）。</div>
       <div class="log-ver"><b>v1.37</b> · 风格升级（2026-09-01）：① 新增深色模式——header「🌙 深色」按钮手动切换，localStorage 记忆 + 跟随系统偏好；排班表/统计/弹窗/下拉/引导全量适配深色配色；② CSS 变量令牌化——散落的硬编码颜色/阴影/渐变收敛为 :root 设计令牌，深色模式整体降饱和、文字提亮；③ 字体栈补 PingFang SC/Noto Sans SC，加 meta theme-color 移动端主题色；④ 按钮/输入框补 focus-visible 焦点样式。</div>
       <div class="log-ver"><b>v1.36</b> · 跨项目导航统一（2026-09-01）：① 工具下拉补 wps-img-fixer（图片修复）入口，四个项目（排班/设备共性/Cpk/WPS图片）全链闭环互跳；② 下拉菜单改 fixed 定位——修复 v1.35 引入的 header overflow:hidden 裁切问题（此前菜单被裁只剩一条，需滚动才可见）；③ 菜单项样式统一为英文名+中文副标（对齐 wps-img-fixer 风格）。</div>
@@ -2802,7 +2803,7 @@ $('#personModal').addEventListener('click', e=>{ if(e.target.id==='personModal')
 /* 范例人员（源自《複本 62.68.77除气转码9月排班表.xlsx》）：20 人含工号，9月休息日错峰（周六休15人/周日休5人） */
 function samplePeople(){
   return [
-    {id:'p1', workId:'2413324', name:'周洪发', dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', restOffset:0, note:'组长'},
+    {id:'p1', workId:'2413324', name:'周洪发', dept:'除气', shiftRule:'fixed-night', initialShift:'day', restRule:'sixOne', restOffset:0, note:'组长 · 9/7 起转夜班'},
     {id:'p2', workId:'2617230', name:'吴兆哲', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
     {id:'p3', workId:'2627909', name:'冯少帅', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
     {id:'p4', workId:'2640154', name:'黄湛江', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
@@ -2825,11 +2826,32 @@ function samplePeople(){
   ];
 }
 
+/* 8月排班锁定（源自 MTW10/MTW30 6休1排班计划表，v1.39 恢复）
+   与 9 月锁定表同载：8/31 转班完成后的班次与 9/1 无缝衔接，跨月体检不再报 8/31 夜→9/1 白连班 */
+function sampleManual8(){
+  const m = {"p1": "..dddddd.dddddd.dddddd.dddddd.d", "p2": "..dddddd.dddddd.ddddd.dddddd.dd", "p3": "d.dddddd.dddddd.ddddd.dddddd.dd", "p4": "..dddddd.dddddd.dddddd.dddddd.d", "p5": "..ddddd.dddddd.dddddd.dddddd.dd", "p6": ".dddddd.dddddd.dddddd.dddddd.dd", "p7": "..ddddd.dddddd.dddddd.dddddd.dd", "p8": ".dddddd.dddddd.dddddd.dddddd.dd", "p9": ".dddddd..dddddd.dddddd.dddddd.d", "p10": "..dddddd.dddddd.ddddd.dddddd.dd", "p11": "d.ddddd.dddddd.dddddd.dddddd.dd", "p12": "..nnnnnn.nnnnnn.nnnnnn.nnnnnn.n", "p13": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p14": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p15": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p16": "n.nnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p17": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p18": "n.nnnnnn.nnnnnn.nnnnnn.nnnnnn.n", "p19": "..nnnnnn.nnnnnn.nnnnn.nnnnnn..d", "p20": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn"};
+  // 8月锁定表按「月末周末转班」修正：8/29（2026年8月最后周六）起轮转人员班次翻转，周末完成切换
+  // p19 孙子恒另修正：v1.31 起改固定白班，8/29~8/30 双休缓冲、8/31 起白班（与 9/1 锁定白班无缝衔接，避免跨月连班）
+  const rot = {};
+  for(const p of samplePeople()){ if(p.shiftRule==='rotate') rot[p.id] = true; }
+  for(const pid in m){
+    if(!rot[pid]) continue;
+    const a = m[pid].split('');
+    for(let d=29; d<=31; d++){
+      if(a[d-1]==='d') a[d-1]='n';
+      else if(a[d-1]==='n') a[d-1]='d';
+    }
+    m[pid] = a.join('');
+  }
+  return m;
+}
+
 /* 9月排班锁定（源自《複本 62.68.77除气转码9月排班表.xlsx》·资材部-9月-6休1排班表）
-   9/1~9/30 全月锁定；转班已于 8/31 完成（8/30 周日休缓冲），9 月内无转班 */
+   9/1~9/30 全月锁定；转班已于 8/31 完成（8/30 周日休缓冲）
+   ★ p1 周洪发例外：9/7（周一）白班转夜班，9/7~9/30 排夜班（周日休不变） */
 function sampleManual9(){
   return {
-    "p1": "ddddd.dddddd.dddddd.dddddd.ddd",
+    "p1": "ddddd.nnnnnn.nnnnnn.nnnnnn.nnn",
     "p2": "nnnn.nnnnnn.nnnnnn.nnnnnn.nnnn",
     "p3": "nnnn.nnnnnn.nnnnnn.nnnnnn.nnnn",
     "p4": "nnnn.nnnnnn.nnnnnn.nnnnnn.nnnn",
@@ -2858,18 +2880,20 @@ function loadSample(){
   state.manual = {}; state.monthShift = {};
   state.rowOrder = []; // 示例加载恢复默认部门排序
   const t = today(); state.curYear = t.y; state.curMonth = t.m;
+  state.manual['2026-08'] = sampleManual8(); // 8月锁定（与9月表衔接，跨月体检/上月视图无连班）
   state.manual['2026-09'] = sampleManual9(); // 9月锁定《複本 62.68.77除气转码9月排班表》
   state.satLoad = 'normal'; state.sunLoad = 'busy'; // 周六正常、周日任务多
   state.sampleVer = SAMPLE_VER; // 示例版本标记（供旧示例自动升级判定）
   histReset(); saveState(); renderAll();
   const wm = $('#welcomeModal'); if(wm) wm.classList.remove('show');
-  toast('🧪 已填入 20 名技术员（除气/转码 9月6休1排班，9月排班已锁定）');
+  toast('🧪 已填入 20 名技术员（除气/转码 9月6休1排班，8/9 月排班已锁定）');
 }
 
 /* 是否与示例锁定值一致（一致的格子不显示手动蓝点，用户改过的才显示） */
-let _base9 = null;
+let _base8 = null, _base9 = null;
 function lockBase(pid, key, d){
-  if(key !== '2026-09' || !state.sampleVer) return false;
+  if(!state.sampleVer || (key !== '2026-08' && key !== '2026-09')) return false;
+  if(key === '2026-08'){ if(!_base8) _base8 = sampleManual8(); const base = _base8[pid]; if(!base) return false; const m = state.manual[key] && state.manual[key][pid]; if(!m) return false; return m[d-1] === base[d-1]; }
   if(!_base9) _base9 = sampleManual9();
   const base = _base9[pid]; if(!base) return false;
   const m = state.manual[key] && state.manual[key][pid]; if(!m) return false;
@@ -2913,7 +2937,7 @@ window.addEventListener('beforeunload', e=>{
 
 /* ================= 初始化 ================= */
 /* 旧版示例数据自动升级：示例数据打 sampleVer 标记；版本旧于 SAMPLE_VER 且名单匹配旧示例 → 自动替换为新范例 */
-const SAMPLE_VER = 18;
+const SAMPLE_VER = 19;
 const SAMPLE_NAMES = ['周洪发','吴兆哲','冯少帅','黄湛江','段高翔','郑高鑫','金凡','李冉','徐强','李晓东','刘进','段帅帅','张云鹏','蒋豪','宋心阳','喻来','陈红浩','罗铭','孙子恒','程稳'];
 const OLD8_NAMES  = ['陈建国','刘志强','王丽华','赵永刚','钱文杰','孙秀兰','周晓峰','吴国庆'];
 function isOldSample(){
