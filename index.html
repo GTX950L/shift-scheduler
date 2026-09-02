@@ -238,6 +238,18 @@
     padding:10px 20px;border-radius:10px;box-shadow:0 8px 24px rgba(16,32,64,.35);opacity:0;transition:opacity .25s,transform .25s;z-index:200;pointer-events:none}
   html[data-theme=dark] #toast{background:#2b3b55;box-shadow:0 8px 24px rgba(0,0,0,.5)}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+  /* ===== v1.42：键盘编辑 + 循环画笔悬停预览 + 周复制选目标 ===== */
+  .cell.kb-sel{outline:2px solid var(--brand-dark);outline-offset:-1px;z-index:3;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+  html[data-theme=dark] .cell.kb-sel{outline-color:#7fb3e8}
+  .pv-tip{position:fixed;z-index:210;background:#0f172a;color:#e2e8f0;font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;
+    pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.35);white-space:nowrap;opacity:0;transition:opacity .12s;max-width:280px}
+  html[data-theme=dark] .pv-tip{background:#e2e8f0;color:#0f172a}
+  .pv-tip.show{opacity:1}
+  #weekTargets label{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;
+    margin-bottom:6px;font-size:12.5px;background:var(--p-card-bg);cursor:pointer;user-select:none}
+  #weekTargets label:hover{background:var(--hover-bg)}
+  #weekTargets label input{accent-color:var(--brand)}
+  #weekTargets label .wk-man{font-size:10.5px;color:var(--muted);margin-left:auto}
   .help-sec{margin-bottom:14px}
   .help-sec h4{margin:0 0 6px;font-size:14px;color:var(--heading)}
   .help-sec ul{margin:0;padding-left:18px;font-size:12.5px;color:var(--sec-fg)}
@@ -367,7 +379,7 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.41</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.42</span></h1>
     <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
   </div>
   <div class="hd-right">
@@ -393,7 +405,7 @@
 <nav class="toolbar" id="toolbar">
   <div class="grp">
     <label>画笔</label>
-    <select id="brush" title="画笔：点击/拖拽填充单元格；循环模式=点击依次 休→白→夜。快捷键 1~5 快速切换，←→ 切换月份">
+    <select id="brush" title="画笔：点击/拖拽填充单元格；循环模式=点击依次 休→白→夜（悬停格子可预览将变班次）。快捷键 1~5 快速切换，←→ 切换月份">
       <option value="cycle">🔁 循环切换</option>
       <option value="day">☀️ 白班</option>
       <option value="night">🌙 夜班</option>
@@ -513,7 +525,7 @@
       <div style="font-size:12.5px;color:#374151;line-height:1.7">
         <b>① 添加技术员</b>：设置姓名、工号（选填）、部门、班次规则（固定白班 / 固定夜班 / 月轮转）、休息规则（上六休一可选周六/周日休）。<br>
         <b>② 点「⚡ 自动排班」</b>生成当月排班基线，并自动体检（有问题直接弹报告）。<br>
-        <b>③ 微调</b>：点击格子循环切换 休→白→夜；<kbd>Shift</kbd>+点击 加班；按住拖拽批量填充；<kbd>右键</kbd>菜单（休/请假/清除手动）；<kbd>Ctrl+Z/Y</kbd> 撤销/重做。<br>
+        <b>③ 微调</b>：点击格子循环切换 休→白→夜（悬停可预览）；<kbd>Shift</kbd>+点击 加班；按住拖拽批量填充；点选格子后可用 <kbd>←→↑↓</kbd> 移动、<kbd>空格</kbd> 循环、<kbd>1~5</kbd> 设值；<kbd>右键</kbd>菜单（休/请假/清除手动）；<kbd>Ctrl+Z/Y</kbd> 撤销/重做。<br>
         <b>④ 更多功能</b>：周模板（点表头「第N周」，按周一~周日分组）、复制排班（人员卡片「📋」）、调整行序（拖人名行）、周末负荷（周六/周日下拉）、转班、节假日、导入旧表——详见「❓ 帮助」。
       </div>
     </section>
@@ -536,6 +548,7 @@
 </section>
 
 <div id="toast"></div>
+<div id="pvTip" class="pv-tip"></div>
 
 <div class="modal-mask" id="personModal">
   <div class="modal">
@@ -600,13 +613,14 @@
       <h4>✍️ 手工微调</h4>
       <ul>
         <li>选择「画笔」后点击 / 按住拖拽批量填充：白班 / 夜班 / 休 / 加班。</li>
-        <li>「🔁 循环切换」画笔：点击依次 休 → 白班 → 夜班 → 休。</li>
+        <li>「🔁 循环切换」画笔：点击依次 休 → 白班 → 夜班 → 休；鼠标<b>悬停格子会预览</b>点击将变为的班次（含防呆拦截提示），看清再点。</li>
         <li>快捷键：<kbd>1</kbd>~<kbd>5</kbd> 切换画笔（循环/白/夜/休/加班）；<kbd>Shift</kbd>+点击=加班，<kbd>右键</kbd>=弹出菜单（休 / 请假 / 清除手动）。</li>
-        <li><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd>（或工具栏 ↩ ↪）撤销 / 重做；<kbd>←</kbd><kbd>→</kbd> 或 <kbd>PgUp</kbd><kbd>PgDn</kbd> 切换中心月份。</li>
+        <li><b>键盘微调（v1.42）</b>：点击选中格子后（蓝色虚线框）可用 <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> 移动焦点、<kbd>空格</kbd> / <kbd>Enter</kbd> 循环切换、<kbd>1</kbd>~<kbd>5</kbd> 直接设值（1=循环 2=白 3=夜 4=休 5=加班）、<kbd>Delete</kbd> 清除手动、<kbd>Esc</kbd> 取消选中；未选中格子时 <kbd>←</kbd><kbd>→</kbd> 仍是切换月份。</li>
+        <li><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd>（或工具栏 ↩ ↪）撤销 / 重做；<kbd>PgUp</kbd><kbd>PgDn</kbd> 切换中心月份。</li>
         <li><b>复制排班</b>：右侧技术员卡片点「📋」→ 再点另一张卡片，把源人员<b>当月排班整体复制</b>给目标（含休息日，可 Ctrl+Z 撤销）；点空白处取消。</li>
         <li><b>整月复制</b>：工具栏「📋 复制到下月」把本月全部手工修改（请假/调班/锁定班次）复制到下月，轮转班次自动生成，可 Ctrl+Z 撤销。</li>
         <li><b>清除下月</b>：工具栏「🧹 清下月」一键清除下月所有手工排班，恢复未排班状态（可 Ctrl+Z 撤销），与「复制到下月」对称。</li>
-        <li><b>周模板复制</b>：表头按<b>日历周（周一到周日）</b>分组，点「第 N 周」即把该周 7 天排班整体复制到后续所有完整周（跨月周可用，复制目标跨月连续；含手工修改与休息；模板含连班/超 6 连班的人员自动跳过；灰色周为视图截断的不完整周，不可作模板；可 Ctrl+Z 撤销）。</li>
+        <li><b>周模板复制</b>：表头按<b>日历周（周一到周日）</b>分组，点「第 N 周」弹出<b>目标周选择框</b>——默认勾选后续所有完整周，可取消个别周后再复制（跨月周可用，复制目标跨月连续；含手工修改与休息；目标周现有手工会被覆盖，弹窗中标出「已有 N 格」供参考；模板含连班/超 6 连班的人员自动跳过；灰色周为视图截断的不完整周，不可作模板；可 Ctrl+Z 撤销）。</li>
         <li><b>调整行顺序</b>：排班表按住<b>人名行</b>上下拖动即可换位（自动保存，跨月视图同样生效）；点表头「🔄 部门排序」恢复默认（除气在上、转码在下）。</li>
       </ul>
     </div>
@@ -673,7 +687,7 @@
         <li>工具栏「部门」下拉可只查看除气/转码的排班（月度统计与导出仍为全部人员）。</li>
         <li>换电脑 / 换浏览器：导出 JSON 备份 → 新电脑「⬆ 导入 ▾ → 完整备份 JSON」恢复（会覆盖当前数据，导入前有确认）。</li>
         <li>🔒 防呆保护：删除人员 / 清手动 / 强制转班 / 导入覆盖 等破坏性操作均有<b>确认提示</b>；人员<b>同名</b>会提醒、<b>工号重复</b>会拦截；CSV 支持 GBK/UTF-8 自动识别；导出/打印前会检查是否存在连班违规。</li>
-        <li>⏪ <b>自动快照</b>：删除人员 / 导入 / 示例覆盖等不可撤销操作前自动保存完整数据（最近 5 份），工具栏「⏪ 快照」可一键恢复（恢复前也会再存一份当前数据）。</li>
+        <li>⏪ <b>自动快照</b>：删除人员 / 导入 / 示例覆盖等不可撤销操作前自动保存完整数据（最近 5 份），工具栏「⏪ 快照」可一键恢复；点「↩ 恢复」先弹<b>差异预览</b>（人员名单 / 手工排班格数 / 请假条数 / 受影响月份），看清影响面再确认（恢复前会再存一份当前数据）。</li>
         <li>⚡ <b>自动闭环</b>：切到尚未排班的月份会自动引导「⚡ 自动排班」；点「自动排班」后自动体检——无问题提示通过，有问题直接弹出报告。</li>
       </ul>
     </div>
@@ -685,6 +699,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.42</b> · 使用便捷性四项（2026-09-03）：① <b>循环画笔悬停预览</b>——鼠标悬停格子即浮层提示「点击 → 将变为的班次」，连班自动避让 / 六休一强制休等防呆拦截也一并预告，看清再点防误操作（请假格提示先销假）；② <b>键盘微调</b>——点击格子出现蓝色焦点框后，<kbd>←→↑↓</kbd> 移动、<kbd>空格</kbd>/<kbd>Enter</kbd> 循环切换、<kbd>1</kbd>~<kbd>5</kbd> 直接设值、<kbd>Delete</kbd> 清除手动、<kbd>Esc</kbd> 取消；未选中格子时 <kbd>←→</kbd> 仍为切换月份；③ <b>周模板复制改为可选目标周</b>——点表头「第 N 周」弹出目标周勾选框（默认勾选后续所有完整周，可取消个别周或全不勾取消），逐周标注「已有 N 格手工」防误覆盖，目标周不受限「一刀切复制到后续全部周」；④ <b>快照恢复前差异预览</b>——「↩ 恢复」先在确认框列出差异摘要（人员名单增删 / 手工排班格数增减 / 请假条数 / 受影响月份），看清影响面再确认。同步修正：循环画笔的连班自动替代班次补齐六休一校验，悬停预览与实际写入结果始终一致。</div>
       <div class="log-ver"><b>v1.41</b> · 文案去标识化（2026-09-02）：更新记录与界面说明文字不再出现具体人员姓名，改以「组长 / 一人 / 除气固定白班人员」等描述替代；示例名单数据本身保持不变。</div>
       <div class="log-ver"><b>v1.40</b> · 人员级指定转班日（2026-09-02）：「🔁 转班 ▾」新增 📌 指定人员从某日转班——任意人员（含<b>固定班</b>）可设定本月从第 N 日起白/夜互换直至月末，休息日与连班防呆自动套用（自动排班不再逐格手刷）；「月轮转」人员以指定日替代「月末周末」自动转班；仅当月生效，下月按人员规则回落；设定/取消可 Ctrl+Z 撤销，含完整备份/恢复。固定班人员月中破例（如组长 9/7 转夜班）一键完成。</div>
       <div class="log-ver"><b>v1.39</b> · 示例模板修正（2026-09-02）：① 组长 9/7（周一）由白班转夜班，9/7~9/30 排夜班（周日休不变，9/6 休缓冲衔接），人员属性由「固定白班」改为「固定夜班」（徽标/统计/CSV 规则列一致）；② 恢复 8 月真实排班锁定表——修复 v1.35 跨月体检增强后暴露的 9 处「8/31 夜班 → 9/1 白班」跨月连班违规（此前 8 月末由自动规则提前 2 天转班所致），8/31 班次与 9/1 无缝衔接；③ 示例版本升至 19，旧范例用户打开页面自动升级。</div>
@@ -769,6 +784,18 @@
       <button class="sec" id="checkFix" title="把「夜班→次日白班」连班的次日批量改为休息（可 Ctrl+Z 撤销）">🔧 自动修复连班</button>
       <button class="sec" id="checkClear">清除红框标记</button>
       <button id="checkClose">知道了</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="weekModal">
+  <div class="modal" style="max-width:480px">
+    <h3>📋 周模板复制到目标周</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.7" id="weekInfo"></div>
+    <div id="weekTargets" style="max-height:280px;overflow:auto"></div>
+    <div class="modal-ops">
+      <button class="sec" id="weekCancel" title="取消复制">取消</button>
+      <button id="weekOk" title="把源周排班复制到勾选的目标周（可 Ctrl+Z 撤销）">✓ 复制到勾选周</button>
     </div>
   </div>
 </div>
@@ -1150,7 +1177,7 @@ function renderSheet(){
     const w = wkGroups[i];
     const cross = (w.eM!==w.sM || w.eY!==w.sY);
     h += '<th class="week' + (w.isFull?'':' wk-partial') + '" colspan="' + w.dayCount + '" data-w="' + (i+1) + '" title="' + (w.isFull
-      ? '点击把第 ' + (i+1) + ' 周（' + w.sY + '年' + w.sM + '月' + w.sD + '日 ~ ' + w.eM + '月' + w.eD + '日，周一到周日）的排班复制到后续所有完整周（可 Ctrl+Z 撤销）'
+      ? '点击选择把第 ' + (i+1) + ' 周（' + w.sY + '年' + w.sM + '月' + w.sD + '日 ~ ' + w.eM + '月' + w.eD + '日，周一到周日）复制到的目标周（可 Ctrl+Z 撤销）'
       : '该周被视图截断（不完整），不能作为复制模板') + '">📋 第' + (i+1) + '周' + (cross?' ·跨':'') + '</th>';
   }
   h += '</tr><tr>';
@@ -1199,6 +1226,8 @@ function renderSheet(){
   h += '</tr></tbody>';
   tb.innerHTML = h;
   syncHSBar();
+  // 重建后恢复键盘焦点高亮（焦点格失效时自动清除）
+  applyKbSel();
   // 仅在切换月份/视图时自动滚动到今日列，避免打断用户滚动位置
   if(scrollToKey !== CUR.key + '|' + (state.viewMode||'')){
     scrollToKey = CUR.key + '|' + (state.viewMode||'');
@@ -1420,6 +1449,7 @@ function renderLegend(){
 }
 /* ================= 交互：排班表 ================= */
 let painting = null; // 正在拖拽填充的值
+let kbSel = null;    // 键盘编辑焦点：{pid,mkey,d}（点击格子后可用方向键移动 / 空格循环 / 数字设值）
 let dragPid = null;  // 行拖动排序：正在拖动的 pid
 function clearRowDrag(){
   if(dragPid){
@@ -1642,17 +1672,38 @@ function histReset(){ hist = []; histIdx = -1; histTx = null; updateHistBtns(); 
 function currentCellChar(pid, mkey, day){
   return (CUR.grids && CUR.grids[mkey] && CUR.grids[mkey][pid] && CUR.grids[mkey][pid][day-1]) || '.';
 }
+/* 计算循环画笔点击该格后的"将变值"（含连班/六休一防呆替换结果）。
+   返回 {cur, next, note}：cur=当前值, next=点击后值, note=提示文案（空=常规）。
+   六休一对"最终 next"（含连班自动替代的班次）统一校验，保证与 paintCell→setManual
+   的真实落点一致（否则预览会与实际写入不符）。 */
+function cycleNextValue(pid, mkey, day){
+  const cur = currentCellChar(pid, mkey, day);
+  let next = cur==='.' ? 'd' : (cur==='d' ? 'n' : '.');
+  let note = '';
+  if(next!=='.' && backToBackBlock(pid, mkey, day, next)){
+    const alt = next==='d' ? 'n' : 'd'; // 白被挡 → 试夜；夜被挡 → 试白
+    if(!backToBackBlock(pid, mkey, day, alt)){
+      next = alt;
+      note = '🔒 自动避连班，改为' + (alt==='n'?'夜班':'白班');
+    } else {
+      next = cur;
+      note = '🔒 前后班次限制，点击保持「休」';
+    }
+  }
+  // 六休一防呆：替代后的班次同样要过"连续上班≤6天"校验，超限一律落休
+  const p6 = state.people.find(x=>x.id===pid);
+  if(p6 && p6.restRule==='sixOne' && next!=='.' && workStreakTotal(pid, mkey, day, next) > 6){
+    next = '.';
+    note = '🔒 六休一防呆，实际为休';
+  }
+  return {cur, next, note};
+}
 function paintCell(pid, mkey, day, ch){
   if(getLeave(pid, mkey, day)) setLeave(pid, mkey, day, null); // 点击请假格：先销假再按画笔处理
   if(!ch){ // cycle
-    const cur = currentCellChar(pid, mkey, day);
-    let next = cur==='.' ? 'd' : (cur==='d' ? 'n' : '.');
-    if(next!=='.' && backToBackBlock(pid, mkey, day, next)){
-      const alt = next==='d' ? 'n' : 'd'; // 白被挡 → 试夜；夜被挡 → 试白
-      if(!backToBackBlock(pid, mkey, day, alt)){ next = alt; blockToast('🔒 防呆：该处自动改为「' + (alt==='n'?'夜班':'白班') + '」'); }
-      else { next = cur; blockToast('🔒 防呆：前后班次限制，此处只能保持「休」'); }
-    }
-    if(next !== cur) setManual(pid, mkey, day, next);
+    const cy = cycleNextValue(pid, mkey, day);
+    if(cy.next !== cy.cur) setManual(pid, mkey, day, cy.next);
+    if(cy.note) blockToast(cy.note);
   } else if(ch==='ot'){
     const cur = currentCellChar(pid, mkey, day);
     const base = (state.monthShift[mkey]&&state.monthShift[mkey][pid]) || 'day';
@@ -1673,7 +1724,7 @@ function updateCellDOM(td){
   const desc = lv ? ('请假·' + lv) : (c==='d'?'白班 08:00–20:00':c==='n'?'夜班 20:00–08:00':c==='D'?'白班·加班':c==='N'?'夜班·加班':'休息');
   delete checkViol[mkey+'|'+pid+'|'+d]; // 修改即视为已处理
   const viol = checkViol[mkey+'|'+pid+'|'+d];
-  const keep = ['man','today','dow-sat','dow-sun','dow-busy','dow-hol'];
+  const keep = ['man','today','dow-sat','dow-sun','dow-busy','dow-hol','kb-sel'];
   td.className = 'cell ' + cls + keep.filter(k=>td.classList.contains(k)).map(k=>' '+k).join('') + (viol?' viol':'');
   td.title = esc(p?p.name:'') + ' · ' + mkey.replace('-','年') + '月' + d + '日 · ' + desc + (viol?' ⚠️违规':'');
   const t = td.querySelector('.c-txt'); if(t) t.textContent = txt;
@@ -1713,6 +1764,134 @@ document.addEventListener('mouseup', ()=>{
 });
 /* 窗口失焦兜底：鼠标在窗口外松开时提交悬空事务 */
 window.addEventListener('blur', ()=>{ painting = null; if(histTx && histTx.length){ histCommit('排班修改'); } });
+
+/* ===== v1.42 键盘编辑：点击格子后方向键移动焦点、空格/回车循环、1~5 设值 =====
+   焦点随渲染保留：renderSheet 重建后按 kbSel 重新高亮；点击空白处 / Esc 取消。 */
+function findKbTd(){
+  if(!kbSel) return null;
+  return document.querySelector('#sheet td.cell[data-p="' + kbSel.pid + '"][data-m="' + kbSel.mkey + '"][data-d="' + kbSel.d + '"]');
+}
+function setKbSel(td, scroll){
+  if(!td) return;
+  kbSel = {pid: td.dataset.p, mkey: td.dataset.m, d: +td.dataset.d};
+  clearKbSelDOM(); td.classList.add('kb-sel');
+  if(scroll) td.scrollIntoView({block:'nearest', inline:'center'});
+}
+function clearKbSelDOM(){
+  document.querySelectorAll('#sheet td.kb-sel').forEach(t=>t.classList.remove('kb-sel'));
+}
+function applyKbSel(){
+  clearKbSelDOM();
+  const td = findKbTd();
+  if(td) td.classList.add('kb-sel');
+  else kbSel = null; // 焦点格不在当前视图（切换月份/人员删除）→ 自动失效
+}
+function kbMove(dirCol, dirRow){
+  if(!kbSel) return;
+  const cur = findKbTd(); if(!cur) return;
+  const tr = cur.closest('tr');
+  if(!tr) return;
+  if(dirCol){ // 左右：同人员行内按 DOM 列序（日期连续，天然支持跨月列）
+    const cells = [...tr.querySelectorAll('td.cell')];
+    const i = cells.indexOf(cur);
+    const t2 = dirCol>0 ? cells[i+1] : cells[i-1];
+    if(t2){ setKbSel(t2, true); return; }
+    toast(dirCol>0 ? '已是视图最右日期' : '已是视图最左日期'); return;
+  }
+  // 上下：同列换人（按当前可见行序）
+  const rows = [...document.querySelectorAll('#sheet tbody tr[data-pid]')];
+  const ri = rows.indexOf(tr);
+  const tr2 = dirRow>0 ? rows[ri+1] : rows[ri-1];
+  if(!tr2){ toast(dirRow>0 ? '已是最后一名技术员' : '已是第一名技术员'); return; }
+  const t2 = tr2.querySelector('td.cell[data-m="' + kbSel.mkey + '"][data-d="' + kbSel.d + '"]');
+  if(t2) setKbSel(t2, true);
+}
+function kbEditCell(ch){
+  // ch: 'd'|'n'|'.'|'ot'|null(cycle) —— 与 paintCell 同语义
+  if(!kbSel) return;
+  histBegin();
+  paintCell(kbSel.pid, kbSel.mkey, kbSel.d, ch);
+  histCommit('键盘排班');
+  saveState(); renderSheet(); renderStats();
+  const td = findKbTd(); if(td) td.classList.add('kb-sel');
+}
+function kbClearManual(){
+  if(!kbSel) return;
+  histBegin();
+  setManual(kbSel.pid, kbSel.mkey, kbSel.d, '_');
+  histCommit('键盘清除手动');
+  saveState(); renderSheet(); renderStats();
+  const td = findKbTd(); if(td) td.classList.add('kb-sel');
+}
+/* 点击格子后记录键盘焦点（右键菜单不设焦点；拖拽从起点开始即可） */
+const _kbMouseDown = e=>{
+  const td = e.target.closest('td.cell');
+  if(!td || e.button!==0) return;
+  kbSel = {pid: td.dataset.p, mkey: td.dataset.m, d: +td.dataset.d};
+};
+$('#sheet').addEventListener('mousedown', _kbMouseDown);
+/* 点击表格外空白（工具栏等）取消焦点 */
+document.addEventListener('mousedown', e=>{
+  if(e.target.closest('#sheet') || e.target.closest('#cellMenu') || e.target.closest('.modal-mask')) return;
+  kbSel = null; clearKbSelDOM();
+});
+
+/* ===== v1.42 循环画笔悬停预览：鼠标悬停即显示"点击将变为"（防误点） ===== */
+const pvTip = () => document.getElementById('pvTip');
+function pvLabel(c){
+  return c==='.' ? '休' : (c==='d' ? '白班' : (c==='n' ? '夜班' : (c==='D'||c==='N' ? '加班' : '')));
+}
+function pvShow(td, x, y){
+  if(painting !== null){ pvHide(); return; }      // 拖拽中不预览
+  if((document.getElementById('brush').value) !== 'cycle'){ pvHide(); return; } // 仅循环画笔预览
+  const pid = td.dataset.p, mkey = td.dataset.m, d = +td.dataset.d;
+  const lv = getLeave(pid, mkey, d);
+  const cy = cycleNextValue(pid, mkey, d);
+  const t = pvTip();
+  const noteHtml = cy.note ? '<br><span style="font-weight:400;opacity:.85">' + cy.note + '</span>' : '';
+  if(lv){
+    // 请假格：点击先销假再按循环处理（预览值=销假后的循环结果，与 paintCell 一致）
+    t.innerHTML = '当前：<b>请假·' + lv + '</b> · <b>点击 → 先销假</b>'
+      + (cy.next !== cy.cur ? '，随即循环为 ' + pvLabel(cy.next) : '');
+  } else if(cy.next !== cy.cur){
+    t.innerHTML = '<b>点击 → ' + pvLabel(cy.next) + '</b>' + noteHtml;
+  } else {
+    // 防呆保持（前后班次限制 / 六休一）：点击不会变更
+    t.innerHTML = '当前：<b>' + (pvLabel(cy.cur) || '未知') + '</b> · 点击保持' + noteHtml;
+  }
+  t.classList.add('show');
+  const tw = t.offsetWidth, th = t.offsetHeight;
+  let lx = x + 14, ly = y + 16;
+  if(lx + tw > innerWidth - 6) lx = x - tw - 10;
+  if(ly + th > innerHeight - 6) ly = y - th - 10;
+  t.style.left = lx + 'px'; t.style.top = ly + 'px';
+}
+function pvHide(){
+  const t = pvTip();
+  if(t) t.classList.remove('show');
+}
+$('#sheet').addEventListener('mouseover', e=>{
+  const td = e.target.closest('td.cell');
+  if(!td){ pvHide(); return; }
+  pvShow(td, e.clientX, e.clientY);
+});
+$('#sheet').addEventListener('mouseleave', pvHide);
+$('#brush').addEventListener('change', pvHide);
+document.addEventListener('mousemove', e=>{
+  const t = pvTip();
+  if(t && t.classList.contains('show')){
+    // 只更新位置，不重算内容（内容在 mouseover 进入格子时算好）
+    const tw = t.offsetWidth, th = t.offsetHeight;
+    let lx = e.clientX + 14, ly = e.clientY + 16;
+    if(lx + tw > innerWidth - 6) lx = e.clientX - tw - 10;
+    if(ly + th > innerHeight - 6) ly = e.clientY - th - 10;
+    t.style.left = lx + 'px'; t.style.top = ly + 'px';
+  }
+});
+/* 表滚动 / 重绘后浮层可能错位 → 隐藏 */
+document.getElementById('sheetScroll').addEventListener('scroll', pvHide);
+
+
 /* 右键：自定义菜单（休息/请假/清除手动） */
 let cmCell = null;
 $('#sheet').addEventListener('contextmenu', e=>{
@@ -1742,7 +1921,8 @@ $('#cellMenu').addEventListener('click', e=>{
   $('#cellMenu').classList.remove('show');
   updateCellDOM(cmCell); renderSheet(); renderStats();
 });
-/* 键盘快捷键：1-5 切换画笔（循环/白/夜/休/加班），←→ / PageUp/Down 切换月份 */
+/* 键盘快捷键：选中格子后 ↑↓←→ 移动焦点、空格/回车 循环、1~5 直接设值、Del 清手动、Esc 取消；
+   未选中格子时：1-5 切换画笔，←→ / PageUp/Down 切换月份 */
 document.addEventListener('keydown', e=>{
   const tag = (e.target.tagName||'').toLowerCase();
   if(tag==='input'||tag==='select'||tag==='textarea'||e.target.isContentEditable) return;
@@ -1751,6 +1931,25 @@ document.addEventListener('keydown', e=>{
   if((e.ctrlKey||e.metaKey) && (k==='y'||k==='Y')){ e.preventDefault(); redo(); return; }
   if((e.ctrlKey||e.metaKey) && e.shiftKey && (k==='z'||k==='Z')){ e.preventDefault(); redo(); return; }
   const brushMap = {'1':'cycle','2':'day','3':'night','4':'rest','5':'ot'};
+  if(k==='PageUp'){ e.preventDefault(); shiftMonth(-1); return; }
+  if(k==='PageDown'){ e.preventDefault(); shiftMonth(1); return; }
+  if(kbSel){
+    if(k==='ArrowUp'){ e.preventDefault(); kbMove(0,-1); return; }
+    if(k==='ArrowDown'){ e.preventDefault(); kbMove(0,1); return; }
+    if(k==='ArrowLeft'){ e.preventDefault(); kbMove(-1,0); return; }
+    if(k==='ArrowRight'){ e.preventDefault(); kbMove(1,0); return; }
+    if(k===' '||k==='Enter'){ e.preventDefault(); kbEditCell(null); return; }
+    if(brushMap[k]){
+      e.preventDefault();
+      const v = brushMap[k];
+      $('#brush').value = v;                 // 画笔与设值保持一致
+      kbEditCell(v==='cycle' ? null : (v==='day' ? 'd' : v==='night' ? 'n' : v==='rest' ? '.' : 'ot'));
+      return;
+    }
+    if(k==='Delete'||k==='Backspace'){ e.preventDefault(); kbClearManual(); return; }
+    if(k==='Escape'){ kbSel = null; clearKbSelDOM(); return; }
+    return; // 有焦点格时，其它字符键不触发月份切换/画笔提示，避免误操作
+  }
   if(brushMap[k]){
     $('#brush').value = brushMap[k];
     toast('画笔：' + ({cycle:'🔁 循环切换',day:'☀️ 白班',night:'🌙 夜班',rest:'🟢 休',ot:'🔺 加班'})[brushMap[k]]);
@@ -1781,10 +1980,10 @@ $('#sheet').addEventListener('dblclick', e=>{
   histCommit('复制前一天排班');
   renderSheet(); toast('已把 ' + py + '年' + pm + '月' + pd + '日 的排班复制到 ' + mkey.replace('-','年') + '月' + d + '日（' + n + '人，连班防呆拦截的格子已跳过）');
 });
-/* 点击表头「第N周」：把该周排班复制到后续所有完整周 */
+/* 点击表头「第N周」：弹出目标周选择框（默认勾选后续所有完整周，可取消个别周） */
 $('#sheet').addEventListener('click', e=>{
   const th = e.target.closest('thead th.week'); if(!th) return;
-  copyWeekTemplate(+th.dataset.w);
+  openWeekCopy(+th.dataset.w);
 });
 
 /* ================= 交互：人员管理 ================= */
@@ -1973,10 +2172,8 @@ $('#clearNextBtn').onclick = ()=>{
   saveState(); renderAll();
   toast('🧹 已清除下月（' + nk.replace('-','年') + '月）排班与请假，可重新自动排班');
 };
-/* 周模板复制（日历周版）：把视图内第 w 周（周一~周日）复制到后续所有完整周。
-   模板必须是完整 7 天周（周一~周日全在视图内）；跨月周可作模板，复制目标跨月连续；
-   源值取合并后排班（含手工修改与休息）；模板周含连班/超6连班的人员整行跳过；
-   逐格写入复用防呆（边界连班拦截、六休一自动改休）；入历史可 Ctrl+Z 撤销。 */
+/* 周分组：视图内按日历周（周一~周日）划分，供表头「第N周」显示与周复制使用。
+   跨月周完整则 isFull=true（可作为模板或复制目标）；被视图截断的周 isFull=false。 */
 function buildWeekGroups(){
   const months = CUR.months;
   const first = months[0], last = months[months.length-1];
@@ -2003,15 +2200,66 @@ function cellVal(pid, y, m, d){
   const g = CUR.grids[ym(y,m)];
   return (g && g[pid] && g[pid][d-1]) || '.';
 }
-function copyWeekTemplate(w){
+/* ---- v1.42 周复制选目标周：计算某周范围内手工格数 / 打开目标选择弹窗 ---- */
+function countManInWeek(wk){
+  let c = 0;
+  for(let i=0;i<7;i++){
+    const d = new Date(wk.sY, wk.sM-1, wk.sD+i);
+    const key = ym(d.getFullYear(), d.getMonth()+1), dd = d.getDate();
+    const man = state.manual[key];
+    if(!man) continue;
+    for(const pid in man){
+      const s = man[pid];
+      if(s && s[dd-1] && s[dd-1] !== '_') c++;
+    }
+  }
+  return c;
+}
+function weekRangeText(wk){
+  return wk.sY + '年' + wk.sM + '月' + wk.sD + '日 ~ ' + (wk.eM!==wk.sM ? wk.eM + '月' : '') + wk.eD + '日';
+}
+function openWeekCopy(w){
   const weeks = buildWeekGroups();
   const src = weeks[w-1]; if(!src) return;
   if(!src.isFull){ toast('⚠️ 该周被视图截断（不完整），请选择完整的周一~周日周'); return; }
   const tgts = weeks.slice(w).filter(x=>x.isFull);
   if(!tgts.length){ toast('⚠️ 该周之后没有完整的周可复制'); return; }
   if(!state.people.length){ toast('👷 请先添加技术员'); return; }
-  const sTxt = src.sY + '年' + src.sM + '月' + src.sD + '日 ~ ' + (src.eM!==src.sM ? src.eM + '月' : '') + src.eD + '日';
-  if(!confirm('将把第 ' + w + ' 周（' + sTxt + '，周一到周日）的排班复制到后续 ' + tgts.length + ' 个完整周（含手工修改与休息，可 Ctrl+Z 撤销）。确定？')) return;
+  window._wkSrc = w;
+  $('#weekInfo').innerHTML = '把<b>第 ' + w + ' 周</b>（' + weekRangeText(src) + '，周一到周日）的排班复制到下方勾选的目标周'
+    + '（含手工修改与休息；目标周现有手工会被覆盖，供参考；模板含连班/超6连班的人员整行跳过；可 Ctrl+Z 撤销）。';
+  $('#weekTargets').innerHTML = tgts.map(t=>{
+    const n = weeks.indexOf(t) + 1;
+    const mc = countManInWeek(t);
+    return '<label><input type="checkbox" data-w="' + n + '" checked> 📋 第 ' + n + ' 周（' + weekRangeText(t) + '）'
+      + (mc ? '<span class="wk-man">已有 ' + mc + ' 格手工</span>' : '<span class="wk-man">无手工</span>') + '</label>';
+  }).join('');
+  $('#weekModal').classList.add('show');
+}
+$('#weekCancel').onclick = ()=> $('#weekModal').classList.remove('show');
+$('#weekModal').addEventListener('click', e=>{ if(e.target.id==='weekModal') e.target.classList.remove('show'); });
+$('#weekOk').onclick = ()=>{
+  const ns = [...$('#weekTargets').querySelectorAll('input:checked')].map(i=>+i.dataset.w);
+  $('#weekModal').classList.remove('show');
+  if(!ns.length){ toast('未勾选任何目标周，已取消'); return; }
+  copyWeekTemplate(window._wkSrc, ns);
+};
+/* 周模板复制（日历周版）：把视图内第 w 周（周一~周日）复制到指定目标周集合。
+   wantW（第几周的数组）缺省=复制到后续所有完整周（历史行为，供其它入口复用）。
+   模板必须是完整 7 天周（周一~周日全在视图内）；跨月周可作模板，复制目标跨月连续；
+   源值取合并后排班（含手工修改与休息）；模板周含连班/超6连班的人员整行跳过；
+   逐格写入复用防呆（边界连班拦截、六休一自动改休）；入历史可 Ctrl+Z 撤销。 */
+function copyWeekTemplate(w, wantW){
+  const weeks = buildWeekGroups();
+  const src = weeks[w-1]; if(!src) return;
+  if(!src.isFull){ toast('⚠️ 该周被视图截断（不完整），请选择完整的周一~周日周'); return; }
+  let tgts;
+  if(wantW && wantW.length) tgts = wantW.map(n=>weeks[n-1]).filter(x=>x && x.isFull);
+  else tgts = weeks.slice(w).filter(x=>x.isFull);
+  if(!tgts.length){ toast('⚠️ 没有可复制的目标周（不完整周已被跳过）'); return; }
+  if(!state.people.length){ toast('👷 请先添加技术员'); return; }
+  const sTxt = weekRangeText(src);
+  const tTxt = tgts.length > 3 ? tgts.length + ' 周' : tgts.map(t=>'第 ' + (weeks.indexOf(t)+1) + ' 周').join('、');
   histBegin();
   let cells = 0, skip = 0;
   const srcDates = [];
@@ -2033,7 +2281,7 @@ function copyWeekTemplate(w){
   }
   histCommit('周模板复制');
   saveState(); renderAll();
-  toast('📋 已把第 ' + w + ' 周复制到后续 ' + tgts.length + ' 个完整周（' + cells + ' 格' + (skip ? '，' + skip + ' 人因模板含违规跳过' : '') + '，可 Ctrl+Z 撤销）');
+  toast('📋 已把第 ' + w + ' 周复制到 ' + tTxt + '（' + cells + ' 格' + (skip ? '，' + skip + ' 人因模板含违规跳过' : '') + '，可 Ctrl+Z 撤销）');
 }
 $('#rotateBtn').onclick = ()=> $('#rotateMenu').parentElement.classList.toggle('open');
 function doRotateAll(){
@@ -2243,13 +2491,52 @@ function openSnapModal(){
   }
   $('#snapModal').classList.add('show');
 }
+/* 快照恢复前的差异摘要：对比"当前数据"与"快照数据"，列出关键差异供用户确认影响面 */
+function snapDiffLines(s){
+  const snap = s.state || {};
+  const oldP = snap.people || [], newP = state.people || [];
+  const oldM = snap.manual || {}, newM = state.manual || {};
+  const oldLv = snap.leave || {}, newLv = state.leave || {};
+  const lines = [];
+  // 人员
+  const oldN = oldP.map(p=>p.name), newN = newP.map(p=>p.name);
+  const added = newN.filter(n=>!oldN.includes(n));          // 恢复后会被移除
+  const removed = oldN.filter(n=>!newN.includes(n));        // 恢复后会回来
+  if(oldN.length === newN.length) lines.push('人员：当前 ' + newN.length + ' 人 ↔ 快照 ' + oldN.length + ' 人（名单一致）');
+  else {
+    lines.push('人员：当前 ' + newN.length + ' 人 ↔ 快照 ' + oldN.length + ' 人（不一致）');
+    if(added.length) lines.push('  · 恢复后将从名单消失：' + added.slice(0,4).join('、') + (added.length>4 ? ' 等' : ''));
+    if(removed.length) lines.push('  · 恢复后将重新出现：' + removed.slice(0,4).join('、') + (removed.length>4 ? ' 等' : ''));
+  }
+  // 手工排班月份差异（格数）
+  const keys = [...new Set([...Object.keys(oldM), ...Object.keys(newM), ...Object.keys(oldLv), ...Object.keys(newLv)])];
+  const manN = st => { let c=0; for(const k in st){ const mm=st[k]; for(const pid in mm){ const s=mm[pid]; for(let i=0;i<(s||'').length;i++) if(s[i]!=='_' && s[i]!==undefined) c++; } } return c; };
+  const leaveN = st => { let c=0; for(const k in st){ const mm=st[k]; for(const pid in mm) c += Object.keys(mm[pid]||{}).length; } return c; };
+  const oldMC = manN(oldM), newMC = manN(newM);
+  if(oldMC !== newMC) lines.push('手工排班：当前 ' + newMC + ' 格 ↔ 快照 ' + oldMC + ' 格' + (oldMC>newMC ? '（恢复会增加 ' + (oldMC-newMC) + ' 格）' : '（恢复会清除 ' + (newMC-oldMC) + ' 格）'));
+  else if(keys.length) lines.push('手工排班：当前与快照一致（' + newMC + ' 格）');
+  const oldLC = leaveN(oldLv), newLC = leaveN(newLv);
+  if(oldLC !== newLC) lines.push('请假记录：当前 ' + newLC + ' 条 ↔ 快照 ' + oldLC + ' 条');
+  // 涉及月份
+  const monthTxt = k => k.replace('-','年') + '月';
+  const sorted = keys.sort();
+  if(sorted.length > 0 && (oldMC !== newMC || oldLC !== newLC)){
+    const mStr = sorted.slice(0,6).map(monthTxt).join('、');
+    lines.push('受影响月份：' + mStr + (sorted.length>6 ? ' 等 ' + sorted.length + ' 个月' : ''));
+  }
+  if(!keys.length) lines.push('快照与当前均无排班/请假数据');
+  return lines;
+}
 function restoreSnapshot(idx){
   const snaps = getSnaps();
   const s = snaps[idx];
   if(!s || !s.state) return false;
   const dt = new Date(s.t);
   const ts = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0') + ' ' + String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
-  if(!confirm('⚠️ 恢复到 ' + ts + ' 的快照（' + s.reason + '，' + (s.people||0) + ' 人）将覆盖当前所有数据。\n恢复前会先保存当前数据为快照，可再次恢复。确定继续？')) return false;
+  const diff = snapDiffLines(s);
+  if(!confirm('⚠️ 恢复到 ' + ts + ' 的快照（' + s.reason + '，' + (s.people||0) + ' 人）将覆盖当前所有数据。\n'
+    + '\n【差异预览】（当前 → 快照）\n' + diff.join('\n')
+    + '\n\n恢复前会先保存当前数据为快照，可再次恢复。确定继续？')) return false;
   pushSnapshot('恢复快照（' + ts + ' ' + s.reason + '）');
   state = JSON.parse(JSON.stringify(s.state));
   saveState(); histReset(); renderAll();
