@@ -127,7 +127,7 @@
   .sheet-panel{flex:1 1 858px;min-width:0;max-width:calc(100% - 353px)}
   .side{flex:0 0 329px;display:flex;flex-direction:column;gap:18px}
   /* ===== 排班表 ===== */
-  .sheet-scroll{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:10px;background:var(--sheet-bg)}
+  .sheet-scroll{overflow:auto;max-height:92vh;border:1px solid var(--border);border-radius:10px;background:var(--sheet-bg)}
   .print-title{display:none}
   /* 表上部横向滚动条：与 sheet-scroll 同步滚动（内容超宽时显示） */
   .h-scroll-bar{overflow-x:auto;overflow-y:hidden;max-height:12px;display:none;margin-bottom:4px;padding-bottom:0}
@@ -159,10 +159,10 @@
   .tag-转码{background:#fef3c7;color:#92400e}
   html[data-theme=dark] .tag-除气{background:#1e2f50;color:#93c5fd}
   html[data-theme=dark] .tag-转码{background:#45371a;color:#fde68a}
-  .cell{width:33px;height:33px;cursor:pointer;position:relative;user-select:none;transition:box-shadow .1s,transform .08s,filter .08s}
+  .cell{width:33px;height:30px;cursor:pointer;position:relative;user-select:none;transition:box-shadow .1s,transform .08s,filter .08s}
   .cell:hover{box-shadow:inset 0 0 0 1.5px rgba(47,109,181,.6);z-index:1;filter:brightness(1.05)}
   .cell:active{transform:scale(.94)}
-  .cell .c-txt{font-weight:700;font-size:12px;line-height:33px}
+  .cell .c-txt{font-weight:700;font-size:12px;line-height:30px}
   .cell .c-badge{position:absolute;top:1px;right:1px;font-size:8px;font-weight:800;line-height:1;padding:1.5px 3px;border-radius:4px;color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
   .cell.day{background:linear-gradient(180deg,var(--c-day-top) 0%,var(--c-day) 100%);color:var(--c-day-t)}
   .cell.night{background:linear-gradient(180deg,var(--c-night-top) 0%,var(--c-night) 100%);color:var(--c-night-t)}
@@ -379,7 +379,7 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.42</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.43</span></h1>
     <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
   </div>
   <div class="hd-right">
@@ -699,6 +699,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.43</b> · 排班表显示窗口扩大（2026-09-04）：① 排班表滚动容器最大高度 <code>max-height</code> 由 <code>72vh</code> 提高到 <code>92vh</code>，让屏幕更高的窗口不再过早截断 20+ 名人员列表；② 单元格高度由 <code>33px</code> 微调为 <code>30px</code>（line-height 同步），纵向更紧凑——常规 1080P 显示器一屏可看完全月人员，无须垂直滚动。打印与窄屏断点不受影响。</div>
       <div class="log-ver"><b>v1.42</b> · 使用便捷性四项（2026-09-03）：① <b>循环画笔悬停预览</b>——鼠标悬停格子即浮层提示「点击 → 将变为的班次」，连班自动避让 / 六休一强制休等防呆拦截也一并预告，看清再点防误操作（请假格提示先销假）；② <b>键盘微调</b>——点击格子出现蓝色焦点框后，<kbd>←→↑↓</kbd> 移动、<kbd>空格</kbd>/<kbd>Enter</kbd> 循环切换、<kbd>1</kbd>~<kbd>5</kbd> 直接设值、<kbd>Delete</kbd> 清除手动、<kbd>Esc</kbd> 取消；未选中格子时 <kbd>←→</kbd> 仍为切换月份；③ <b>周模板复制改为可选目标周</b>——点表头「第 N 周」弹出目标周勾选框（默认勾选后续所有完整周，可取消个别周或全不勾取消），逐周标注「已有 N 格手工」防误覆盖，目标周不受限「一刀切复制到后续全部周」；④ <b>快照恢复前差异预览</b>——「↩ 恢复」先在确认框列出差异摘要（人员名单增删 / 手工排班格数增减 / 请假条数 / 受影响月份），看清影响面再确认。同步修正：循环画笔的连班自动替代班次补齐六休一校验，悬停预览与实际写入结果始终一致。</div>
       <div class="log-ver"><b>v1.41</b> · 文案去标识化（2026-09-02）：更新记录与界面说明文字不再出现具体人员姓名，改以「组长 / 一人 / 除气固定白班人员」等描述替代；示例名单数据本身保持不变。</div>
       <div class="log-ver"><b>v1.40</b> · 人员级指定转班日（2026-09-02）：「🔁 转班 ▾」新增 📌 指定人员从某日转班——任意人员（含<b>固定班</b>）可设定本月从第 N 日起白/夜互换直至月末，休息日与连班防呆自动套用（自动排班不再逐格手刷）；「月轮转」人员以指定日替代「月末周末」自动转班；仅当月生效，下月按人员规则回落；设定/取消可 Ctrl+Z 撤销，含完整备份/恢复。固定班人员月中破例（如组长 9/7 转夜班）一键完成。</div>
