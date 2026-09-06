@@ -2,8 +2,8 @@
    覆盖：转班下拉入口 / 弹窗设定（固定白班人员从第7日起转夜）/
         周日休保留 / reload 持久化 / 列表展示与取消回落 / Ctrl+Z·Ctrl+Y /
         月轮转人员不受扰 / 10月体检零违规
-   运行：NODE_PATH=.../node_modules node verify_sprot.js  （需已起 http.server 8002） */
-const { chromium } = require('playwright');
+   运行：npm run test:all（推荐）或手动 node verify_sprot.js（自动起服务，浏览器解析见 pw.js） */
+const { chromium } = require('./pw');
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

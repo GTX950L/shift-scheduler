@@ -1,8 +1,8 @@
 /* shift-scheduler v1.36 冒烟测试：Playwright headless chromium
    覆盖：加载无错 / 示例数据 / 自动排班 / 排班表渲染 / 手动蓝点 / 撤销 /
         请假登记 / 复制到下月+清下月(请假对称) / 视图切换 / 更新记录 / 工具下拉 / CSV 导出
-   运行：NODE_PATH=.../node_modules node smoke.js  （需已起 http.server 8002） */
-const { chromium } = require('playwright');
+   运行：npm run test:all（推荐）或手动 node smoke.js（自动起服务，浏览器解析见 pw.js） */
+const { chromium } = require('./pw');
 
 (async () => {
   const browser = await chromium.launch();

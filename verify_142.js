@@ -5,8 +5,8 @@
            Ctrl+Z·Ctrl+Y/Esc 取消/未选中时←→仍切月）
         ④ 周模板复制改为可选目标周（弹窗/全不勾取消/复制落格/取消按钮）
         ⑤ 快照恢复前差异预览（confirm 含差异摘要，恢复生效）
-   运行：NODE_PATH=C:\...\node_modules node verify_142.js  （需已起 http.server 8002） */
-const { chromium } = require('playwright');
+   运行：npm run test:all（推荐）或手动 node verify_142.js（自动起服务，浏览器解析见 pw.js） */
+const { chromium } = require('./pw');
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

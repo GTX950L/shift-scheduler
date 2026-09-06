@@ -379,7 +379,7 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.43</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.44</span></h1>
     <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
   </div>
   <div class="hd-right">
@@ -537,7 +537,7 @@
   <div class="kpi-row" id="kpiRow"></div>
   <div class="stats-grid">
     <div class="chart-box">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">每日人力分布（白班 / 夜班，浅色叠加为加班）</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">每日人力分布（白班 / 夜班在岗数，请假不计入；浅色叠加为加班）</div>
       <div class="chart-scroll" id="chartBox"></div>
     </div>
     <div class="tbl-box">
@@ -628,7 +628,7 @@
       <h4>📝 请假 / 🏮 节假日</h4>
       <ul>
         <li>排班表任意格子<b>右键 → 请假</b>（事假/病假/年假/其他），格子变灰显示「假」，统计/合计自动计入请假、出勤排除；右键「取消请假」销假。</li>
-        <li>「🏮 节假日」按钮可给任意日期标记法定假日/停线日：表头显示 🏮+名称、列淡黄高亮；弹窗内「📅 一键标记 2026 法定假日」按国务院放假安排批量标记（已有其他名称的日期不覆盖）。</li>
+        <li>「🏮 节假日」按钮可给任意日期标记法定假日/停线日：表头显示 🏮+名称、列淡黄高亮；弹窗内「📅 一键标记 2026 法定假日」按国务院放假安排批量标记（内置仅 2026 年，其它年份请选日期＋名称逐日手动添加；已有其他名称的日期不覆盖）。</li>
       </ul>
     </div>
     <div class="help-sec">
@@ -699,6 +699,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.44</b> · 口径修复与年度适配（2026-09-06）：① <b>每日人力图口径修复</b>——请假者不再计入白/夜在岗柱，与排班表每日合计、月度统计口径一致（此前请假格在图中仍按在岗统计，图表与表格数字对不上）；② <b>示例数据载入即到位</b>——填入示例后视图自动切到 2026 年 9 月（示例锁定月），不再停留在空白月；③ <b>固定转班日超月提醒</b>——固定转班日超出当月天数（如 31 日遇 2 月）时，「⚡ 自动排班」明确提示轮转班次顺延至下月 1 日切换；④ <b>备份导入结构校验</b>——恢复前校验人员与记录字段，不完整的人员/记录自动剔除并提示，误导入损坏或异项目 JSON 不再白屏；⑤ <b>法定假日引导</b>——「📅 一键标记 2026 法定假日」在 2026 年以外月份点按，提示该年需手动标记；⑥ <b>回归测试一键化</b>——新增 <code>npm run test:all</code>（自动起本地服务并依次运行 smoke / 转班日 / v1.42 三套端到端测试），测试脚本自动兼容 playwright 与 playwright-core。</div>
       <div class="log-ver"><b>v1.43</b> · 排班表显示窗口扩大（2026-09-04）：① 排班表滚动容器最大高度 <code>max-height</code> 由 <code>72vh</code> 提高到 <code>92vh</code>，让屏幕更高的窗口不再过早截断 20+ 名人员列表；② 单元格高度由 <code>33px</code> 微调为 <code>30px</code>（line-height 同步），纵向更紧凑——常规 1080P 显示器一屏可看完全月人员，无须垂直滚动。打印与窄屏断点不受影响。</div>
       <div class="log-ver"><b>v1.42</b> · 使用便捷性四项（2026-09-03）：① <b>循环画笔悬停预览</b>——鼠标悬停格子即浮层提示「点击 → 将变为的班次」，连班自动避让 / 六休一强制休等防呆拦截也一并预告，看清再点防误操作（请假格提示先销假）；② <b>键盘微调</b>——点击格子出现蓝色焦点框后，<kbd>←→↑↓</kbd> 移动、<kbd>空格</kbd>/<kbd>Enter</kbd> 循环切换、<kbd>1</kbd>~<kbd>5</kbd> 直接设值、<kbd>Delete</kbd> 清除手动、<kbd>Esc</kbd> 取消；未选中格子时 <kbd>←→</kbd> 仍为切换月份；③ <b>周模板复制改为可选目标周</b>——点表头「第 N 周」弹出目标周勾选框（默认勾选后续所有完整周，可取消个别周或全不勾取消），逐周标注「已有 N 格手工」防误覆盖，目标周不受限「一刀切复制到后续全部周」；④ <b>快照恢复前差异预览</b>——「↩ 恢复」先在确认框列出差异摘要（人员名单增删 / 手工排班格数增减 / 请假条数 / 受影响月份），看清影响面再确认。同步修正：循环画笔的连班自动替代班次补齐六休一校验，悬停预览与实际写入结果始终一致。</div>
       <div class="log-ver"><b>v1.41</b> · 文案去标识化（2026-09-02）：更新记录与界面说明文字不再出现具体人员姓名，改以「组长 / 一人 / 除气固定白班人员」等描述替代；示例名单数据本身保持不变。</div>
@@ -1377,6 +1378,7 @@ function renderChart(){
   for(let d=1; d<=dim; d++){
     let day=0,night=0,dayOt=0,nightOt=0;
     for(const p of state.people){
+      if(getLeave(p.id, CUR.key, d)) continue; // 请假不在岗：与每日合计行/月度统计口径一致（v1.44 修复）
       const c = (grid[p.id]||[])[d-1]||'.';
       if(c==='d') day++; else if(c==='n') night++;
       else if(c==='D') dayOt++; else if(c==='N') nightOt++;
@@ -1761,7 +1763,7 @@ $('#sheet').addEventListener('mouseover', e=>{
 });
 document.addEventListener('mouseup', ()=>{
   painting = null;
-  if(painted){ painted = false; histCommit('排班修改'); renderSheet(); } // 拖拽/点击结束后提交历史并刷新合计行
+  if(painted){ painted = false; histCommit('排班修改'); renderSheet(); renderStats(); renderChart(); } // 拖拽/点击结束后提交历史并刷新合计行/统计/图表（v1.44 图表口径同步）
 });
 /* 窗口失焦兜底：鼠标在窗口外松开时提交悬空事务 */
 window.addEventListener('blur', ()=>{ painting = null; if(histTx && histTx.length){ histCommit('排班修改'); } });
@@ -1920,7 +1922,7 @@ $('#cellMenu').addEventListener('click', e=>{
   else if(a==='leave-o') setLeave(pid, mkey, d, '其他');
   histCommit('右键操作');
   $('#cellMenu').classList.remove('show');
-  updateCellDOM(cmCell); renderSheet(); renderStats();
+  updateCellDOM(cmCell); renderSheet(); renderStats(); renderChart(); // v1.44：请假/销假同步刷新图表口径
 });
 /* 键盘快捷键：选中格子后 ↑↓←→ 移动焦点、空格/回车 循环、1~5 直接设值、Del 清手动、Esc 取消；
    未选中格子时：1-5 切换画笔，←→ / PageUp/Down 切换月份 */
@@ -2109,13 +2111,17 @@ $('#monthLabel').onclick = ()=>{
 };
 $('#genBtn').onclick = ()=>{
   if(!state.people.length){ toast('👷 请先添加技术员再自动排班'); return; }
+  // v1.44：固定转班日超出当月天数（如 31 日遇 2 月）时如实提示顺延，避免静默不转
+  const rd = (state.rotateMode||'lastWeekend')==='fixed' ? (state.rotateDay||1) : 0;
+  const rdWarn = (rd > CUR.dim && state.people.some(p=>p.shiftRule==='rotate'))
+    ? '；注意：本月仅 ' + CUR.dim + ' 天，固定转班日 ' + rd + ' 日不存在，轮转班次顺延至下月 1 日切换（无周末缓冲）' : '';
   renderAll();
   const issues = computeChecks();
   if(issues.length){
-    toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线，发现 ' + issues.length + ' 处需关注，详见体检报告');
+    toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线，发现 ' + issues.length + ' 处需关注，详见体检报告' + rdWarn);
     runChecks(); // 有违规/提醒 → 自动弹出体检报告
   } else {
-    toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线，体检通过 ✅（手工修改保留）');
+    toast('⚡ 已生成 ' + CUR.y + '年' + CUR.m + '月 排班基线，体检通过 ✅（手工修改保留）' + rdWarn);
   }
 };
 /* 整月复制：把当前月的手工修改（班次/调班/强制休）与请假记录整体复制到下月，轮转班次自动生成不受影响 */
@@ -2585,7 +2591,15 @@ const HOLIDAYS_2026 = {
 $('#holPreset').onclick = ()=>{
   const key = CUR.key;
   const h = HOLIDAYS_2026[key];
-  if(!h){ toast('该月没有内置的 2026 法定假日（内置：元旦/春节/清明/五一/端午/中秋/国庆）'); return; }
+  if(!h){
+    if(+key.split('-')[0] !== 2026){
+      // v1.44：内置数据仅 2026 年，其它年份给出手动标记引导，避免按钮"无响应"困惑
+      toast('📅 一键标记仅内置 2026 年法定假日。' + (+key.split('-')[0]) + ' 年请手动标记：在下方「日期＋名称」添加后点「＋ 添加」');
+    } else {
+      toast('2026 年 ' + CUR.m + ' 月没有内置法定假日（内置：元旦/春节/清明/五一/端午/中秋/国庆）');
+    }
+    return;
+  }
   const names = Object.values(h).filter((v,i,a)=>a.indexOf(v)===i).join('、');
   if(!confirm('将为 ' + CUR.y + '年' + CUR.m + '月 标记法定假日：' + names + '（共 ' + Object.keys(h).length + ' 天）。\n已手工标记的其他名称不会被覆盖。确定添加？')) return;
   state.holidays[key] = state.holidays[key] || {};
@@ -3087,29 +3101,97 @@ function applyCSVImport(rows){
     }
   }, 300);
 }
+/* v1.44 备份结构校验：防「合法 JSON 但结构损坏」（误导入其它项目备份 / 字段被手工改坏）
+   导致渲染期异常白屏。只保留合规人员及其对应记录，坏数据计数并入提示。 */
+function sanitizeBackup(s){
+  if(!s || typeof s !== 'object') return null;
+  const seen = new Set(); const people = []; let bad = 0;
+  if(Array.isArray(s.people)){
+    for(const p of s.people){
+      if(p && typeof p === 'object' && typeof p.id === 'string' && p.id && typeof p.name === 'string' && p.name && !seen.has(p.id)){
+        seen.add(p.id); people.push(p);
+      } else bad++;
+    }
+  }
+  const obj = v => (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+  /* month -> pid -> value 结构的月份表：只保留现存人员条目，并按类型校验值 */
+  const map = (src, kind) => {
+    const out = {}; const srcO = obj(src);
+    for(const mk of Object.keys(srcO)){
+      const inner = srcO[mk]; if(!inner || typeof inner !== 'object' || Array.isArray(inner)) continue;
+      const o2 = {};
+      for(const pid of Object.keys(inner)){
+        if(!seen.has(pid)) continue;
+        const val = inner[pid];
+        if(kind==='shift' && (val==='day'||val==='night')) o2[pid] = val;
+        else if(kind==='int' && val !== '' && val !== null && Number.isFinite(+val)) o2[pid] = +val;
+        else if(kind==='str' && typeof val === 'string') o2[pid] = val;
+        else if(kind==='leave' && val && typeof val === 'object' && !Array.isArray(val)){
+          const o3 = {};
+          for(const dd of Object.keys(val)){ if(typeof val[dd] === 'string') o3[dd] = val[dd]; else bad++; }
+          if(Object.keys(o3).length) o2[pid] = o3; else bad++;
+        } else bad++;
+      }
+      if(Object.keys(o2).length) out[mk] = o2;
+    }
+    return out;
+  };
+  const hol = {}; const holSrc = obj(s.holidays);
+  for(const mk of Object.keys(holSrc)){
+    const inner = holSrc[mk]; if(!inner || typeof inner !== 'object' || Array.isArray(inner)) continue;
+    const o2 = {};
+    for(const dd of Object.keys(inner)){ if(typeof inner[dd] === 'string') o2[dd] = inner[dd]; else bad++; }
+    if(Object.keys(o2).length) hol[mk] = o2;
+  }
+  const rowOrder = Array.isArray(s.rowOrder) ? s.rowOrder.filter(id => typeof id === 'string' && seen.has(id)) : [];
+  const okLoad = v => (v==='normal'||v==='busy') ? v : 'normal';
+  const num01 = (v, max, dft) => (Number.isFinite(+v) && +v >= 1 && +v <= max) ? +v : dft;
+  const out = {
+    people, bad,
+    monthShift: map(s.monthShift, 'shift'),
+    spRot: map(s.spRot, 'int'),
+    manual: map(s.manual, 'str'),
+    leave: map(s.leave, 'leave'),
+    holidays: hol,
+    rowOrder,
+    satLoad: okLoad(s.satLoad), sunLoad: okLoad(s.sunLoad),
+    rotateMode: (s.rotateMode==='lastWeekend'||s.rotateMode==='fixed') ? s.rotateMode : 'lastWeekend',
+    rotateDay: num01(s.rotateDay, 31, 1),
+    viewMode: (s.viewMode==='month'||s.viewMode==='cn'||s.viewMode==='pc'||s.viewMode==='pcn') ? s.viewMode : 'cn',
+    deptFilter: (s.deptFilter==='除气'||s.deptFilter==='转码') ? s.deptFilter : 'all',
+    sampleVer: Number.isFinite(+s.sampleVer) ? +s.sampleVer : 0,
+    curYear: num01(s.curYear, 9999, today().y),
+    curMonth: num01(s.curMonth, 12, today().m),
+    warn: ''
+  };
+  if(!people.length) return null; // 备份必含人员；空名单视为无效，避免恢复成"0 人 + 孤儿数据"
+  out.warn = bad ? ('已清理 ' + bad + ' 处不完整数据') : '';
+  return out;
+}
 function importJSONData(data){
   if(!data || data.app !== 'shift-scheduler' || !data.state){ toast('⚠️ 不是有效的排班助手备份文件'); return; }
   if(state.people.length && !confirm('⚠️ 导入备份将覆盖当前所有数据（人员 ' + state.people.length + ' 人、全部排班/请假/节假日）。\n建议先「⬇ 导出 → 完整备份 JSON」留存当前数据。确定继续？')) return;
   pushSnapshot('导入备份 JSON');
-  const s = data.state;
-  state.people = s.people || [];
-  state.monthShift = s.monthShift || {};
-  state.spRot = s.spRot || {};
-  state.manual = s.manual || {};
-  state.leave = s.leave || {};
-  state.holidays = s.holidays || {};
-  state.rowOrder = Array.isArray(s.rowOrder) ? s.rowOrder : [];
-  state.satLoad = s.satLoad || 'normal'; state.sunLoad = s.sunLoad || 'normal';
+  const s = sanitizeBackup(data.state);
+  if(!s){ toast('⚠️ 备份文件缺少有效数据，未导入'); return; }
+  state.people = s.people;
+  state.monthShift = s.monthShift;
+  state.spRot = s.spRot;
+  state.manual = s.manual;
+  state.leave = s.leave;
+  state.holidays = s.holidays;
+  state.rowOrder = s.rowOrder;
+  state.satLoad = s.satLoad; state.sunLoad = s.sunLoad;
   // 恢复视图/转班/示例等设置（旧备份无这些字段时用默认值，不报错）
-  state.rotateMode = s.rotateMode || 'lastWeekend';
-  state.rotateDay = (state.rotateMode==='fixed' && s.rotateDay) ? s.rotateDay : 1;
-  state.viewMode = s.viewMode || 'cn';
-  state.deptFilter = s.deptFilter || 'all';
-  state.sampleVer = s.sampleVer || 0;
-  state.curYear = s.curYear || today().y; state.curMonth = s.curMonth || today().m;
+  state.rotateMode = s.rotateMode;
+  state.rotateDay = (state.rotateMode==='fixed') ? s.rotateDay : 1;
+  state.viewMode = s.viewMode;
+  state.deptFilter = s.deptFilter;
+  state.sampleVer = s.sampleVer;
+  state.curYear = s.curYear; state.curMonth = s.curMonth;
   migrateV8(state); // 旧备份可能含 x/y 留守字符或 low 负荷，恢复时统一迁移
   histReset(); saveState(); renderAll();
-  toast('💾 备份已恢复（' + state.people.length + ' 人）');
+  toast('💾 备份已恢复（' + state.people.length + ' 人' + (s.warn ? '，' + s.warn : '') + '）');
 }
 /* ---------- 文件读取与触发 ---------- */
 let fileAct = null; // 待执行的导入动作
@@ -3294,14 +3376,15 @@ function loadSample(){
   state.people = samplePeople();
   state.manual = {}; state.monthShift = {}; state.spRot = {};
   state.rowOrder = []; // 示例加载恢复默认部门排序
-  const t = today(); state.curYear = t.y; state.curMonth = t.m;
+  // 示例锁定在 2026-08/09：视图必须落在示例月（2026-09），避免停留在空白月误以为载入失败（v1.44）
+  state.curYear = 2026; state.curMonth = 9;
   state.manual['2026-08'] = sampleManual8(); // 8月锁定（与9月表衔接，跨月体检/上月视图无连班）
   state.manual['2026-09'] = sampleManual9(); // 9月锁定《複本 62.68.77除气转码9月排班表》
   state.satLoad = 'normal'; state.sunLoad = 'busy'; // 周六正常、周日任务多
   state.sampleVer = SAMPLE_VER; // 示例版本标记（供旧示例自动升级判定）
   histReset(); saveState(); renderAll();
   const wm = $('#welcomeModal'); if(wm) wm.classList.remove('show');
-  toast('🧪 已填入 20 名技术员（除气/转码 9月6休1排班，8/9 月排班已锁定）');
+  toast('🧪 已填入 20 名技术员（除气/转码 9月6休1排班，8/9 月排班已锁定，视图已切到 2026 年 9 月）');
 }
 
 /* 是否与示例锁定值一致（一致的格子不显示手动蓝点，用户改过的才显示） */
