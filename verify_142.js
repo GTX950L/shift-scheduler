@@ -6,7 +6,8 @@
         ④ 周模板复制改为可选目标周（弹窗/全不勾取消/复制落格/取消按钮）
         ⑤ 快照恢复前差异预览（confirm 含差异摘要，恢复生效）
    运行：npm run test:all（推荐）或手动 node verify_142.js（自动起服务，浏览器解析见 pw.js） */
-const { chromium } = require('./pw');
+const pw = require('./pw');
+const { chromium } = pw;
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -40,7 +41,9 @@ const { chromium } = require('./pw');
     // ---------- 准备：示例数据 → 单月视图 → 10月自动排班（停留在 10 月） ----------
     await page.goto('http://127.0.0.1:8002/index.html', { waitUntil: 'load', timeout: 30000 });
     await page.waitForTimeout(800);
-    await page.click('#wSample').catch(() => {});
+    await page.evaluate(() => { const b = document.getElementById('wStart'); if (b) b.click(); });
+    await page.waitForTimeout(250);
+    await page.evaluate(() => { const b = document.getElementById('wSampleSmall'); if (b) b.click(); });
     await page.waitForTimeout(900);
     await page.selectOption('#viewMode', 'month'); await page.waitForTimeout(500);
     await page.click('#nextMonth'); await page.waitForTimeout(600);            // 9月 → 10月
@@ -179,7 +182,7 @@ const { chromium } = require('./pw');
 
     // ---------- ⑤ 快照恢复前差异预览 ----------
     const manCur = await manCount();
-    await page.click('#snapBtn'); await page.waitForTimeout(400);
+    await pw.moreAction(page, 'snapshot', 500);
     const snapN = await page.evaluate(() => document.querySelectorAll('#snapList .snap-restore').length);
     await page.click('#snapList .snap-restore'); await page.waitForTimeout(900);
     const confirmMsg = lastDialog;

@@ -1,6 +1,6 @@
 {
   "name": "shift-scheduler",
-  "version": "1.45.0",
+  "version": "1.46.0",
   "description": "技术员排班助手：除气/转码两部门两班倒月度排班，月轮转、人员级指定转班日、连班保护、周末加班、请假登记、排班体检，导入导出支持 CSV / Excel(.xlsx/.xls)。纯单文件 HTML，离线可用。",
   "private": true,
   "scripts": {
@@ -8,7 +8,8 @@
     "test:smoke": "node smoke.js",
     "test:sprot": "node verify_sprot.js",
     "test:v142": "node verify_142.js",
-    "test:import": "node verify_import.js"
+    "test:import": "node verify_import.js",
+    "test:ui": "node verify_ui.js"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0"

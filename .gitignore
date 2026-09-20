@@ -3,6 +3,8 @@ _*.js
 _*.png
 _*.py
 _*.txt
+_*.html
+_*.css
 _out/
 node_modules/
 package-lock.json

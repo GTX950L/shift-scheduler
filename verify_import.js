@@ -11,7 +11,8 @@
         本脚本一律在 evaluate 里直接 .click()，并把每次等待压到最短。 */
 const fs = require('fs');
 const path = require('path');
-const { chromium } = require('./pw');
+const pw = require('./pw');
+const { chromium } = pw;
 
 const FIX = path.join(__dirname, 'test-fixtures');
 const results = [];
@@ -29,14 +30,14 @@ const IMPORT_MS = 900;
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text()); });
   /* 对话框路由：导入覆盖确认一律确定；「是否清空旧排班重排」一律取消（要保留导入结果做断言） */
-  page.on('dialog', d => (/清空并重新自动排班/.test(d.message()) ? d.dismiss() : d.accept()));
+  page.on('dialog', d => (/立即清空|清空并重新自动排班/.test(d.message()) ? d.dismiss() : d.accept()));
 
   /* 页内把数据恢复成空白（免重载，快得多） */
   const reset = async () => {
     await page.evaluate(() => {
       state.people = []; state.manual = {}; state.monthShift = {}; state.spRot = {};
       state.leave = {}; state.holidays = {}; state.rowOrder = []; state.sampleVer = 0;
-      ['welcomeModal', 'headerPickModal', 'checkModal'].forEach(id => document.getElementById(id).classList.remove('show'));
+      ['welcomeModal', 'headerPickModal', 'importPreviewModal', 'checkModal'].forEach(id => document.getElementById(id).classList.remove('show'));
       saveState(); renderAll();
     });
     await page.waitForTimeout(150);
@@ -56,6 +57,8 @@ const IMPORT_MS = 900;
       handleImportFile(new File([u8], name, { type: 'application/octet-stream' }));
     }, { b64, name });
     await page.waitForTimeout(IMPORT_MS);
+    await pw.confirmImport(page);       // v1.46：导入前会先弹识别预览，需确认
+    await page.waitForTimeout(200);
   };
   const importFixture = f => importBytes(fixture(f), f);
   const readState = () => page.evaluate(() => {
@@ -91,6 +94,8 @@ const IMPORT_MS = 900;
     await reset();
     await page.evaluate(csv => handleImportFile(new File([new TextEncoder().encode(csv)], '自我导出.csv', { type: 'text/csv' })), csvText);
     await page.waitForTimeout(IMPORT_MS);
+    await pw.confirmImport(page);
+    await page.waitForTimeout(200);
     const a1 = await readState();
     ok('A1. 本工具 CSV 导出 → 导入', a1.people.length === sampleN && a1.months.includes('2026-09'),
       '人员 ' + sampleN + '→' + a1.people.length + '，月份 ' + a1.months.join(','));
@@ -116,6 +121,30 @@ const IMPORT_MS = 900;
         '人数=' + st.people.length + ' 甲一=' + (jy ? jy.slice(0, 8) + '…' : '缺失')
           + ' 第25天=' + (jy ? jy[24] : '?') + ' 子甲首格=' + (zj ? zj[0] : '缺失') + ' 工号=' + workOk);
     }
+
+    /* ---------- A2b. 转置表（日期竖排 / 人员横排） ---------- */
+    for (const [f, label, n] of [
+      ['排班表_转置_日期竖排.xlsx', 'XLSX 转置表（日期竖排）', 5],
+      ['排班表_转置_日期竖排.csv', 'CSV 转置表（日期竖排）', 4]
+    ]) {
+      await reset();
+      await importFixture(f);
+      const st = await readState();
+      const jy = st.manual['2026-09'] && st.manual['2026-09']['甲一'];
+      ok('A2b. ' + label, st.people.length === n && jy && jy.slice(0, 7) === 'dddddd.' && jy[21] === 'n',
+        '人数=' + st.people.length + ' 甲一=' + (jy ? jy.slice(0, 10) + '…' : '缺失'));
+    }
+
+    /* ---------- A2c. 合并单元格：姓名/部门只在首行写 ---------- */
+    await reset();
+    await importFixture('排班表_合并单元格.xlsx');
+    const a2c = await readState();
+    const jy2c = a2c.manual['2026-09'] && a2c.manual['2026-09']['甲一'];
+    const dept2c = Object.fromEntries(a2c.people.map(p => [p.name, p.dept]));
+    ok('A2c. XLSX 合并单元格（续行合并 + 部门向下填充）',
+      a2c.people.length === 3 && jy2c === 'dddddddddddddddnnnnnnnnnnnnnnn'
+        && dept2c['乙二'] === '除气' && dept2c['丙三'] === '转码',
+      '人数=' + a2c.people.length + ' 甲一=' + (jy2c ? jy2c.slice(0, 16) + '…' : '缺失') + ' 部门=' + JSON.stringify(dept2c));
 
     /* ---------- A3. 单行表头 XLSX（姓名/部门/班次规则 + 文本日期） ---------- */
     await reset();
@@ -143,6 +172,8 @@ const IMPORT_MS = 900;
       handleImportFile(new File([new TextEncoder().encode(h)], '网页导出.xls', { type: 'application/vnd.ms-excel' }));
     });
     await page.waitForTimeout(IMPORT_MS);
+    await pw.confirmImport(page);
+    await page.waitForTimeout(200);
     const a4 = await readState();
     const zy = a4.manual['2026-09'] && a4.manual['2026-09']['赵一'];
     ok('A4. HTML 伪 Excel（.xls 实为网页表格）', a4.people.length === 3 && zy && zy[0] === 'd' && zy[6] === '.',
@@ -164,7 +195,9 @@ const IMPORT_MS = 900;
         state.people = []; state.manual = {}; state.monthShift = {}; state.leave = {}; state.rowOrder = [];
         saveState(); renderAll();
         handleImportFile(new File([bytes], 'roundtrip.' + f, { type: 'application/octet-stream' }));
-        await new Promise(r => setTimeout(r, 1300));
+        await new Promise(r => setTimeout(r, 800));
+        { const m = document.getElementById('importPreviewModal'); if (m && m.classList.contains('show')) document.getElementById('ipOk').click(); }
+        await new Promise(r => setTimeout(r, 1000));
         const back = state.manual['2026-09'] || {};
         const lv = state.leave['2026-09'] || {};
         let withCells = 0, mismatch = 0; const bad = [];
@@ -184,6 +217,37 @@ const IMPORT_MS = 900;
         rt.len + ' 字节；人员 ' + rt.want + '→' + rt.n + '，有排班 ' + rt.withCells + '，不一致 ' + rt.mismatch
           + (rt.bad.length ? '（' + rt.bad.join('；') + '）' : ''));
     }
+
+    /* ---------- B2. 空白待填表 → 填完导入 round-trip ---------- */
+    await reset();
+    await loadSample();
+    const blank = await page.evaluate(async () => {
+      const dim = CUR.dim;
+      const dateHead = Array.from({ length: dim }, (_, i) => ({ d: CUR.y + '-' + pad2(CUR.m) + '-' + pad2(i + 1) }));
+      const dowHead = Array.from({ length: dim }, (_, i) => '周' + WEEK[dowOf(CUR.y, CUR.m, i + 1)]);
+      const rows = [['填写说明：在空白格填 白班 / 夜班 / 休'],
+        ['技术员', '部门', '班次规则', '休息规则', ...dateHead],
+        ['星期', '', '', '', ...dowHead]];
+      for (const p of rowOrderPeople(true)) {
+        rows.push([p.name, p.dept, SHIFT_TXT[p.shiftRule] || '月轮转', REST_TXT[p.restRule] || '无休', ...Array.from({ length:dim }, () => '')]);
+      }
+      const bytes = xlsxBuild([{ name: '待填排班表', rows }]);
+      const names = rows.slice(3).map(r => r[0]);
+      /* 模拟「同事填完」：给每人填 白/夜/休 */
+      const filled = rows.map((r, i) => i < 3 ? r : r.map((v, ci) => ci < 4 ? v : ((ci + i) % 7 === 0 ? '休' : (ci % 2 ? '白班' : '夜班'))));
+      state.people = []; state.manual = {}; state.monthShift = {}; state.leave = {}; state.rowOrder = [];
+      saveState(); renderAll();
+      handleImportFile(new File([xlsxBuild([{ name:'待填排班表', rows:filled }])], '待填排班表.xlsx', { type:'application/octet-stream' }));
+      await new Promise(r => setTimeout(r, 900));
+      { const m = document.getElementById('importPreviewModal'); if (m && m.classList.contains('show')) document.getElementById('ipOk').click(); }
+      await new Promise(r => setTimeout(r, 900));
+      const back = state.manual['2026-09'] || {};
+      let okN = 0;
+      for (const p of state.people) { const s = back[p.id] || ''; if (s && /[^_]/.test(s)) okN++; }
+      return { bytes: bytes.length, want: names.length, got: state.people.length, okN };
+    });
+    ok('B2. 空白待填表 → 填完导入', blank.got === blank.want && blank.okN === blank.want,
+      blank.bytes + ' 字节；人员 ' + blank.want + '→' + blank.got + '，有排班 ' + blank.okN);
 
     /* ---------- C. 导出菜单均触发下载 ---------- */
     console.log('C. 导出菜单下载');
@@ -248,7 +312,9 @@ const IMPORT_MS = 900;
       await new Promise(r => setTimeout(r, 100));
       const enabled = !document.getElementById('hpOk').disabled;
       document.getElementById('hpOk').click();          /* 用选中的第 2 行解析 */
-      await new Promise(r => setTimeout(r, 1300));
+      await new Promise(r => setTimeout(r, 700));
+      { const m = document.getElementById('importPreviewModal'); if (m && m.classList.contains('show')) document.getElementById('ipOk').click(); }
+      await new Promise(r => setTimeout(r, 1000));
       const back = state.manual['2026-09'] || {};
       const w = state.people.find(p => p.name === '王五');
       const l = state.people.find(p => p.name === '李六');

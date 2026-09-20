@@ -48,7 +48,8 @@ server.listen(PORT, '127.0.0.1', async () => {
     ['smoke.js', '冒烟测试'],
     ['verify_sprot.js', '人员级指定转班日'],
     ['verify_142.js', 'v1.42 便捷功能'],
-    ['verify_import.js', 'v1.45 导入导出多格式']
+    ['verify_import.js', 'v1.45 导入导出多格式'],
+    ['verify_ui.js', 'v1.46 界面与引导']
   ];
   /* 可选：node run-tests.js import  → 只跑文件名含 import 的那套（调试单套时用） */
   const filter = process.argv.slice(2).filter(a => !a.startsWith('-'));

@@ -154,6 +154,66 @@ def write_csv_from_business(path):
     print('  ✓', os.path.relpath(path, HERE), '(GBK)')
 
 
+def write_xlsx_transposed(path):
+    """转置表：日期竖排（每行一天）、人员横排（每人一列）"""
+    from openpyxl import Workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = '转置排班'
+    names = NAMES_A[:5]
+    ws.cell(1, 1, '日期')
+    for j, nm in enumerate(names):
+        ws.cell(1, 2 + j, nm)
+    for d in range(DAYS):
+        dt = START + timedelta(days=d)
+        ws.cell(2 + d, 1, dt)
+        for j, nm in enumerate(names):
+            ws.cell(2 + d, 2 + j, sched_row('x', j, d + 1))
+    wb.save(path)
+    print('  ✓', os.path.relpath(path, HERE), '(转置)')
+
+
+def write_xlsx_merged_cells(path):
+    """合并单元格：部门只在首行写；某人被拆成两行（姓名只在第一行写）"""
+    from openpyxl import Workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = '合并单元格'
+    ws.cell(1, 1, '技术员')
+    ws.cell(1, 2, '部门')
+    for i in range(DAYS):
+        dt = START + timedelta(days=i)
+        ws.cell(1, 3 + i, '%d/%d' % (dt.month, dt.day))
+    # 甲一：前 15 天一行、后 15 天另一行（姓名合并 → 第二行姓名留空）
+    ws.cell(2, 1, '甲一'); ws.cell(2, 2, '除气')
+    ws.cell(3, 1, None);   ws.cell(3, 2, None)
+    for i in range(DAYS):
+        ws.cell(2, 3 + i, '白班' if i < 15 else None)
+        ws.cell(3, 3 + i, None if i < 15 else '夜班')
+    # 乙二：部门留空 → 应向下填充为「除气」
+    ws.cell(4, 1, '乙二'); ws.cell(4, 2, None)
+    for i in range(DAYS):
+        ws.cell(4, 3 + i, '休' if (i + 3) % 7 == 0 else '白班')
+    # 丙三：换部门
+    ws.cell(5, 1, '丙三'); ws.cell(5, 2, '转码')
+    for i in range(DAYS):
+        ws.cell(5, 3 + i, '夜班')
+    wb.save(path)
+    print('  ✓', os.path.relpath(path, HERE), '(合并单元格)')
+
+
+def write_csv_transposed(path):
+    """转置表（CSV，GBK）：日期竖排 + 人员横排，日期写成 M/D"""
+    names = NAMES_A[:4]
+    lines = ['日期,' + ','.join(names)]
+    for d in range(DAYS):
+        dt = START + timedelta(days=d)
+        lines.append('%d/%d,' % (dt.month, dt.day) + ','.join(sched_row('x', j, d + 1) for j in range(len(names))))
+    with open(path, 'wb') as f:
+        f.write('\r\n'.join(lines).encode('gbk', errors='replace'))
+    print('  ✓', os.path.relpath(path, HERE), '(转置 CSV)')
+
+
 if __name__ == '__main__':
     print('生成合成测试样本 →', OUT)
     write_xlsx_two_row_header(os.path.join(OUT, '排班表_双行表头_序列日期.xlsx'))
@@ -162,4 +222,7 @@ if __name__ == '__main__':
     write_xlsx_single_header(os.path.join(OUT, '排班表_单行表头_文本日期.xlsx'))
     write_xls_two_row_header(os.path.join(OUT, '排班表_双行表头.xls'))
     write_csv_from_business(os.path.join(OUT, '排班表_双行表头.csv'))
+    write_xlsx_transposed(os.path.join(OUT, '排班表_转置_日期竖排.xlsx'))
+    write_csv_transposed(os.path.join(OUT, '排班表_转置_日期竖排.csv'))
+    write_xlsx_merged_cells(os.path.join(OUT, '排班表_合并单元格.xlsx'))
     print('完成')

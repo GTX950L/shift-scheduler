@@ -3,7 +3,8 @@
         周日休保留 / reload 持久化 / 列表展示与取消回落 / Ctrl+Z·Ctrl+Y /
         月轮转人员不受扰 / 10月体检零违规
    运行：npm run test:all（推荐）或手动 node verify_sprot.js（自动起服务，浏览器解析见 pw.js） */
-const { chromium } = require('./pw');
+const pw = require('./pw');
+const { chromium } = pw;
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -21,13 +22,14 @@ const { chromium } = require('./pw');
   try {
     await page.goto('http://127.0.0.1:8002/index.html', { waitUntil: 'load', timeout: 30000 });
     await page.waitForTimeout(800);
-    await page.click('#wSample').catch(() => {});
+    await page.evaluate(() => { const b = document.getElementById('wStart'); if (b) b.click(); });
+    await page.waitForTimeout(250);
+    await page.evaluate(() => { const b = document.getElementById('wSampleSmall'); if (b) b.click(); });
     await page.waitForTimeout(900);
 
     // 1. 切到 10 月（未锁月）→ 郑高鑫(p6 fixed-day) 设「从第7日起换班」
     await page.click('#nextMonth'); await page.waitForTimeout(700);
-    await page.click('#rotateBtn'); await page.waitForTimeout(300);
-    await page.click('#rotateMenu button[data-a="person"]'); await page.waitForTimeout(400);
+    await pw.moreAction(page, 'rotatePerson', 500);
     const modalOpen = await page.evaluate(() => document.getElementById('spRotModal').classList.contains('show'));
     await page.selectOption('#spRotPerson', 'p6'); await page.waitForTimeout(200);
     await page.selectOption('#spRotDay', '7');
@@ -51,8 +53,7 @@ const { chromium } = require('./pw');
     ok('4. 设定持久化(reload)', r7.includes('night'), 'reload后 10/7=' + r7.split(' ')[1]);
 
     // 5. 列表显示 + 取消按钮生效 → 回落按规则(全白)
-    await page.click('#rotateBtn'); await page.waitForTimeout(300);
-    await page.click('#rotateMenu button[data-a="person"]'); await page.waitForTimeout(400);
+    await pw.moreAction(page, 'rotatePerson', 500);
     const listTxt = await page.evaluate(() => document.getElementById('spRotList').textContent);
     await page.click('#spRotList button[data-clear="p6"]'); await page.waitForTimeout(500);
     const c7 = await cellCls('p6', '2026-10', 7);

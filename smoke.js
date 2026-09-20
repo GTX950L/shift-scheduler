@@ -2,7 +2,8 @@
    覆盖：加载无错 / 示例数据 / 自动排班 / 排班表渲染 / 手动蓝点 / 撤销 /
         请假登记 / 复制到下月+清下月(请假对称) / 视图切换 / 更新记录 / 工具下拉 / CSV 导出
    运行：npm run test:all（推荐）或手动 node smoke.js（自动起服务，浏览器解析见 pw.js） */
-const { chromium } = require('./pw');
+const pw = require('./pw');
+const { chromium } = pw;
 
 (async () => {
   const browser = await chromium.launch();
@@ -24,7 +25,9 @@ const { chromium } = require('./pw');
     ok('1. 欢迎弹窗', welcome, welcome ? '（首次打开展示）' : '未出现（可能是非空 localStorage 或加载异常）');
 
     // 2. 填入示例数据（欢迎弹窗内按钮）
-    await page.click('#wSample').catch(() => {});
+    await page.evaluate(() => { const b = document.getElementById('wStart'); if (b) b.click(); });
+    await page.waitForTimeout(250);
+    await page.evaluate(() => { const b = document.getElementById('wSampleSmall'); if (b) b.click(); });
     await page.waitForTimeout(800);
     const pCount = await page.evaluate(() => document.querySelectorAll('.p-card').length);
     ok('2. 示例数据 20 人', pCount === 20, '实际 ' + pCount + ' 人');
@@ -96,8 +99,7 @@ const { chromium } = require('./pw');
     ok('8. 右键登记事假', leaveTxt === '假', '格子显示「' + leaveTxt + '」');
 
     // 9. 复制到下月 → 切 11 月 → 请假随迁
-    await page.click('#copyMonthBtn');
-    await page.waitForTimeout(500);
+    await pw.moreAction(page, 'copyMonth', 500);
     await page.click('#nextMonth'); // 10月 → 11月
     await page.waitForTimeout(600);
     const leaveCopied = await page.evaluate(() => {
@@ -108,14 +110,12 @@ const { chromium } = require('./pw');
     ok('9. 请假随「到下月」复制', leaveCopied, '11 月首格=' + (leaveCopied ? '假' : '非假'));
 
     // 10. 清下月同步清除请假：中心月 11 月 → 先复制 11月到12月（含请假），再清下月（=12月）
-    await page.click('#copyMonthBtn');
-    await page.waitForTimeout(500);
+    await pw.moreAction(page, 'copyMonth', 500);
     const leave12Before = await page.evaluate(() => {
       const td = document.querySelector('#sheet tbody tr[data-pid] td.cell[data-m="2026-12"][data-d="1"]');
       return td && td.querySelector('.c-txt') && td.querySelector('.c-txt').textContent === '假';
     });
-    await page.click('#clearNextBtn'); // 中心月 11 月 → 清除对象为 12 月
-    await page.waitForTimeout(500);
+    await pw.moreAction(page, 'clearNext', 500); // 中心月 11 月 → 清除对象为 12 月
     const leave12After = await page.evaluate(() => {
       const td = document.querySelector('#sheet tbody tr[data-pid] td.cell[data-m="2026-12"][data-d="1"]');
       return td && td.querySelector('.c-txt') && td.querySelector('.c-txt').textContent === '假';

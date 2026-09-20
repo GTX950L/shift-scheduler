@@ -198,6 +198,23 @@
   .p-card.src-hl{border-color:var(--brand);box-shadow:0 0 0 2px rgba(47,109,181,.35);cursor:pointer;background:var(--p-card-src)}
   .p-empty{text-align:center;padding:26px 12px;color:var(--muted);font-size:13px}
   .p-empty .big{font-size:15px;color:var(--sec-fg);font-weight:700;margin-bottom:6px}
+  /* v1.46：卡片信息分层 + 出勤进度条 */
+  .p-card{transition:border-color .12s,box-shadow .12s,transform .12s}
+  .p-card:hover{border-color:#bcd3ee;box-shadow:0 3px 12px rgba(16,32,64,.09)}
+  .p-card .pmeta .pm{font-size:11px;color:var(--muted)}
+  .p-att{display:flex;align-items:center;gap:7px;margin-top:6px}
+  .p-att-bar{flex:1;height:5px;border-radius:3px;background:var(--tag-bg);overflow:hidden}
+  .p-att-bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#5b9bd5,#2f6db5)}
+  .p-att-t{font-size:10.5px;color:var(--muted);font-weight:600;white-space:nowrap}
+  /* 部门分组首行：加一条分隔线，20 人长表也能一眼分出部门 */
+  #sheet tbody tr.dept-first>th,#sheet tbody tr.dept-first>td{border-top:2px solid #b7cfe8}
+  #sheet tbody tr[data-pid]:hover>th{background:#e9f2fc}
+  html[data-theme=dark] #sheet tbody tr.dept-first>th,html[data-theme=dark] #sheet tbody tr.dept-first>td{border-top-color:#3a5878}
+  /* 细滚动条（长表格/长列表不抢视觉） */
+  .sheet-scroll::-webkit-scrollbar,.people-list::-webkit-scrollbar,#hpTable::-webkit-scrollbar,.ip-tbl-wrap::-webkit-scrollbar,.tip-list::-webkit-scrollbar{width:10px;height:10px}
+  .sheet-scroll::-webkit-scrollbar-thumb,.people-list::-webkit-scrollbar-thumb,#hpTable::-webkit-scrollbar-thumb,.ip-tbl-wrap::-webkit-scrollbar-thumb{background:#c6d5e6;border-radius:5px;border:2px solid transparent;background-clip:content-box}
+  .sheet-scroll::-webkit-scrollbar-thumb:hover,.people-list::-webkit-scrollbar-thumb:hover{background:#a8bfd8;background-clip:content-box}
+  .sheet-scroll::-webkit-scrollbar-track,.people-list::-webkit-scrollbar-track{background:transparent}
   /* ===== 统计 ===== */
   .stats-panel{max-width:1500px;margin:0 auto 26px}
   .stats-grid{display:flex;flex-wrap:wrap;gap:18px}
@@ -222,6 +239,26 @@
   .f-row input[type=text],.f-row select{flex:1}
   .f-hint{font-size:11px;color:var(--muted);margin:-6px 0 10px 100px}
   .modal-ops{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+  /* ===== v1.46：导入预览 ===== */
+  .ip-cards{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .ip-card{flex:1 1 110px;background:var(--tot-bg);border:1px solid var(--border);border-radius:10px;padding:9px 10px;text-align:center}
+  .ip-card b{display:block;font-size:19px;color:var(--brand-dark);line-height:1.2}
+  .ip-card span{font-size:11px;color:var(--muted)}
+  .ip-line{font-size:12.5px;color:var(--sec-fg);line-height:1.75;margin-bottom:10px}
+  .ip-tbl-wrap{max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:9px;margin-bottom:10px}
+  table.ip-tbl{border-collapse:collapse;font-size:12px;width:100%;white-space:nowrap}
+  table.ip-tbl th,table.ip-tbl td{border-bottom:1px solid var(--border);padding:5px 9px;text-align:center;color:var(--sec-fg)}
+  table.ip-tbl th{background:linear-gradient(180deg,var(--th-grad1),var(--th-grad2));color:var(--th-fg);font-weight:650;position:sticky;top:0}
+  table.ip-tbl td.ip-name{text-align:left;font-weight:650;color:var(--heading)}
+  td.ip-c{width:34px}
+  td.ip-c.ip-w{background:#e8f2ff;color:#1e4d8c;font-weight:650}
+  td.ip-c.ip-r{background:#eef1f5;color:#64748b}
+  td.ip-c.ip-x{color:#cbd5e1}
+  td.ip-more{color:var(--muted);font-size:11.5px;text-align:left}
+  .ip-tag{font-size:10px;background:#fef3c7;color:#92400e;border-radius:4px;padding:0 4px;font-weight:600}
+  .ip-hint{color:var(--muted);font-size:11.5px}
+  .ip-note{font-size:12px;color:var(--sec-fg);background:var(--tot-bg);border-radius:8px;padding:9px 11px;line-height:1.7}
+  .modal-ops button.pri{background:linear-gradient(180deg,var(--brand),var(--brand-dark));color:#fff;border-color:transparent;font-weight:700}
   /* ===== 表头手动指定（导入兜底） ===== */
   table.hp-tbl{border-collapse:collapse;font-size:11.5px;width:100%;white-space:nowrap}
   table.hp-tbl th,table.hp-tbl td{border:1px solid var(--border);padding:4px 7px;max-width:170px;overflow:hidden;text-overflow:ellipsis;color:var(--sec-fg)}
@@ -386,12 +423,102 @@
     td.cell.today{box-shadow:none}
     .cell:hover{box-shadow:none}
   }
+  /* ===== v1.46：工具栏两行分层 / 流程提示条 / 空状态 / 折叠指引 / 向导 ===== */
+  .toolbar{display:flex;flex-direction:column;gap:0;padding:0}
+  .tb-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%}
+  /* 组内也要能换行——否则窄屏下第二行的设置项会顶出横向滚动条 */
+  .tb-row .grp{flex-wrap:wrap;min-width:0}
+  .tb-main{padding:11px 30px;border-bottom:1px solid var(--border)}
+  .tb-set{padding:8px 30px;background:var(--tot-bg);gap:10px}
+  /* 窄屏：行内边距与旧版一致，且容器不再叠加 padding */
+  @media (max-width:900px){
+    .toolbar{padding:0;gap:0}
+    .tb-main,.tb-set{padding:9px 14px}
+  }
+  .tb-set .sep{width:1px;height:18px;background:var(--border);margin:0 2px}
+  .tb-set label{font-size:11.5px}
+  .tb-set select{padding:5px 8px;font-size:12.5px}
+  .tb-right{margin-left:auto;gap:6px}
+  /* 主操作按钮：品牌蓝渐变，视觉上第一眼就看见 */
+  .toolbar button.pri{background:linear-gradient(180deg,var(--brand),var(--brand-dark));color:#fff;border-color:transparent;
+    font-weight:700;padding:9px 16px;font-size:13.5px;box-shadow:0 3px 10px rgba(47,109,181,.32)}
+  .toolbar button.pri:hover{filter:brightness(1.07)}
+  html[data-theme=dark] .toolbar button.pri{background:linear-gradient(180deg,#3f7fc4,#2a5c96)}
+  .toolbar button.ico{padding:6px 10px;font-size:14px;line-height:1;min-width:34px;justify-content:center}
+  /* ---- 流程提示条 ---- */
+  .flow-bar{display:flex;align-items:center;gap:12px;max-width:1500px;margin:0 auto 14px;
+    background:linear-gradient(90deg,#eaf3ff,#f6faff);border:1px solid #c5dcf7;border-radius:12px;
+    padding:11px 16px;box-shadow:var(--shadow-sm)}
+  html[data-theme=dark] .flow-bar{background:linear-gradient(90deg,#22334c,#1d2b40);border-color:#33507a}
+  .flow-bar .fb-ico{font-size:18px;line-height:1}
+  .flow-bar .fb-txt{font-size:13px;color:var(--fg);line-height:1.6;flex:1;min-width:0}
+  .flow-bar .fb-txt b{color:var(--brand-dark)}
+  .flow-bar .fb-ops{display:flex;gap:8px;flex-wrap:wrap}
+  .flow-bar .fb-ops button{padding:6px 13px;font-size:12.5px;font-weight:600}
+  .flow-bar .fb-x{background:none;border:none;color:var(--muted);font-size:13px;padding:4px 6px;cursor:pointer;box-shadow:none}
+  .flow-bar .fb-x:hover{color:var(--fg)}
+  /* ---- 空状态引导 ---- */
+  .empty-state{text-align:center;padding:26px 18px 30px}
+  .empty-state .es-ico{font-size:38px;line-height:1;margin-bottom:6px}
+  .empty-state h3{margin:0 0 16px;font-size:16px;color:var(--heading)}
+  .es-cards{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;max-width:900px;margin:0 auto}
+  .es-card{flex:1 1 250px;max-width:290px;text-align:left;background:var(--p-card-bg);border:1px solid var(--border);
+    border-radius:12px;padding:14px 15px;cursor:pointer;display:flex;flex-direction:column;gap:5px;box-shadow:none;
+    transition:transform .12s,border-color .12s,box-shadow .12s}
+  .es-card:hover{transform:translateY(-2px);border-color:var(--brand);box-shadow:0 6px 18px rgba(47,109,181,.16)}
+  .es-card .es-n{width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;font-size:11.5px;font-weight:700;
+    display:flex;align-items:center;justify-content:center}
+  .es-card b{font-size:13.5px;color:var(--heading)}
+  .es-card em{font-style:normal;font-size:11.5px;color:var(--muted);line-height:1.65}
+  .es-guide{margin-top:16px;background:none;border:none;color:var(--brand);font-size:12.5px;cursor:pointer;box-shadow:none;text-decoration:underline}
+  /* ---- 折叠式操作指引 ---- */
+  .tip-list{display:flex;flex-direction:column;gap:6px}
+  details.tip{border:1px solid var(--border);border-radius:10px;background:var(--p-card-bg);overflow:hidden}
+  details.tip>summary{display:flex;align-items:center;gap:8px;padding:9px 11px;cursor:pointer;font-size:13px;
+    font-weight:650;color:var(--heading);list-style:none;user-select:none}
+  details.tip>summary::-webkit-details-marker{display:none}
+  details.tip>summary::after{content:'▾';margin-left:auto;color:var(--muted);font-size:11px;transition:transform .15s}
+  details.tip[open]>summary::after{transform:rotate(180deg)}
+  details.tip>summary:hover{background:var(--hover-bg)}
+  details.tip .tp-n{width:18px;height:18px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  details.tip>summary em{margin-left:auto;font-style:normal;font-size:11px;color:var(--muted);font-weight:600}
+  details.tip>summary::after{margin-left:8px}
+  details.tip .tip-body{padding:2px 12px 12px 38px;font-size:12.3px;line-height:1.8;color:var(--sec-fg)}
+  /* ---- 向导 ---- */
+  .gd-tabs{display:flex;gap:6px;margin-bottom:14px}
+  .gd-tab{flex:1;text-align:center;padding:8px 6px;border-radius:9px;border:1px solid var(--border);background:var(--p-card-bg);
+    font-size:12px;color:var(--muted);cursor:pointer;position:relative}
+  .gd-tab .gt-n{display:block;font-size:15px;font-weight:700;color:var(--muted)}
+  .gd-tab.done{border-color:#a8cdf0;background:#f0f7ff}
+  .gd-tab.done .gt-n{color:var(--brand)}
+  .gd-tab.sel{border-color:var(--brand);background:linear-gradient(180deg,#eaf3ff,#dceafc);box-shadow:0 2px 8px rgba(47,109,181,.18)}
+  .gd-tab.sel .gt-n{color:var(--brand-dark)}
+  .gd-tab.sel .gt-s{color:var(--brand-dark);font-weight:700}
+  html[data-theme=dark] .gd-tab.done{background:#22334c;border-color:#33507a}
+  html[data-theme=dark] .gd-tab.sel{background:linear-gradient(180deg,#22334c,#1b2a40)}
+  .gd-body{min-height:186px;font-size:13px;line-height:1.85;color:var(--sec-fg)}
+  .gd-body h4{margin:0 0 8px;font-size:15px;color:var(--heading)}
+  .gd-body ol{margin:8px 0 0;padding-left:20px}
+  .gd-body li{margin-bottom:5px}
+  .gd-ops{justify-content:space-between}
+  .gd-ops #wStart{margin-left:auto;background:none;border:none;color:var(--muted);font-size:12.5px;box-shadow:none;text-decoration:underline}
+  .gd-body p{margin:0 0 8px}
+  .gd-body code{background:var(--tot-bg);border:1px solid var(--border);border-radius:4px;padding:0 4px;font-size:12px}
+  .gd-quick{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)}
+  .gd-quick button{padding:6px 13px;font-size:12.5px;font-weight:600}
+  /* ---- 快捷键表 ---- */
+  .key-tbl{border-collapse:collapse;width:100%;font-size:12.5px}
+  .key-tbl th,.key-tbl td{border-bottom:1px solid var(--border);padding:7px 9px;text-align:left;color:var(--sec-fg)}
+  .key-tbl th{background:linear-gradient(180deg,var(--th-grad1),var(--th-grad2));color:var(--th-fg);font-weight:650}
+  kbd{display:inline-block;padding:1px 6px;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;
+    background:var(--card);font-family:inherit;font-size:11.5px;color:var(--heading);margin:0 1px}
 </style>
 </head>
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.45</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.46</span></h1>
     <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
   </div>
   <div class="hd-right">
@@ -415,119 +542,158 @@
 </header>
 
 <nav class="toolbar" id="toolbar">
-  <div class="grp">
-    <label>画笔</label>
-    <select id="brush" title="画笔：点击/拖拽填充单元格；循环模式=点击依次 休→白→夜（悬停格子可预览将变班次）。快捷键 1~5 快速切换，←→ 切换月份">
-      <option value="cycle">🔁 循环切换</option>
-      <option value="day">☀️ 白班</option>
-      <option value="night">🌙 夜班</option>
-      <option value="rest">🟢 休</option>
-      <option value="ot">🔺 加班</option>
-    </select>
-    <label>周六</label>
-    <select id="satLoad" title="周六任务量：繁忙时自动把双休人员叫回上班（标记加班）">
-      <option value="normal">正常</option>
-      <option value="busy">繁忙 🔥</option>
-    </select>
-    <label>周日</label>
-    <select id="sunLoad" title="周日任务量：繁忙时自动把双休人员叫回上班（标记加班）">
-      <option value="normal">正常</option>
-      <option value="busy">繁忙 🔥</option>
-    </select>
-  </div>
-  <div class="sep"></div>
-  <div class="grp">
-    <label title="排班表显示范围：跨月视图可连续查看转班前后几天">视图</label>
-    <select id="viewMode" title="排班表显示范围：跨月视图可连续查看转班前后几天">
-      <option value="month">本月</option>
-      <option value="cn" selected>本月+下月</option>
-      <option value="pc">上月+本月</option>
-      <option value="pcn">上月+本月+下月</option>
-    </select>
-    <label title="转班时间：默认每月最后一个周末（周六起）转班，也可固定每月某天">转班</label>
-    <select id="rotateMode" title="月末周末=每月最靠近月末的周六起转班（默认）；固定日期=每月指定第几天转班">
-      <option value="lastWeekend">月末周末</option>
-      <option value="fixed">固定日期</option>
-    </select>
-    <input type="number" id="rotateDay" min="1" max="31" step="1" title="固定转班日（1~31），选「固定日期」时生效" style="width:52px;text-align:center">
-    <label title="排班表按部门筛选显示（统计/导出仍为全部人员）">部门</label>
-    <select id="deptFilter" title="排班表按部门筛选显示；统计/导出仍包含全部人员">
-      <option value="all">全部</option>
-      <option value="除气">除气</option>
-      <option value="转码">转码</option>
-    </select>
-  </div>
-  <div class="sep"></div>
-  <div class="grp">
-    <button id="genBtn" title="按人员规则 + 周末负荷 + 转班日自动生成本月排班（保留手工修改）">⚡ 自动排班</button>
-    <button id="copyMonthBtn" class="sec" title="把本月手工修改（含请假/调班）整体复制到下月，轮转班次自动生成">📋 到下月</button>
-    <button id="clearNextBtn" class="sec" title="一键清除下月（中心月+1）的所有手工排班，恢复未排班状态（可 Ctrl+Z 撤销）">🧹 清下月</button>
-    <div class="dd">
-      <button id="rotateBtn" class="sec" title="转班：月轮转全员强制转班，或指定任意人员（含固定班）从某日起转班">🔁 转班 ▾</button>
-      <div class="dd-menu" id="rotateMenu">
-        <div class="dd-title">全员转班（作用于月轮转人员）</div>
-        <button data-a="all" title="把本月所有“月轮转”人员的班次强制取反（手动控制转班时机，可撤销）">🔁 月轮转全员转班</button>
-        <div class="dd-sep"></div>
-        <div class="dd-title">人员级指定转班（仅当月生效）</div>
-        <button data-a="person" title="固定班 / 月轮转人员均可：设定某人从本月某日起白/夜互换，自动套休息日与连班防呆">📌 指定人员从某日转班…</button>
+  <!-- ===== 第一行：主操作（大按钮，一眼知道先点哪个） ===== -->
+  <div class="tb-row tb-main">
+    <div class="grp">
+      <button id="genBtn" class="pri" title="按人员规则 + 周末负荷 + 转班日，自动生成本月排班（保留手工修改）">⚡ 自动排班</button>
+      <div class="dd">
+        <button id="importBtn" title="导入旧排班表：CSV / Excel .xlsx / .xls，也可以把文件直接拖到页面上">⬆ 导入旧表 ▾</button>
+        <div class="dd-menu" id="importMenu">
+          <div class="dd-title">导入（按姓名合并，不删现有人）</div>
+          <button data-act="table">📄 排班表 CSV / Excel（.xlsx / .xls）</button>
+          <div class="dd-sep"></div>
+          <div class="dd-title">导入（覆盖当前所有数据）</div>
+          <button data-act="json">💾 完整备份 JSON</button>
+        </div>
+      </div>
+      <div class="dd">
+        <button id="exportBtn" title="导出排班表 / 月度统计（CSV 或 Excel），以及完整备份；也可导出空白待填表发给别人填">⬇ 导出 ▾</button>
+        <div class="dd-menu" id="exportMenu">
+          <div class="dd-title">排班表（当前中心月）</div>
+          <button data-act="csv">📄 CSV（含日期与星期行）</button>
+          <button data-act="xlsx">🟩 Excel .xlsx（日期为真日期）</button>
+          <button data-act="xls">🟩 Excel 97-2003 .xls</button>
+          <div class="dd-sep"></div>
+          <div class="dd-title">月度统计（月底报工）</div>
+          <button data-act="stats">📄 CSV（白/夜/加班/请假/出勤）</button>
+          <button data-act="stats-xlsx">🟩 Excel .xlsx</button>
+          <button data-act="stats-xls">🟩 Excel 97-2003 .xls</button>
+          <div class="dd-sep"></div>
+          <div class="dd-title">发给别人填 / 备份</div>
+          <button data-act="blank-xlsx" title="导出「人员名单 + 日期表头」的空白待填表，发给别人填完再导入">📝 空白待填表 .xlsx（发给别人填）</button>
+          <button data-act="json">💾 完整备份 JSON（含人员/排班/设置）</button>
+        </div>
+      </div>
+      <button id="checkBtn" class="sec" title="体检当前月排班：连班 / 连续上班超限 / 班次空缺 / 节假日无人值班">🔍 体检</button>
+      <button id="printBtn" class="sec" title="打印 / 存为 PDF（横向 A4）">🖨 打印</button>
+      <div class="dd">
+        <button id="helpBtn" class="sec" title="使用说明 / 快捷键 / 更新记录">📖 帮助 ▾</button>
+        <div class="dd-menu" id="helpMenu">
+          <div class="dd-title">帮助</div>
+          <button data-a="help">❓ 使用说明</button>
+          <button data-a="guide">🚀 新手引导（3 步上手）</button>
+          <button data-a="keys">⌨️ 快捷键一览</button>
+          <div class="dd-sep"></div>
+          <button data-a="log">📜 更新记录</button>
+        </div>
       </div>
     </div>
-    <button id="clearManBtn" class="sec" title="清除本月所有手工修改，恢复自动排班结果">🧹 清手动</button>
-  </div>
-  <div class="sep"></div>
-  <div class="grp">
-    <button id="undoBtn" class="sec" title="撤销（Ctrl+Z）">↩ 撤销</button>
-    <button id="redoBtn" class="sec" title="重做（Ctrl+Y）">↪ 重做</button>
-    <button id="snapBtn" class="sec" title="操作前自动快照（删除/导入/示例覆盖等不可撤销操作自动保存，可一键恢复）">⏪ 快照</button>
-    <button id="checkBtn" class="sec" title="体检当前月排班：连班/连续上班/班次空缺/节假日值班">🔍 体检</button>
-    <button id="holidayBtn" class="sec" title="标记节假日 / 停线日">🏮 节假日</button>
-  </div>
-  <div class="sep"></div>
-  <div class="grp">
-    <div class="dd">
-      <button id="exportBtn" class="sec" title="导出排班表 / 月度统计（CSV 或 Excel），以及完整备份 JSON">⬇ 导出 ▾</button>
-      <div class="dd-menu" id="exportMenu">
-        <div class="dd-title">排班表（当前中心月）</div>
-        <button data-act="csv">📄 CSV（含日期与星期行，Excel 可打开）</button>
-        <button data-act="xlsx">🟩 Excel 工作簿 .xlsx（日期为真日期）</button>
-        <button data-act="xls">🟩 Excel 97-2003 .xls（老版 Excel/WPS）</button>
-        <div class="dd-sep"></div>
-        <div class="dd-title">月度统计（月底报工）</div>
-        <button data-act="stats">📄 CSV（白/夜/加班/请假/出勤）</button>
-        <button data-act="stats-xlsx">🟩 Excel .xlsx</button>
-        <button data-act="stats-xls">🟩 Excel 97-2003 .xls</button>
-        <div class="dd-sep"></div>
-        <div class="dd-title">备份</div>
-        <button data-act="json">💾 完整备份 JSON（含人员/排班/设置）</button>
+    <div class="grp tb-right">
+      <button id="undoBtn" class="ico sec" title="撤销（Ctrl+Z）">↩</button>
+      <button id="redoBtn" class="ico sec" title="重做（Ctrl+Y）">↪</button>
+      <div class="dd">
+        <button id="moreBtn" class="sec" title="更多功能：转班 / 到下月 / 清空 / 快照 / 节假日">⋯ 更多 ▾</button>
+        <div class="dd-menu" id="moreMenu">
+          <div class="dd-title">月度操作</div>
+          <button data-act="copyMonth">📋 本月排班复制到下月</button>
+          <button data-act="clearNext">🧹 清除下月手工排班</button>
+          <button data-act="clearMan">🧹 清除本月手工修改</button>
+          <div class="dd-sep"></div>
+          <div class="dd-title">转班</div>
+          <button data-act="rotateAll" title="把本月所有「月轮转」人员的班次强制取反">🔁 月轮转全员转班</button>
+          <button data-act="rotatePerson" title="固定班 / 月轮转均可：设定某人从本月某日起白/夜互换">📌 指定人员从某日转班…</button>
+          <div class="dd-sep"></div>
+          <div class="dd-title">记录与标记</div>
+          <button data-act="snapshot" title="删除人员 / 导入 / 示例覆盖等操作前会自动快照，可一键恢复">⏪ 操作前快照（最近 5 份）</button>
+          <button data-act="holiday">🏮 节假日 / 停线日</button>
+          <button data-act="sample" title="用 20 人 9 月排班范例覆盖当前内容">🧪 载入示例数据</button>
+          <div class="dd-sep"></div>
+          <button data-act="reset">🧨 清空全部数据（重新开始）</button>
+        </div>
       </div>
     </div>
-    <div class="dd">
-      <button id="importBtn" class="sec" title="导入旧排班表（CSV / Excel .xlsx / .xls，可直接拖到页面上）或备份 JSON">⬆ 导入 ▾</button>
-      <div class="dd-menu" id="importMenu">
-        <div class="dd-title">导入（会合并同名人员）</div>
-        <button data-act="table">📄 排班表 CSV / Excel（.xlsx / .xls）</button>
-        <div class="dd-title" style="margin-top:4px">导入（会覆盖当前所有数据）</div>
-        <button data-act="json">💾 完整备份 JSON</button>
-      </div>
-    </div>
-    <button id="printBtn" class="sec" title="打印 / 存为 PDF（横向 A4）">🖨 打印</button>
-    <div class="dd">
-      <button id="helpBtn" class="sec" title="使用说明 / 更新记录">📖 帮助 ▾</button>
-      <div class="dd-menu" id="helpMenu">
-        <div class="dd-title">帮助与记录</div>
-        <button data-a="help">❓ 使用说明</button>
-        <button data-a="log">📜 更新记录</button>
-      </div>
+  </div>
+  <!-- ===== 第二行：快捷设置（低频，紧凑） ===== -->
+  <div class="tb-row tb-set">
+    <div class="grp">
+      <label>画笔</label>
+      <select id="brush" title="画笔：点击/拖拽填充单元格；循环模式=点击依次 休→白→夜（悬停格子可预览将变的班次）">
+        <option value="cycle">🔁 循环切换</option>
+        <option value="day">☀️ 白班</option>
+        <option value="night">🌙 夜班</option>
+        <option value="rest">🟢 休</option>
+        <option value="ot">🔺 加班</option>
+      </select>
+      <span class="sep"></span>
+      <label>视图</label>
+      <select id="viewMode" title="排班表显示范围：跨月视图可连续查看转班前后几天">
+        <option value="month">本月</option>
+        <option value="cn" selected>本月+下月</option>
+        <option value="pc">上月+本月</option>
+        <option value="pcn">上月+本月+下月</option>
+      </select>
+      <label>部门</label>
+      <select id="deptFilter" title="排班表按部门筛选显示（统计与导出仍为全部人员）">
+        <option value="all">全部</option>
+        <option value="除气">除气</option>
+        <option value="转码">转码</option>
+      </select>
+      <span class="sep"></span>
+      <label title="周末任务量：繁忙时自动把双休人员叫回上班（标记加班）">周末</label>
+      <select id="satLoad" title="周六任务量：繁忙时自动把双休人员叫回上班（标记加班）">
+        <option value="normal">周六正常</option>
+        <option value="busy">周六繁忙 🔥</option>
+      </select>
+      <select id="sunLoad" title="周日任务量：繁忙时自动把双休人员叫回上班（标记加班）">
+        <option value="normal">周日正常</option>
+        <option value="busy">周日繁忙 🔥</option>
+      </select>
+      <span class="sep"></span>
+      <label title="转班时间：默认每月最后一个周末（周六起）转班，也可固定每月某天">转班</label>
+      <select id="rotateMode" title="月末周末=每月最靠近月末的周六起转班（默认）；固定日期=每月指定第几天转班">
+        <option value="lastWeekend">月末周末</option>
+        <option value="fixed">固定日期</option>
+      </select>
+      <input type="number" id="rotateDay" min="1" max="31" step="1" title="固定转班日（1~31），选「固定日期」时生效" style="width:50px;text-align:center">
     </div>
   </div>
 </nav>
 <input type="file" id="fileInput" accept=".csv,.txt,.xlsx,.xls,.json" style="display:none">
 
 <main class="wrap">
+  <!-- 流程提示条：按当前状态提示「下一步做什么」，无事可做时自动隐藏 -->
+  <div class="flow-bar" id="flowBar" hidden>
+    <span class="fb-ico" id="fbIco">👉</span>
+    <span class="fb-txt" id="fbTxt"></span>
+    <span class="fb-ops" id="fbOps"></span>
+    <button class="fb-x" id="fbClose" title="本次不再提示">✕</button>
+  </div>
   <section class="panel sheet-panel">
     <h2><span class="t">📋 排班表 <span id="sheetTitle" style="font-size:12px;color:var(--muted);font-weight:600"></span></span>
       <span style="display:inline-flex;gap:6px;align-items:center"><button id="resetRowBtn" class="sm" style="display:none" title="恢复默认部门排序（除气在上、转码在下）">🔄 部门排序</button></span></h2>
     <div class="h-scroll-bar" id="hScrollBar"><div class="h-scroll-inner"></div></div>
+    <div class="empty-state" id="emptyState" hidden>
+      <div class="es-ico">🗓️</div>
+      <h3>还没有技术员，先选一种方式开始</h3>
+      <div class="es-cards">
+        <button class="es-card" data-es="import">
+          <span class="es-n">1</span>
+          <b>导入旧排班表</b>
+          <em>已有 Excel / CSV 排班表，直接导入最省事（支持 .xlsx/.xls/.csv，也可把文件拖到页面上）</em>
+        </button>
+        <button class="es-card" data-es="add">
+          <span class="es-n">2</span>
+          <b>手动添加人员</b>
+          <em>从零开始建档：姓名 + 部门 + 班次规则 + 休息规则，之后点「⚡ 自动排班」</em>
+        </button>
+        <button class="es-card" data-es="sample">
+          <span class="es-n">3</span>
+          <b>先看示例数据</b>
+          <em>载入 20 人 9 月范例，边看边学（可随时清空）</em>
+        </button>
+      </div>
+      <button class="es-guide" id="esGuide">🚀 打开 3 步上手引导</button>
+    </div>
     <div class="sheet-scroll" id="sheetScroll">
       <div id="printTitle" class="print-title"></div>
       <table class="sheet" id="sheet"></table>
@@ -541,12 +707,44 @@
       <div class="people-list" id="peopleList"></div>
     </section>
     <section class="panel">
-      <h2><span class="t">💡 操作指引</span></h2>
-      <div style="font-size:12.5px;color:#374151;line-height:1.7">
-        <b>① 添加技术员</b>：设置姓名、工号（选填）、部门、班次规则（固定白班 / 固定夜班 / 月轮转）、休息规则（上六休一可选周六/周日休）。<br>
-        <b>② 点「⚡ 自动排班」</b>生成当月排班基线，并自动体检（有问题直接弹报告）。<br>
-        <b>③ 微调</b>：点击格子循环切换 休→白→夜（悬停可预览）；<kbd>Shift</kbd>+点击 加班；按住拖拽批量填充；点选格子后可用 <kbd>←→↑↓</kbd> 移动、<kbd>空格</kbd> 循环、<kbd>1~5</kbd> 设值；<kbd>右键</kbd>菜单（休/请假/清除手动）；<kbd>Ctrl+Z/Y</kbd> 撤销/重做。<br>
-        <b>④ 更多功能</b>：周模板（点表头「第N周」，按周一~周日分组）、复制排班（人员卡片「📋」）、调整行序（拖人名行）、周末负荷（周六/周日下拉）、转班、节假日、导入旧表（CSV / Excel，也可直接拖文件进来）、导出 Excel/CSV——详见「❓ 帮助」。
+      <h2><span class="t">💡 操作指引</span><button class="sm sec" id="guideBtn2" title="打开分步引导">🚀 分步引导</button></h2>
+      <div class="tip-list">
+        <details class="tip" open>
+          <summary><span class="tp-n">1</span>准备人员<em>添加 / 导入</em></summary>
+          <div class="tip-body">
+            点右上「＋ 添加」填姓名、工号（选填）、部门、班次规则（固定白班 / 固定夜班 / 月轮转）、休息规则（上六休一可选周六 / 周日休）。<br>
+            已经有旧排班表更快：<b>⬆ 导入旧表</b>，支持 Excel / CSV，也可以把文件直接拖到页面上。
+          </div>
+        </details>
+        <details class="tip">
+          <summary><span class="tp-n">2</span>一键自动排班<em>⚡ 自动排班</em></summary>
+          <div class="tip-body">
+            点 <b>⚡ 自动排班</b> 生成当月基线：已含转班、连班保护、周末加班，并自动体检（有问题直接弹报告）。<br>
+            周末任务多就把「周末」下拉设成 <b>繁忙 🔥</b>，双休人员会被自动叫回并标记加班。
+          </div>
+        </details>
+        <details class="tip">
+          <summary><span class="tp-n">3</span>手工微调<em>点格子改班次</em></summary>
+          <div class="tip-body">
+            单击格子循环 休→白→夜（悬停会先<strong>预览将变成的班次</strong>）；<kbd>Shift</kbd>+单击 = 加班；按住拖动 = 批量填充。<br>
+            点选格子后可用 <kbd>←→↑↓</kbd> 移动、<kbd>空格</kbd> 循环、<kbd>1~4</kbd> 直接设值；<kbd>右键</kbd> = 休 / 请假 / 清除手动；<kbd>Ctrl+Z</kbd> 撤销。
+          </div>
+        </details>
+        <details class="tip">
+          <summary><span class="tp-n">4</span>检查与交付<em>体检 / 导出 / 打印</em></summary>
+          <div class="tip-body">
+            <b>🔍 体检</b> 检查连班、连续上班超限、班次空缺、节假日无人值班，可一键修复连班。<br>
+            <b>⬇ 导出</b> 排班表与月度统计（CSV / Excel .xlsx / .xls），<b>🖨 打印</b> 横向 A4 贴墙；<b>💾 完整备份 JSON</b> 换电脑迁移。
+          </div>
+        </details>
+        <details class="tip">
+          <summary><span class="tp-n">5</span>进阶功能<em>周模板 / 转班 / 到下月</em></summary>
+          <div class="tip-body">
+            点表头「第 N 周」把该周排班复制到后续周；人员卡片「📋」整体复制排班给另一人；拖人名行调整顺序。<br>
+            「⋯ 更多」里有：本月排班复制到下月、清除下月、全员 / 指定人员转班、节假日标记、操作前快照。<br>
+            详细说明见 <b>📖 帮助 → 使用说明</b>，快捷键见 <b>📖 帮助 → 快捷键一览</b>。
+          </div>
+        </details>
       </div>
     </section>
   </aside>
@@ -620,6 +818,16 @@
 <div class="modal-mask" id="helpModal">
   <div class="modal" style="max-width:640px">
     <h3>❓ 使用说明</h3>
+    <div class="help-sec">
+      <h4>🖱️ 界面怎么用（工具栏分两行）</h4>
+      <ul>
+        <li><b>第一行 = 主操作</b>：<code>⚡ 自动排班</code>（蓝色最大那个，每月点一次即可）、<code>⬆ 导入旧表</code>、<code>⬇ 导出</code>、<code>🔍 体检</code>、<code>🖨 打印</code>、<code>📖 帮助</code>，最右边 <code>↩ ↪</code> 撤销重做 与 <code>⋯ 更多</code>。</li>
+        <li><b>第二行 = 快捷设置</b>：画笔、视图、部门、周末负荷、转班，改完立即生效（用户偏好会自动保存）。</li>
+        <li><b>「⋯ 更多」</b>装着低频操作：本月排班复制到下月、清除下月 / 本月手工、全员或指定人员转班、操作前快照、节假日标记、载入示例、清空全部数据。</li>
+        <li>表格上方会有一条<b>蓝色提示条</b>告诉你「现在该做什么」（没有人员 / 本月未排班 / 有违规），直接点提示条上的按钮即可；不想要这条提示可点右侧 ✕ 关掉。</li>
+        <li>不熟悉的话：<b>📖 帮助 → 🚀 新手引导</b> 是 3 步交互式向导，每一步都带「现在就做」按钮。</li>
+      </ul>
+    </div>
     <div class="help-sec">
       <h4>📌 排班流程</h4>
       <ul>
@@ -696,7 +904,10 @@
         <li><b>日期列</b>：支持 第N天 / N / N日 / 8/1 / 8-1 / 8月1日 / 2026/8/1 / 2026年8月1日，以及 Excel 另存后残留的<b>日期序列号</b>（如 46266 = 2026/9/1）；跨月表（如 8/1~9/30）自动拆分写入对应月份。</li>
         <li><b>多工作表</b>：Excel 有多张表时自动挑选「姓名列 + 日期列」最完整的那张，并在提示中标出所用表名。</li>
         <li><b>单元格文本</b>：休/休息/空、白班/白/日/早班、夜班/夜/晚/中班、加班/加/OT、班/上/√/出勤（按该行班次自动推断白/夜）、请假（事假/病假/年假 自动登记到请假记录）。</li>
+        <li><b>导入前先看识别结果</b>：识别完会弹「📄 导入预览」——告诉你识别到几人、日期列在哪、覆盖哪些月份，并列出前几行映射后的效果；确认无误再点「✓ 确认导入」。不放心可点「🔧 换表头行」自己指定。</li>
         <li><b>识别不了也不卡住</b>：万一表头太特殊，会弹出「🔧 手动指定表头行」窗口，把文件前若干行原样列出，你点一下哪一行是表头即可按该行解析。</li>
+        <li><b>日期竖排、人员横排</b>的表也能读：会自动转置后识别。</li>
+        <li><b>合并单元格</b>（部门或姓名只在首行写一次）会自动向下填充。</li>
         <li>导入后旧排班会<b>按人员锁定</b>（格子左上角蓝点），人员按姓名<b>合并</b>：同名更新属性、新名新增（工号一并带入）。</li>
         <li>旧表不想用了想重新排：导入完成后按提示点「确定」清空旧排班 → 点「⚡ 自动排班」生成新表 → 再手工微调。</li>
         <li>想保留旧表只改部分：直接点格子修改，或「🧹 清手动」后重新自动排班。</li>
@@ -708,6 +919,7 @@
         <li>所有数据自动保存在本机浏览器（localStorage），关闭页面不丢失。</li>
         <li>「⬇ 导出 ▾」：排班表 <b>CSV / Excel(.xlsx) / Excel 97-2003(.xls)</b>（含真实日期+星期行，Excel 可直接看、按日期排序筛选）、月度统计 <b>CSV / .xlsx / .xls</b>（白/夜/加班/请假/出勤，月底报工用）、完整备份 JSON（备份全部数据）。</li>
         <li>三种表格格式内容一致（同一口径），只是文件类型不同：日常用 .xlsx，老版 Excel/WPS 用 .xls，需要贴到别处用 CSV。</li>
+        <li>📝 <b>要别人帮你填排班</b>：用「⬇ 导出 → 空白待填表 .xlsx」，会导出「人员名单 + 日期表头」的空白表（第一行写着填写说明），填完发回来用「⬆ 导入旧表」收回即可。</li>
         <li>工具栏「部门」下拉可只查看除气/转码的排班（月度统计与导出仍为全部人员）。</li>
         <li>换电脑 / 换浏览器：导出 JSON 备份 → 新电脑「⬆ 导入 ▾ → 完整备份 JSON」恢复（会覆盖当前数据，导入前有确认）。</li>
         <li>🔒 防呆保护：删除人员 / 清手动 / 强制转班 / 导入覆盖 等破坏性操作均有<b>确认提示</b>；人员<b>同名</b>会提醒、<b>工号重复</b>会拦截；CSV 支持 GBK / UTF-8 / UTF-16 自动识别；导出/打印前会检查是否存在连班违规。</li>
@@ -723,6 +935,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.46</b> · 界面简化 + 导入体验（2026-09-21）：① <b>工具栏重组为两行</b>——第一行只放主操作（⚡自动排班 做成蓝色主按钮、导入旧表 / 导出 / 体检 / 打印 / 帮助，撤销重做与「⋯ 更多」靠右），第二行是紧凑的快捷设置（画笔 / 视图 / 部门 / 周末 / 转班）；低频操作（复制到下月、清下月、清手动、转班、快照、节假日、示例、清空全部数据）全部收进「⋯ 更多」，新手不用再面对 20 个按钮。<br>② <b>流程提示条</b>——表格上方按当前状态提示「下一步做什么」（还没有人员 / 本月未排班 / 有 N 处违规），并直接给出可点的动作按钮，可一键关闭本次提示。<br>③ <b>空状态引导</b>——没有人员时用三张卡片替代空表格（导入旧表 / 手动添加 / 看示例），直接点卡片开始。<br>④ <b>3 步上手向导</b>——首开自动弹出分步向导（准备人员 → 自动排班 → 微调交付），每步都有「现在就做」按钮；帮助菜单新增「🚀 新手引导」与「⌨️ 快捷键一览」。<br>⑤ <b>操作指引改为可折叠 5 步</b>，默认只显示标题，点开才看细节，侧栏不再是一大段文字。<br>⑥ <b>导入预览确认</b>——导入前先弹识别结果（几人 / 几天 / 覆盖哪些月份 / 姓名在第几列 / 前几行映射效果），确认后才落库，不放心可「🔧 换表头行」重选。<br>⑦ <b>识别再增强</b>——支持「日期竖排 / 人员横排」的转置表（自动转置）、合并单元格的姓名与部门列自动向下填充、同一人被拆成多行时按格合并、日期新增 M/D/YYYY 与「N号」并自动去掉时间后缀、班次新增 早 / 大夜 / 放假 / ○●◯ 等写法；占位行不再被多算成一个人。<br>⑧ <b>新增空白待填表</b>——「⬇ 导出 → 空白待填表 .xlsx」导出「人员名单 + 日期表头」的空白表（首行附填写说明），发给同事填完再导入回来。<br>⑨ <b>视觉打磨</b>——排班表按部门加分隔线、鼠标悬停高亮整行姓名格；人员卡片改为信息分层 + 出勤进度条；统一细滚动条与焦点样式。</div>
       <div class="log-ver"><b>v1.45</b> · 导入导出全面支持 XLS/XLSX/CSV（2026-09-20）：① <b>修「无法识别表头」</b>——根因有二：Excel 另存后表头日期变成<b>日期序列号</b>（如 46266），且真实排班表是「日期列在第 2 行、姓名列在第 3 行」的<b>双行表头</b>，旧逻辑要求姓名与日期同行才认。现改为「取连续日期列最多的那一行当表头」，日期识别新增 序列号 / N日 / YYYY年M月D日，并按「列号连续 + 逐日递增」筛选日期列，避免把偶然出现的数字当成日期；② <b>新增 .xlsx / .xls 导入</b>——纯前端零依赖解析（自研 ZIP/DEFLATE 解压 + OOXML 解析 + OLE 复合文档 + BIFF8 记录解析），读取共享字符串、内联字符串、数字格式（日期/星期格式按 Excel 显示值还原）、多工作表（自动选最合适的一张）；③ <b>新增 .xlsx / .xls 导出</b>——排班表与月度统计均可导出 Excel，日期列写成<b>真日期</b>（可排序/筛选），与 CSV 同一口径；.xls 为真实 BIFF8（Excel 97-2003 / WPS 可开）；④ <b>识别不了也不卡住</b>——新增「🔧 手动指定表头行」弹窗，列出文件前 20 行供点选，彻底消除「无法识别表头」的死路；⑤ <b>拖拽导入</b>——CSV / Excel 文件可直接拖到页面上；⑥ 格式按<b>文件内容</b>判断（不依赖扩展名），编码支持 UTF-8 / GBK / UTF-16，并兼容部分系统导出的「HTML 伪 Excel」。</div>
       <div class="log-ver"><b>v1.44</b> · 口径修复与年度适配（2026-09-06）：① <b>每日人力图口径修复</b>——请假者不再计入白/夜在岗柱，与排班表每日合计、月度统计口径一致（此前请假格在图中仍按在岗统计，图表与表格数字对不上）；② <b>示例数据载入即到位</b>——填入示例后视图自动切到 2026 年 9 月（示例锁定月），不再停留在空白月；③ <b>固定转班日超月提醒</b>——固定转班日超出当月天数（如 31 日遇 2 月）时，「⚡ 自动排班」明确提示轮转班次顺延至下月 1 日切换；④ <b>备份导入结构校验</b>——恢复前校验人员与记录字段，不完整的人员/记录自动剔除并提示，误导入损坏或异项目 JSON 不再白屏；⑤ <b>法定假日引导</b>——「📅 一键标记 2026 法定假日」在 2026 年以外月份点按，提示该年需手动标记；⑥ <b>回归测试一键化</b>——新增 <code>npm run test:all</code>（自动起本地服务并依次运行 smoke / 转班日 / v1.42 三套端到端测试），测试脚本自动兼容 playwright 与 playwright-core。</div>
       <div class="log-ver"><b>v1.43</b> · 排班表显示窗口扩大（2026-09-04）：① 排班表滚动容器最大高度 <code>max-height</code> 由 <code>72vh</code> 提高到 <code>92vh</code>，让屏幕更高的窗口不再过早截断 20+ 名人员列表；② 单元格高度由 <code>33px</code> 微调为 <code>30px</code>（line-height 同步），纵向更紧凑——常规 1080P 显示器一屏可看完全月人员，无须垂直滚动。打印与窄屏断点不受影响。</div>
@@ -848,6 +1061,20 @@
   <button data-a="unleave">↩ 取消请假</button>
 </div>
 
+<div class="modal-mask" id="importPreviewModal">
+  <div class="modal" style="max-width:840px">
+    <h3>📄 导入预览 —— 先确认识别结果</h3>
+    <div id="ipSum"></div>
+    <div class="ip-tbl-wrap"><table class="ip-tbl" id="ipTbl"></table></div>
+    <div class="ip-note" id="ipNote"></div>
+    <div class="modal-ops">
+      <button class="sec" id="ipRepick" title="自动定位的表头不对？手动点选正确的表头行">🔧 换表头行</button>
+      <button class="sec" id="ipCancel">取消</button>
+      <button class="pri" id="ipOk">✓ 确认导入</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-mask" id="headerPickModal">
   <div class="modal" style="max-width:940px">
     <h3>🔧 手动指定表头行</h3>
@@ -862,23 +1089,35 @@
 </div>
 
 <div class="modal-mask" id="welcomeModal">
-  <div class="modal" style="max-width:640px">
-    <div class="welcome">
-      <div class="w-ico">🗓️</div>
-      <h3>欢迎使用技术员排班助手</h3>
-      <p>为除气 / 转码两部门的两班倒排班而设计，三步即可完成一个月排班：</p>
-      <div class="steps">
-        <div class="step"><div class="n">1</div><div class="s">添加技术员</div><div class="d">姓名、部门、班次规则、休息规则</div></div>
-        <div class="step"><div class="n">2</div><div class="s">设置周末负荷</div><div class="d">周末任务多选「繁忙」，自动叫回双休人员加班</div></div>
-        <div class="step"><div class="n">3</div><div class="s">一键自动排班</div><div class="d">生成基线后再手工微调</div></div>
-      </div>
-      <p style="margin-top:10px">也可以直接体验 / 导入旧排班表：</p>
-      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-        <button id="wSample" class="sec">🧪 填入示例数据</button>
-        <button id="wImport" class="sec">📄 导入旧排班表</button>
-        <button id="wStart">开始使用（暂无人员）</button>
-      </div>
+  <div class="modal" style="max-width:660px">
+    <h3>🚀 3 步上手</h3>
+    <div class="gd-tabs" id="gdTabs"></div>
+    <div class="gd-body" id="gdBody"></div>
+    <div class="modal-ops gd-ops">
+      <button class="sec" id="gdPrev">← 上一步</button>
+      <button id="gdNext">下一步 →</button>
+      <button class="sec" id="wStart" title="跳过引导，直接进入空白排班表">跳过，直接开始</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="keysModal">
+  <div class="modal" style="max-width:560px">
+    <h3>⌨️ 快捷键一览</h3>
+    <table class="key-tbl">
+      <tr><th>操作</th><th>快捷键</th></tr>
+      <tr><td>撤销 / 重做</td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td></tr>
+      <tr><td>切换月份</td><td><kbd>←</kbd> <kbd>→</kbd>（未选中格子时）</td></tr>
+      <tr><td>移动选中格子</td><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></td></tr>
+      <tr><td>循环切换班次（休→白→夜）</td><td><kbd>空格</kbd> 或 <kbd>Enter</kbd></td></tr>
+      <tr><td>直接设为 休 / 白 / 夜 / 加班</td><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd></td></tr>
+      <tr><td>清除该格手工修改</td><td><kbd>Delete</kbd></td></tr>
+      <tr><td>取消选中</td><td><kbd>Esc</kbd></td></tr>
+    </table>
+    <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.7">
+      鼠标：单击格子循环切换 · <kbd>Shift</kbd>+单击 = 加班 · 按住拖动 = 批量填充 · 右键 = 休 / 请假 / 清除手动。
+    </div>
+    <div class="modal-ops"><button id="keysClose">知道了</button></div>
   </div>
 </div>
 
@@ -909,6 +1148,7 @@ const defaultState = () => ({
   leave: {},             // {'2026-08': {pid: {'3':'事假'}}} 请假登记（日期->原因）
   holidays: {},          // {'2026-08': {'1':'国庆节'}} 节假日/停线日
   rowOrder: [],          // 排班表自定义行顺序（pid 数组）；空=按部门分组（除气在上、转码在下）
+  schedMarks: {},        // {'2026-09':true} 该月已显式排过班（自动排班/导入/示例），用于「尚未排班」提示
   satLoad: 'normal', sunLoad: 'normal',
   viewMode: 'cn',       // month=本月 | cn=本月+下月(默认) | pc=上月+本月 | pcn=上月+本月+下月
   deptFilter: 'all',    // all=全部 | 除气 | 转码（排班表显示筛选）
@@ -1158,6 +1398,7 @@ function renderAll(){
   if(rb) rb.style.display = (state.rowOrder && state.rowOrder.length) ? '' : 'none';
   updateHistBtns();
   renderSheet(); renderPeople(); renderStats(); renderChart(); renderKpis(); renderLegend();
+  renderFlowBar(); renderEmptyState();   // v1.46：流程提示条 + 空状态引导
 }
 function cellInfo(c){
   const map = { '.':['rest',''], 'd':['day','白'], 'n':['night','夜'],
@@ -1229,8 +1470,10 @@ function renderSheet(){
   }
   h += '</tr></thead><tbody>';
   // 每人一行：默认按部门分组（除气在上、转码在下，组内保持录入顺序）；用户拖拽后按自定义顺序
+  let lastDept = null;
   for(const p of rowOrderPeople()){
-    h += '<tr data-pid="' + p.id + '" draggable="true" title="按住拖动可调整行顺序"><th><span class="nm"><span class="dept-tag tag-' + p.dept + '">' + p.dept + '</span><span>' + esc(p.name) + '</span></span></th>';
+    const deptFirst = (p.dept !== lastDept); lastDept = p.dept;
+    h += '<tr data-pid="' + p.id + '"' + (deptFirst ? ' class="dept-first"' : '') + ' draggable="true" title="按住拖动可调整行顺序"><th><span class="nm"><span class="dept-tag tag-' + p.dept + '">' + p.dept + '</span><span>' + esc(p.name) + '</span></span></th>';
     for(const c of cols){
       const grid = CUR.grids[c.key]; if(!grid) continue;
       const arr = grid[p.id] || [];
@@ -1319,10 +1562,13 @@ function renderPeople(){
         + '<span class="ops"><button class="op-copy" data-id="' + p.id + '" title="复制当月排班到其他技术员">📋</button>'
         + '<button class="op-edit" data-id="' + p.id + '" title="编辑">✏️</button>'
         + '<button class="op-del" data-id="' + p.id + '" title="删除">🗑</button></span></div>'
-        + (p.workId ? '<div class="pmeta"><span class="badge b-yellow">工号 ' + esc(p.workId) + '</span></div>' : '')
-        + '<div class="pmeta"><span class="badge ' + (p.shiftRule==='rotate'?'b-rot':p.shiftRule==='fixed-night'?'b-night':'b-yellow') + '">' + shTxt + '</span>'
-        + '<span>本月 ' + shNow + '</span><span class="badge b-yellow">' + restTxt + '</span>'
-        + '<span class="badge b-yellow">出勤 ' + workDays + '天</span></div></div>';
+        + '<div class="pmeta">'
+        + (p.workId ? '<span class="pm">工号 ' + esc(p.workId) + '</span>' : '')
+        + '<span class="badge ' + (p.shiftRule==='rotate'?'b-rot':p.shiftRule==='fixed-night'?'b-night':'b-yellow') + '">' + shTxt + '</span>'
+        + '<span class="pm">本月 ' + shNow + '</span><span class="pm">' + restTxt + '</span></div>'
+        + '<div class="p-att" title="本月出勤 ' + workDays + ' 天（不含请假），当月共 ' + CUR.dim + ' 天">'
+        + '<div class="p-att-bar"><i style="width:' + Math.min(100, Math.round(workDays / CUR.dim * 100)) + '%"></i></div>'
+        + '<span class="p-att-t">出勤 ' + workDays + '/' + CUR.dim + '</span></div></div>';
     }
   }
   box.innerHTML = html;
@@ -2128,12 +2374,16 @@ function setMonth(y,m){
   if(prev !== key) toast('已切换到 ' + y + '年' + m + '月' + (rot ? '（' + rot + '名轮转人员班次已互换）' : ''));
   if(prev !== key) autoGuideMonth(key);
 }
-/* 切到新月份时：该月无任何手工锁定且已添加人员 → 引导自动排班 */
+/* 某月是否已排过班：显式标记（自动排班/导入/示例）或存在手工锁定 */
+function monthScheduled(key){
+  if(state.schedMarks && state.schedMarks[key]) return true;
+  const man = state.manual[key];
+  return !!(man && Object.values(man).some(s => s && /[^_]/.test(s)));
+}
+/* 切到新月份时：该月尚未排班且已添加人员 → 引导自动排班 */
 function autoGuideMonth(key){
   if(!state.people.length) return;
-  const man = state.manual[key];
-  const hasMan = man && Object.values(man).some(s=>s && /[^_]/.test(s));
-  if(!hasMan) setTimeout(()=>toast('💡 ' + key.replace('-','年') + '月 尚未排班，点「⚡ 自动排班」一键生成基线'), 700);
+  if(!monthScheduled(key)) setTimeout(()=>toast('💡 ' + key.replace('-','年') + '月 尚未排班，点「⚡ 自动排班」一键生成基线'), 700);
 }
 $('#monthLabel').onclick = ()=>{
   let inp = $('#monthInput');
@@ -2153,6 +2403,9 @@ $('#genBtn').onclick = ()=>{
   const rd = (state.rotateMode||'lastWeekend')==='fixed' ? (state.rotateDay||1) : 0;
   const rdWarn = (rd > CUR.dim && state.people.some(p=>p.shiftRule==='rotate'))
     ? '；注意：本月仅 ' + CUR.dim + ' 天，固定转班日 ' + rd + ' 日不存在，轮转班次顺延至下月 1 日切换（无周末缓冲）' : '';
+  state.schedMarks = state.schedMarks || {};
+  state.schedMarks[CUR.key] = true;
+  saveState();
   renderAll();
   const issues = computeChecks();
   if(issues.length){
@@ -2198,10 +2451,9 @@ function copyMonthToNext(){
   saveState(); renderAll();
   toast('📋 已把 ' + CUR.y + '年' + CUR.m + '月 手工排班复制到 ' + nk.replace('-','年') + '月（' + Object.keys(copied).length + ' 人' + (Object.keys(copiedLeave).length ? '，含 ' + Object.keys(copiedLeave).length + ' 人请假' : '') + '）');
 }
-$('#copyMonthBtn').onclick = copyMonthToNext;
 /* 一键清除下月：删除下月手工排班锁定与请假，恢复未排班状态（入历史，可 Ctrl+Z 撤销）
    与「📋 到下月」对称——后者连请假一起搬移，前者应一并清掉 */
-$('#clearNextBtn').onclick = ()=>{
+function doClearNext(){
   const nk = CUR.m===12 ? ym(CUR.y+1,1) : ym(CUR.y,CUR.m+1);
   const man = state.manual[nk];
   const has = man && Object.values(man).some(s=>s && /[^_]/.test(s));
@@ -2214,9 +2466,10 @@ $('#clearNextBtn').onclick = ()=>{
   delete state.manual[nk];
   delete state.leave[nk];
   histCommit('清除下月排班');
+  if(state.schedMarks) delete state.schedMarks[nk];
   saveState(); renderAll();
   toast('🧹 已清除下月（' + nk.replace('-','年') + '月）排班与请假，可重新自动排班');
-};
+}
 /* 周分组：视图内按日历周（周一~周日）划分，供表头「第N周」显示与周复制使用。
    跨月周完整则 isFull=true（可作为模板或复制目标）；被视图截断的周 isFull=false。 */
 function buildWeekGroups(){
@@ -2328,7 +2581,6 @@ function copyWeekTemplate(w, wantW){
   saveState(); renderAll();
   toast('📋 已把第 ' + w + ' 周复制到 ' + tTxt + '（' + cells + ' 格' + (skip ? '，' + skip + ' 人因模板含违规跳过' : '') + '，可 Ctrl+Z 撤销）');
 }
-$('#rotateBtn').onclick = ()=> $('#rotateMenu').parentElement.classList.toggle('open');
 function doRotateAll(){
   const key = CUR.key;
   const rotPeople = state.people.filter(p=>p.shiftRule==='rotate');
@@ -2346,10 +2598,6 @@ function doRotateAll(){
   saveState(); renderAll();
   toast('🔁 本月已强制转班（' + n + '人）');
 }
-$$('#rotateMenu button').forEach(b=>b.onclick = ()=>{
-  if(b.dataset.a==='all') doRotateAll();
-  else if(b.dataset.a==='person') openSpRotModal();
-});
 /* ---------- 📌 人员级指定转班日（仅当月：从第 N 日起白/夜互换） ---------- */
 function applySpRot(pid, key, day){ // day=null/0 清除
   state.spRot = state.spRot || {}; state.spRot[key] = state.spRot[key] || {};
@@ -2439,7 +2687,7 @@ $('#spRotAdd').onclick = ()=>{
 };
 $('#spRotClose').onclick = ()=> $('#spRotModal').classList.remove('show');
 $('#spRotModal').addEventListener('click', e=>{ if(e.target.id==='spRotModal') e.target.classList.remove('show'); });
-$('#clearManBtn').onclick = ()=>{
+function doClearMan(){
   if(!state.manual[CUR.key] || !Object.keys(state.manual[CUR.key]).length){ toast('本月没有手工修改'); return; }
   if(!confirm('确定清除本月（' + CUR.y + '年' + CUR.m + '月）所有手工修改，恢复自动排班结果？\n此操作可 Ctrl+Z 撤销。')) return;
   histBegin();
@@ -2449,7 +2697,7 @@ $('#clearManBtn').onclick = ()=>{
   histPush({t:'clearMan', key:CUR.key, before:snap});
   histCommit('清除本月手动修改');
   saveState(); renderAll(); toast('🧹 已清除本月手工修改，恢复自动排班（可 Ctrl+Z 撤销）');
-};
+}
 $('#deptFilter').onchange = ()=>{
   state.deptFilter = $('#deptFilter').value;
   saveState(); renderSheet();
@@ -2482,7 +2730,6 @@ function loadTxt(v){ return v==='busy' ? '繁忙' : '正常'; }
 $('#undoBtn').onclick = undo;
 $('#redoBtn').onclick = redo;
 $('#checkBtn').onclick = runChecks;
-$('#holidayBtn').onclick = openHolidayModal;
 $('#checkClose').onclick = ()=> $('#checkModal').classList.remove('show');
 $('#checkClear').onclick = ()=>{ checkViol = {}; renderSheet(); $('#checkModal').classList.remove('show'); toast('🧹 已清除红框标记'); };
 /* 体检一键修复：把「夜→白」连班的次日批量设为休（入历史，可 Ctrl+Z 撤销） */
@@ -2588,7 +2835,6 @@ function restoreSnapshot(idx){
   toast('⏪ 已恢复到 ' + ts + ' 的快照（' + s.reason + '）');
   return true;
 }
-$('#snapBtn').onclick = openSnapModal;
 $('#snapClose').onclick = ()=> $('#snapModal').classList.remove('show');
 $('#snapModal').addEventListener('click', e=>{ if(e.target.id==='snapModal') e.target.classList.remove('show'); });
 /* ---------- 节假日管理 ---------- */
@@ -2850,6 +3096,15 @@ function exportCSV(){
   downloadBlob(csv, 'text/csv;charset=utf-8', '排班表_' + CUR.key + (vmTxt ? '_' + vmTxt : '') + '.csv');
   toast('⬇ 已导出 ' + CUR.y + '年' + CUR.m + '月 排班 CSV（当前视图「' + (VM_NAMES[state.viewMode||'cn']||'本月+下月') + '」，CSV 固定为当前中心月）');
 }
+/* 生成 Excel 字节并触发下载（各导出入口共用，避免重复代码） */
+function downloadExcelBytes(fmt, sheets, baseName){
+  const bytes = (fmt === 'xls') ? xlsBuild(sheets) : xlsxBuild(sheets);
+  const blob = new Blob([bytes], { type:'application/vnd.ms-excel' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = baseName + '.' + fmt;
+  a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
 function exportExcel(fmt, kind){
   if(!exportGuard(fmt === 'xls' ? '（.xls）' : '（.xlsx）')) return;
   const isSched = kind === 'sched';
@@ -2858,17 +3113,36 @@ function exportExcel(fmt, kind){
     rows:isSched ? scheduleMatrix(true) : statsMatrix()
   }];
   try{
-    const bytes = (fmt === 'xls') ? xlsBuild(sheets) : xlsxBuild(sheets);
-    const blob = new Blob([bytes], { type:'application/vnd.ms-excel' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = (isSched ? '排班表_' : '月度统计_') + CUR.key + '.' + fmt;
-    a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+    downloadExcelBytes(fmt, sheets, (isSched ? '排班表_' : '月度统计_') + CUR.key);
   }catch(err){
     toast('⚠️ 生成 ' + fmt + ' 失败：' + (err && err.message ? err.message : err));
     return;
   }
   toast('⬇ 已导出 ' + CUR.y + '年' + CUR.m + '月 ' + (isSched ? '排班表' : '月度统计') + ' Excel（.' + fmt + '，当前中心月）');
+}
+/* 空白待填表：人员名单 + 日期表头 + 星期行，格子留空。发给别人填完再「⬆ 导入旧表」收回。
+   第一行是填写说明（只作提示，导入时不会被当成人员行）。 */
+function exportBlankTemplate(){
+  if(!state.people.length){ toast('👷 还没有人员，先添加或导入人员再生成待填表'); return; }
+  const dim = CUR.dim;
+  const dateHead = Array.from({length:dim},(_,i)=>({ d: CUR.y + '-' + pad2(CUR.m) + '-' + pad2(i + 1) }));
+  const dowHead = Array.from({length:dim},(_,i)=>'周' + WEEK[dowOf(CUR.y,CUR.m,i+1)]);
+  const rows = [
+    ['填写说明：在空白格填 白班 / 夜班 / 休（也可写 白 / 夜 / 休、加班、请假）；填完存为 .xlsx 发回即可导入。请勿改动前 4 列与日期表头。'],
+    ['技术员','部门','班次规则','休息规则', ...dateHead],
+    ['星期','','','', ...dowHead]
+  ];
+  for(const p of rowOrderPeople(true)){
+    rows.push([p.name, p.dept, SHIFT_TXT[p.shiftRule]||'月轮转', REST_TXT[p.restRule]||'无休',
+      ...Array.from({length:dim},()=>'')]);
+  }
+  try{
+    downloadExcelBytes('xlsx', [{ name:'待填排班表 ' + CUR.key, rows }], '待填排班表_' + CUR.key);
+  }catch(err){
+    toast('⚠️ 生成待填表失败：' + (err && err.message ? err.message : err));
+    return;
+  }
+  toast('📝 已导出空白待填表 .xlsx（' + CUR.y + '年' + CUR.m + '月，' + state.people.length + ' 人）——发给同事填完再导入');
 }
 function exportJSON(){
   const data = { app:'shift-scheduler', version:1, savedAt:new Date().toISOString(),
@@ -2876,6 +3150,7 @@ function exportJSON(){
       satLoad:state.satLoad, sunLoad:state.sunLoad,
       rotateMode:state.rotateMode, rotateDay:state.rotateDay,
       viewMode:state.viewMode, deptFilter:state.deptFilter, sampleVer:state.sampleVer,
+      schedMarks:state.schedMarks,
       curYear:state.curYear, curMonth:state.curMonth } };
   downloadBlob(JSON.stringify(data,null,2), 'application/json', '排班备份_' + CUR.key + '.json');
   toast('💾 已导出完整备份 JSON（含所有月份数据）');
@@ -3880,7 +4155,7 @@ function xlsBuild(sheets){
    识别失败时不再直接报错，而是弹出「点选表头行」的兜底界面（见 openHeaderPicker）。 */
 const normCell = c => String(c == null ? '' : c).replace(/\u00a0/g, ' ').trim();
 /* 表头关键字：这些字样出现在「姓名列」上时说明该行不是数据行 */
-const HDR_WORDS = /合计|总计|小计|部门|技术员|星期|负责人|标题|姓名|日期|工号|编号|备注|序号|班次|班制|休息|休法|排休|规则|部门长|制表|审核|单位/;
+const HDR_WORDS = /合计|总计|小计|部门|技术员|星期|负责人|标题|姓名|日期|工号|编号|备注|序号|班次|班制|休息|休法|排休|规则|部门长|制表|审核|单位|白班|夜班|加班|出勤|请假/;
 function isHeaderishName(s){
   const v = normCell(s).replace(/\s+/g, '');
   if(!v) return true;
@@ -3889,7 +4164,10 @@ function isHeaderishName(s){
 }
 /* 日期识别。type: 'date' 带明确 年/月/日；'dayN' 只有第几天（归到当前中心月） */
 function smartParseDate(t){
-  const raw = String(t == null ? '' : t).replace(/[\s\u00a0]/g, '');
+  let raw = String(t == null ? '' : t).replace(/[\s\u00a0]/g, '');
+  if(!raw) return null;
+  /* 去掉可能带的时间部分（2026-09-01T00:00:00 / 2026-09-01 0:00） */
+  raw = raw.replace(/[tT]\d{1,2}:\d{2}(:\d{2})?(\.\d+)?$/, '').replace(/\d{1,2}:\d{2}(:\d{2})?$/, '');
   if(!raw) return null;
   const s = raw.toLowerCase();
   let m = s.match(/^第?(\d{1,2})天?$/);
@@ -3898,11 +4176,13 @@ function smartParseDate(t){
   if(m) return {type:'date', y:+m[1], m:+m[2], d:+m[3]};
   m = s.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?$/);
   if(m) return {type:'date', y:+m[1], m:+m[2], d:+m[3]};
+  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);   // 美式 M/D/YYYY
+  if(m) return {type:'date', y:+m[3], m:+m[1], d:+m[2]};
   m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})$/);
   if(m) return {type:'date', y:null, m:+m[1], d:+m[2]};
-  m = s.match(/^(\d{1,2})月(\d{1,2})日?$/);
+  m = s.match(/^(\d{1,2})月(\d{1,2})[日号]?$/);
   if(m) return {type:'date', y:null, m:+m[1], d:+m[2]};
-  m = s.match(/^(\d{1,2})日$/);
+  m = s.match(/^(\d{1,2})[日号]$/);
   if(m && +m[1] >= 1 && +m[1] <= 31) return {type:'dayN', n:+m[1]};
   /* Excel 把日期存成序列号（1900 日期系统），另存 CSV 后会原样保留，如 46266 → 2026/9/1 */
   m = s.match(/^(\d{4,5})(?:\.0*)?$/);
@@ -4038,18 +4318,20 @@ function smartFindHeader(rows, forceHeadRow){
 function smartCell(t){
   const s = String(t||'').trim().toLowerCase();
   if(!s || /^[\s\-—/]*$/.test(s)) return {ch:'_', leave:null};
+  if(/放假|公休|调休/.test(s)) return {ch:'.', leave:null};   // 先于「假」，避免把放假当请假
   if(/假/.test(s) || /leave|sick|annual/i.test(s)){
     let r = '其他';
     if(/事假/.test(s)) r='事假'; else if(/病假/.test(s)||/sick/.test(s)) r='病假'; else if(/年假/.test(s)||/annual/.test(s)) r='年假';
     return {ch:'_', leave:r};
   }
-  if(/休|rest|off|空|无/.test(s)) return {ch:'.', leave:null};
+  if(/休|rest|off|空|无|放假/.test(s)) return {ch:'.', leave:null};
   if(/加|ot|加班|延/.test(s)){ const n=/夜|晚|night/.test(s); return {ch:n?'N':'D', leave:null}; }
-  const night = /夜|晚|night|中班/.test(s);
-  const day = /白|日|day|早班|常白/.test(s);
+  const night = /夜|晚|night|中班|大夜/.test(s);
+  const day = /白|日|day|早班|早|常白/.test(s);
   if(night && !day) return {ch:'n', leave:null};
   if(day && !night) return {ch:'d', leave:null};
-  if(/班|上|√|✓|出勤|在岗|值班|当班|^[1-9]$/.test(s)) return {ch:'w', leave:null};
+  /* 出勤类记号：班/上/√/✓/○/●/O/1~9（具体白夜由该月段内有明确标注的格子推断） */
+  if(/班|上|√|✓|出勤|在岗|值班|当班|^[o○●◯]$|^[1-9]$/.test(s)) return {ch:'w', leave:null};
   return {ch:'_', leave:null};
 }
 /* 日期列分组到月份（跨月拆分）；无年份时以当前中心月为基准推断 */
@@ -4136,6 +4418,169 @@ function inferRest(chars, y, m, dim){
   if(s6Any && s6Rest) return 'sixOne';
   return 'none';
 }
+/* 表格 → 结构化结果。预览与实际导入共用同一份逻辑，保证「预览看到的 = 导入得到的」。
+   要点：
+   - 姓名/部门列的合并单元格（只在首行写值）自动向下填充；
+   - 同一人若被拆成多行（姓名合并跨行），按格合并而不是互相覆盖；
+   - 行级「班」按月份段推断（段内只有夜则全夜、只有白则全白），避免模板表整列「班」无法判断。 */
+function scanTable(rows, H, groups, monthKeys, dims){
+  const out = [];
+  let lastDept = '';
+  for(let r=H.dataStart; r<rows.length; r++){
+    const row = rows[r] || [];
+    let name = H.nameIdx >= 0 ? normCell(row[H.nameIdx]).replace(/\s+/g, '') : '';
+    const hasData = H.dateCols.some(dc => normCell(row[dc.i]) !== '');
+    let reusedName = false;
+    if(!name || isHeaderishName(name)){
+      if(!name && hasData && out.length){ name = out[out.length - 1].name; reusedName = true; }
+      else continue;
+    }
+    let dept = H.deptIdx >= 0 ? normCell(row[H.deptIdx]) : '';
+    if(dept) lastDept = dept; else dept = lastDept;
+    const workId = (!reusedName && H.workIdIdx >= 0) ? normCell(row[H.workIdIdx]) : '';
+    const perMonth = {};
+    monthKeys.forEach(k => perMonth[k] = { chs:[], leaves:{} });
+    for(const k of monthKeys){
+      const g = groups[k], dim = dims[k];
+      for(let d=1; d<=dim; d++){
+        const ci = g[d];
+        const cell = (ci != null) ? smartCell(row[ci]) : { ch:'_', leave:null };
+        if(cell.leave) perMonth[k].leaves[d] = cell.leave;
+        perMonth[k].chs.push(cell.ch);
+      }
+    }
+    for(const k of monthKeys){
+      const chs = perMonth[k].chs;
+      let nC = 0, dC = 0;
+      for(const c of chs){ if(c === 'n' || c === 'N') nC++; else if(c === 'd' || c === 'D') dC++; }
+      let wv;
+      if(nC > 0 && dC === 0) wv = 'n';
+      else if(dC > 0 && nC === 0) wv = 'd';
+      else if(nC + dC === 0) wv = (inferShift([].concat(...monthKeys.map(kk => perMonth[kk].chs))) === 'fixed-night') ? 'n' : 'd';
+      else wv = (nC >= dC) ? 'n' : 'd';
+      perMonth[k].chs = chs.map(c => c === 'w' ? wv : c);
+    }
+    const allChars = [].concat(...monthKeys.map(k => perMonth[k].chs));
+    let shiftRule = H.shiftIdx >= 0 ? txtToShift(row[H.shiftIdx]) : '';
+    if(!shiftRule) shiftRule = inferShift(allChars);
+    let restRule = H.restIdx >= 0 ? txtToRest(row[H.restIdx]) : '';
+    if(!restRule){
+      const mk = monthKeys[0];
+      restRule = inferRest(perMonth[mk].chs, +mk.split('-')[0], +mk.split('-')[1], dims[mk]);
+    }
+    out.push({ rowNo:r + 1, name, dept:dept || '除气', workId, shiftRule, restRule, perMonth, reusedName });
+  }
+  /* 去重占位行：某行只有姓名、没有任何排班/请假，且同名还另有带数据的行 → 丢掉这条空占位
+     （真实业务表常有一行只写负责人/占位姓名，若留着会让「识别到人员」多算 1 人） */
+  const hasAny = it => Object.keys(it.perMonth).some(k =>
+    it.perMonth[k].chs.some(c => c !== '_') || Object.keys(it.perMonth[k].leaves).length > 0);
+  const nameCount = {};
+  out.forEach(it => { nameCount[it.name] = (nameCount[it.name] || 0) + 1; });
+  return out.filter(it => hasAny(it) || nameCount[it.name] === 1);
+}
+const CH_TXT = { 'd':'白', 'n':'夜', 'D':'白+', 'N':'夜+', '.':'休', '_':'—' };
+/* 导入预览：把「识别到了什么」说清楚，再由用户确认；不确认不落库 */
+let pendingImport = null;
+function openImportPreview(rows, scanned, H, monthKeys, opts){
+  pendingImport = { rows, scanned, H, monthKeys, opts:opts || {} };
+  const mk = monthKeys[0];
+  const dim = daysInMonth(+mk.split('-')[0], +mk.split('-')[1]);
+  const showDays = Math.min(dim, 8);
+  const headCells = [];
+  for(let d=1; d<=showDays; d++) headCells.push('<th>' + (+mk.split('-')[1]) + '/' + d + '</th>');
+  let rowsHtml = '';
+  for(const it of scanned.slice(0, 6)){
+    const chs = it.perMonth[mk].chs;
+    rowsHtml += '<tr><td class="ip-name">' + escapeHtml(it.name) + (it.reusedName ? ' <span class="ip-tag">合并续行</span>' : '') + '</td>'
+      + '<td>' + escapeHtml(it.dept) + '</td><td>' + escapeHtml(it.workId || '—') + '</td>'
+      + chs.slice(0, showDays).map(c => '<td class="ip-c ip-' + (c === '_' ? 'x' : c === '.' ? 'r' : 'w') + '">' + (CH_TXT[c] || c) + '</td>').join('')
+      + '</tr>';
+  }
+  if(scanned.length > 6) rowsHtml += '<tr><td colspan="' + (3 + showDays) + '" class="ip-more">… 其余 ' + (scanned.length - 6) + ' 人略（导入后可在排班表查看）</td></tr>';
+  $('#ipTbl').innerHTML = '<tr><th>姓名</th><th>部门</th><th>工号</th>' + headCells.join('') + '</tr>' + rowsHtml;
+  const monTxt = monthKeys.map(k => k.replace('-', '年') + '月').join('、');
+  /* 人员数按「姓名去重」统计：同一人被拆成多行时不能重复计人 */
+  const nameSet = new Set(scanned.map(it => it.name));
+  const uniq = nameSet.size;
+  const multi = scanned.length - uniq;
+  $('#ipSum').innerHTML =
+    '<div class="ip-cards">'
+    + '<div class="ip-card"><b>' + uniq + '</b><span>识别到人员</span></div>'
+    + '<div class="ip-card"><b>' + H.dateCols.length + '</b><span>日期列（天）</span></div>'
+    + '<div class="ip-card"><b>' + monthKeys.length + '</b><span>覆盖月份</span></div>'
+    + '<div class="ip-card"><b>' + ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'][H.nameIdx] + '</b><span>姓名所在列</span></div>'
+    + '</div>'
+    + '<div class="ip-line">表头识别在第 <b>' + (H.headRow + 1) + ' 行</b>；'
+    + '日期列 第 <b>' + colName(H.dateCols[0].i) + ' ~ ' + colName(H.dateCols[H.dateCols.length - 1].i) + '</b> 列；'
+    + '将写入 <b>' + monTxt + '</b>' + (monthKeys.length > 1 ? '（跨月自动拆分）' : '') + '。</div>';
+  $('#ipNote').innerHTML = state.people.length
+    ? '⚠️ 按姓名合并：同名人员会更新属性并锁定排班，新姓名会新增；<b>不会删除</b>现有人。此操作不可撤销（Ctrl+Z 无效），建议先「⬇ 导出 → 完整备份 JSON」。'
+    : '当前没有人员，将按识别结果新建人员并锁定排班。';
+  $('#ipSum').querySelector('.ip-line').insertAdjacentHTML('beforeend',
+    multi > 0 ? '<br><span class="ip-hint">其中 ' + multi + ' 行是同一人的续行（合并单元格），已按格合并。</span>' : '');
+  $('#ipOk').textContent = '✓ 确认导入 ' + uniq + ' 人';
+  $('#importPreviewModal').classList.add('show');
+}
+function closeImportPreview(){
+  $('#importPreviewModal').classList.remove('show');
+  pendingImport = null;
+}
+/* 真正落库：按姓名合并人员 + 锁定排班 + 登记请假 */
+function doImportApply(scanned, monthKeys, opts){
+  pushSnapshot('导入排班表');
+  let added = 0, updated = 0, cells = 0, leaveN = 0;
+  const mergedSet = new Set();
+  const accum = {};   // 'pid@month' → 已累积的字符（同一人被拆成多行时按格合并）
+  for(const it of scanned){
+    let p = state.people.find(x => x.name === it.name);
+    if(p){
+      Object.assign(p, { dept:it.dept, shiftRule:it.shiftRule, restRule:it.restRule });
+      if(it.workId) p.workId = it.workId;
+      updated++;
+    } else {
+      p = { id:'imp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name:it.name, dept:it.dept,
+        shiftRule:it.shiftRule, initialShift:modeShift(it.perMonth[monthKeys[0]].chs), restRule:it.restRule,
+        note:'', workId:it.workId || undefined };
+      state.people.push(p);
+      added++;
+    }
+    for(const k of monthKeys){
+      const ak = p.id + '@' + k;
+      const prev = accum[ak] || '';
+      const merged = it.perMonth[k].chs.map((c, i) => (c !== '_' ? c : ((prev[i] && prev[i] !== '_') ? prev[i] : c))).join('');
+      accum[ak] = merged;
+      state.monthShift[k] = state.monthShift[k] || {};
+      state.monthShift[k][p.id] = modeShift(merged.split(''));
+      if(!/[^._dDnN]/.test(merged) && /[^_]/.test(merged)){   // 只允许标准字符，异常字符不落库
+        state.manual[k] = state.manual[k] || {};
+        state.manual[k][p.id] = merged;
+        mergedSet.add(ak);
+        cells += Math.max(0, (merged.match(/[^._]/g) || []).length - (prev.match(/[^._]/g) || []).length);
+      }
+      const lvs = it.perMonth[k].leaves;
+      if(Object.keys(lvs).length){
+        state.leave[k] = state.leave[k] || {};
+        state.leave[k][p.id] = state.leave[k][p.id] || {};
+        for(const dd in lvs){ state.leave[k][p.id][dd] = lvs[dd]; leaveN++; }
+      }
+    }
+  }
+  state.rowOrder = [];   // 导入后恢复部门排序（人员结构已变）
+  state.schedMarks = state.schedMarks || {};
+  monthKeys.forEach(k => { state.schedMarks[k] = true; });
+  histReset(); saveState(); renderAll();
+  const monthTxt = monthKeys.map(k => k.replace('-', '年') + '月').join('、');
+  toast('📄 导入完成：新增 ' + added + ' 人，更新 ' + updated + ' 人，锁定 ' + mergedSet.size + ' 人·月（' + cells + ' 个班次'
+    + (leaveN ? '，' + leaveN + ' 条请假' : '') + '，覆盖 ' + monthTxt + '）');
+  setTimeout(()=>{
+    if(confirm('已导入旧排班（当前显示的是导入的表）。\n\n是否立即清空这些排班，改用「⚡ 自动排班」按人员规则重新生成？\n（选「取消」则保留导入的表，可手工微调）')){
+      for(const k of monthKeys) delete state.manual[k];
+      saveState(); renderAll();
+      toast('🧹 已清空导入的排班，请点「⚡ 自动排班」生成新表');
+    }
+  }, 300);
+  return true;
+}
 /* ---------- 导入应用 ---------- */
 let importMode = 'merge'; // 人员合并策略（表格固定按姓名合并；JSON 全量覆盖）
 function applyCSVImport(rows, opts){
@@ -4156,92 +4601,14 @@ function applyCSVImport(rows, opts){
   }
   const dims = {};
   monthKeys.forEach(k=>dims[k]=daysInMonth(+k.split('-')[0], +k.split('-')[1]));
-  // 防呆：导入会按姓名合并/更新人员并锁定排班，且不可撤销（Ctrl+Z 无效）
-  if(state.people.length && !confirm('⚠️ 将导入 ' + (rows.length-H.dataStart) + ' 行数据：按姓名合并/更新人员并锁定排班（' + monthKeys.length + ' 个月' + (monthKeys.length>1 ? '，跨月自动拆分' : '') + '），不可撤销（Ctrl+Z 无效）。\n建议先「⬇ 导出 → 完整备份 JSON」留存当前数据。确定继续？')) return false;
-  pushSnapshot('导入排班表');
-  let added=0, updated=0, cells=0, leaveN=0, skipped=0;
-  const mergedSet = new Set();
-  for(let r=H.dataStart; r<rows.length; r++){
-    const row = rows[r];
-    const name = normCell(row[H.nameIdx]).replace(/\s+/g, '');
-    if(!name || isHeaderishName(name)){ skipped++; continue; }
-    // 1) 逐月解析单元格（跨月拆分；请假单独收集）
-    const perMonth = {};
-    monthKeys.forEach(k=>perMonth[k]={chs:[], leaves:{}});
-    for(const k of monthKeys){
-      const g = groups[k], dim = dims[k];
-      for(let d=1; d<=dim; d++){
-        const ci = g[d];
-        const cell = (ci!=null) ? smartCell(row[ci]) : {ch:'_', leave:null};
-        if(cell.leave) perMonth[k].leaves[d] = cell.leave;
-        perMonth[k].chs.push(cell.ch);
-      }
-    }
-    // 2) 行级「班」推断：按月份段，段内显式白/夜标注决定（模板表 8月段"班"=白、9月段"班"=夜）
-    for(const k of monthKeys){
-      const chs = perMonth[k].chs;
-      let nC=0, dC=0;
-      for(const c of chs){ if(c==='n'||c==='N') nC++; else if(c==='d'||c==='D') dC++; }
-      let wv;
-      if(nC>0 && dC===0) wv = 'n';
-      else if(dC>0 && nC===0) wv = 'd';
-      else if(nC+dC===0){ // 整段无标注 → 用该行全部月份推断班次
-        const all = [].concat(...monthKeys.map(kk=>perMonth[kk].chs));
-        wv = (inferShift(all)==='fixed-night') ? 'n' : 'd';
-      } else wv = (nC>=dC) ? 'n' : 'd';
-      perMonth[k].chs = chs.map(c=>c==='w'?wv:c);
-    }
-    // 3) 人员属性（班次/休息规则：优先规则列，否则从排班推断）
-    const allChars = [].concat(...monthKeys.map(k=>perMonth[k].chs));
-    let shiftRule = H.shiftIdx>=0 ? txtToShift(row[H.shiftIdx]) : '';
-    if(!shiftRule) shiftRule = inferShift(allChars);
-    let restRule = H.restIdx>=0 ? txtToRest(row[H.restIdx]) : '';
-    if(!restRule){ const mk = monthKeys[0]; restRule = inferRest(perMonth[mk].chs, +mk.split('-')[0], +mk.split('-')[1], dims[mk]); }
-    const dept = (H.deptIdx>=0 ? String(row[H.deptIdx]||'').trim() : '') || '除气';
-    const workId = H.workIdIdx>=0 ? String(row[H.workIdIdx]||'').trim() : '';
-    let p = state.people.find(x=>x.name===name);
-    if(p){
-      Object.assign(p, {dept, shiftRule, restRule});
-      if(workId) p.workId = workId;
-      updated++;
-    } else {
-      p = {id:'imp'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), name, dept, shiftRule, initialShift:modeShift(perMonth[monthKeys[0]].chs), restRule, note:'', workId:workId||undefined};
-      state.people.push(p);
-      added++;
-    }
-    // 4) 逐月写入 manual / monthShift / leave
-    for(const k of monthKeys){
-      const chs = perMonth[k].chs;
-      state.monthShift[k] = state.monthShift[k] || {};
-      state.monthShift[k][p.id] = modeShift(chs);
-      const locked = chs.join('');
-      if(/[^._dDnN]/.test(locked)) continue; // 安全校验（只允许标准字符）
-      if(/[^_]/.test(locked)){
-        state.manual[k] = state.manual[k] || {};
-        state.manual[k][p.id] = locked;
-        mergedSet.add(p.id + '@' + k);
-        cells += chs.filter(c=>c!=='.'&&c!=='_').length;
-      }
-      const lvs = perMonth[k].leaves;
-      if(Object.keys(lvs).length){
-        state.leave[k] = state.leave[k] || {};
-        state.leave[k][p.id] = state.leave[k][p.id] || {};
-        for(const dd in lvs){ state.leave[k][p.id][dd] = lvs[dd]; leaveN++; }
-      }
-    }
+  const scanned = scanTable(rows, H, groups, monthKeys, dims);
+  if(!scanned.length){
+    toast('⚠️ 识别到表头但没找到人员行（姓名列可能是空的）');
+    if(!opts.pickedOnce) openHeaderPicker(rows, opts);
+    return false;
   }
-  state.rowOrder = []; // 导入后恢复部门排序（人员结构已变）
-  histReset(); saveState(); renderAll();
-  const monthTxt = monthKeys.map(k=>k.replace('-','年') + '月').join('、');
-  toast('📄 导入完成：新增 ' + added + ' 人，更新 ' + updated + ' 人，锁定 ' + mergedSet.size + ' 人·月（' + cells + ' 个班次' + (leaveN? '，' + leaveN + ' 条请假' : '') + '，覆盖 ' + monthTxt + (skipped? '；跳过 ' + skipped + ' 行非人员行' : '') + '）');
-  // 引导"改成新表"的下一步操作
-  setTimeout(()=>{
-    if(confirm('已导入旧排班（当前显示的是导入的旧表）。\n\n是否立即清空并重新自动排班生成新表？\n（选「取消」则保留旧表，可手工微调）')){
-      for(const k of monthKeys) delete state.manual[k];
-      saveState(); renderAll();
-      toast('🧹 旧排班已清空，请点「⚡ 自动排班」生成新表');
-    }
-  }, 300);
+  if(opts.skipPreview) return doImportApply(scanned, monthKeys, opts);
+  openImportPreview(rows, scanned, H, monthKeys, opts);
   return true;
 }
 /* ---------- 表头识别兜底：手动点选表头行 ----------
@@ -4284,6 +4651,21 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
 /* ---------- 表格文件导入总入口：按文件签名识别真实格式，多工作表自动挑最合适的一张 ---------- */
+/* 行列转置：有些排班表把「日期横排」改成「日期竖排、人员横排」，转置后即可走同一套识别流程 */
+function transposeRows(rows){
+  const n = rows.reduce((mx, r) => Math.max(mx, (r || []).length), 0);
+  const out = [];
+  for(let c = 0; c < n; c++){
+    const row = [];
+    for(let r = 0; r < rows.length; r++) row.push((rows[r] || [])[c] == null ? '' : (rows[r] || [])[c]);
+    out.push(row);
+  }
+  return out;
+}
+function tableScore(rows){
+  const H = smartFindHeader(rows);
+  return (H.nameIdx >= 0 ? 1000 : 0) + (H.dateCols.length >= 2 ? H.dateCols.length : 0);
+}
 function importTableBuffer(buf, fname){
   let parsed;
   try{
@@ -4295,16 +4677,19 @@ function importTableBuffer(buf, fname){
   const sheets = (parsed.sheets || []).filter(s => s.rows && s.rows.length);
   if(!sheets.length){ toast('⚠️ 文件里没有找到可读取的表格数据'); return; }
   if(parsed.enc && /GBK|UTF-16/.test(parsed.enc)) toast('📄 检测到 ' + parsed.enc + ' 编码，已自动转码');
-  /* 多工作表：优先选「姓名列 + 最长连续日期列」得分最高的一张 */
-  let best = sheets[0], bestScore = -1;
+  /* 多工作表 + 横竖两种朝向：都算一遍得分，取最高的那个组合 */
+  let best = null, bestScore = -1;
   for(const sh of sheets){
-    const H = smartFindHeader(sh.rows);
-    const score = (H.nameIdx >= 0 ? 1000 : 0) + (H.dateCols.length >= 2 ? H.dateCols.length : 0);
-    if(score > bestScore){ bestScore = score; best = sh; }
+    const s1 = tableScore(sh.rows);
+    const t = transposeRows(sh.rows);
+    const s2 = tableScore(t);
+    if(s1 >= s2){ if(s1 > bestScore){ bestScore = s1; best = { rows:sh.rows, name:sh.name, trans:false }; } }
+    else if(s2 > bestScore){ bestScore = s2; best = { rows:t, name:sh.name, trans:true }; }
   }
   const kindTxt = { csv:'CSV 文本', xlsx:'Excel 工作簿(.xlsx)', xls:'Excel 97-2003(.xls)', html:'HTML 表格' }[parsed.kind] || '表格';
-  if(bestScore < 1002){ openHeaderPicker(best.rows, { kind:kindTxt, sheetName:best.name }); return; }
+  if(!best || bestScore < 1002){ openHeaderPicker((best ? best.rows : sheets[0].rows), { kind:kindTxt, sheetName:best ? best.name : sheets[0].name }); return; }
   if(sheets.length > 1 && best.name) toast('📄 已选用工作表「' + best.name + '」（文件共 ' + sheets.length + ' 张表）');
+  if(best.trans) toast('🔄 识别为「日期竖排 / 人员横排」的表格，已自动转置后读取');
   applyCSVImport(best.rows, { headRow:smartFindHeader(best.rows).headRow, kind:kindTxt, sheetName:best.name });
 }
 /* v1.44 备份结构校验：防「合法 JSON 但结构损坏」（误导入其它项目备份 / 字段被手工改坏）
@@ -4366,6 +4751,11 @@ function sanitizeBackup(s){
     viewMode: (s.viewMode==='month'||s.viewMode==='cn'||s.viewMode==='pc'||s.viewMode==='pcn') ? s.viewMode : 'cn',
     deptFilter: (s.deptFilter==='除气'||s.deptFilter==='转码') ? s.deptFilter : 'all',
     sampleVer: Number.isFinite(+s.sampleVer) ? +s.sampleVer : 0,
+    schedMarks: (() => {
+      const o = {}; const src = (s.schedMarks && typeof s.schedMarks === 'object') ? s.schedMarks : {};
+      for(const k of Object.keys(src)) if(/^\d{4}-\d{2}$/.test(k) && src[k]) o[k] = true;
+      return o;
+    })(),
     curYear: num01(s.curYear, 9999, today().y),
     curMonth: num01(s.curMonth, 12, today().m),
     warn: ''
@@ -4394,6 +4784,7 @@ function importJSONData(data){
   state.viewMode = s.viewMode;
   state.deptFilter = s.deptFilter;
   state.sampleVer = s.sampleVer;
+  state.schedMarks = s.schedMarks || {};
   state.curYear = s.curYear; state.curMonth = s.curMonth;
   migrateV8(state); // 旧备份可能含 x/y 留守字符或 low 负荷，恢复时统一迁移
   histReset(); saveState(); renderAll();
@@ -4436,6 +4827,7 @@ $$('#exportMenu button').forEach(b=>b.onclick = ()=>{
   else if(act === 'xls') exportExcel('xls', 'sched');
   else if(act === 'stats-xlsx') exportExcel('xlsx', 'stats');
   else if(act === 'stats-xls') exportExcel('xls', 'stats');
+  else if(act === 'blank-xlsx') exportBlankTemplate();
   else exportJSON();
   b.closest('.dd').classList.remove('open');
 });
@@ -4489,6 +4881,21 @@ $('#hpOk').onclick = ()=>{
   closeHeaderPicker();
   applyCSVImport(rows, Object.assign({}, opts, { headRow:sel, pickedOnce:true }));
 };
+/* 导入预览弹窗 */
+$('#ipCancel').onclick = closeImportPreview;
+$('#importPreviewModal').addEventListener('click', e=>{ if(e.target.id === 'importPreviewModal') closeImportPreview(); });
+$('#ipOk').onclick = ()=>{
+  if(!pendingImport) return;
+  const { scanned, monthKeys, opts } = pendingImport;
+  closeImportPreview();
+  doImportApply(scanned, monthKeys, opts);
+};
+$('#ipRepick').onclick = ()=>{
+  if(!pendingImport) return;
+  const { rows, opts } = pendingImport;
+  closeImportPreview();
+  openHeaderPicker(rows, Object.assign({}, opts, { pickedOnce:false }));   // 允许再选一次表头行
+};
 $('#printBtn').onclick = ()=>{
   if(!state.people.length){ toast('👷 暂无可打印的技术员'); return; }
   const v = countViolations();
@@ -4505,12 +4912,18 @@ $('#printBtn').onclick = ()=>{
   }
   setTimeout(()=>window.print(), 60);
 };
-/* 📖 帮助 ▾ 下拉：使用说明 / 更新记录 */
+/* 📖 帮助 ▾ 下拉：使用说明 / 新手引导 / 快捷键 / 更新记录 */
 $('#helpBtn').onclick = ()=> $('#helpMenu').parentElement.classList.toggle('open');
+const HELP_ACTIONS = {
+  help: ()=> $('#helpModal').classList.add('show'),
+  guide: ()=> openGuide(0),
+  keys: ()=> $('#keysModal').classList.add('show'),
+  log: ()=> $('#logModal').classList.add('show')
+};
 $$('#helpMenu button').forEach(b=>b.onclick = ()=>{
-  if(b.dataset.a==='help') $('#helpModal').classList.add('show');
-  else $('#logModal').classList.add('show');
+  const act = HELP_ACTIONS[b.dataset.a];
   b.closest('.dd').classList.remove('open');
+  if(act) act();
 });
 $('#helpClose').onclick = ()=> $('#helpModal').classList.remove('show');
 $('#helpModal').addEventListener('click', e=>{ if(e.target.id==='helpModal') e.target.classList.remove('show'); });
@@ -4604,6 +5017,8 @@ function loadSample(){
   state.manual['2026-09'] = sampleManual9(); // 9月锁定《複本 62.68.77除气转码9月排班表》
   state.satLoad = 'normal'; state.sunLoad = 'busy'; // 周六正常、周日任务多
   state.sampleVer = SAMPLE_VER; // 示例版本标记（供旧示例自动升级判定）
+  state.schedMarks = state.schedMarks || {};
+  Object.keys(state.manual).forEach(k => { state.schedMarks[k] = true; });   // 示例锁定的月份视为已排班
   histReset(); saveState(); renderAll();
   const wm = $('#welcomeModal'); if(wm) wm.classList.remove('show');
   toast('🧪 已填入 20 名技术员（除气/转码 9月6休1排班，8/9 月排班已锁定，视图已切到 2026 年 9 月）');
@@ -4620,24 +5035,10 @@ function lockBase(pid, key, d){
   return m[d-1] === base[d-1];
 }
 
-$('#wSample').onclick = ()=>{
-  if(state.people.length && !confirm('⚠️ 用 9月排班范例（《複本 62.68.77除气转码9月排班表》·20人·9月锁定）覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
-  loadSample();
-};
-$('#wSampleSmall').onclick = ()=>{
-  if(state.people.length && !confirm('⚠️ 用 9月排班范例（《複本 62.68.77除气转码9月排班表》·20人·9月锁定）覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
-  loadSample();
-};
+$('#wSampleSmall').onclick = ()=> doLoadSample();
 $('#wStart').onclick = ()=>{
-  const wm = $('#welcomeModal'); if(wm) wm.classList.remove('show');
-  toast('先从「＋ 添加」开始吧');
-};
-$('#wImport').onclick = ()=>{
-  const wm = $('#welcomeModal'); if(wm) wm.classList.remove('show');
-  fileAct = 'table';
-  const fi = $('#fileInput');
-  fi.accept = '.csv,.txt,.xlsx,.xls';
-  fi.value = ''; fi.click();
+  closeGuide();
+  toast('已跳过引导。想再看一次：📖 帮助 → 🚀 新手引导');
 };
 
 /* ================= 防呆：多标签页 / 意外关闭 ================= */
@@ -4654,6 +5055,183 @@ window.addEventListener('beforeunload', e=>{
     e.returnValue = '';
   }
 });
+
+/* ================= v1.46：界面简化（更多菜单 / 流程提示 / 空状态 / 分步引导） =================
+   设计原则：主操作一眼可见、低频操作收进「⋯ 更多」、随时给出「下一步该做什么」的提示。 */
+/* ---------- ⋯ 更多：低频操作集中管理 ---------- */
+function doLoadSample(){
+  if(state.people.length && !confirm('⚠️ 用 9月排班范例（20 人 · 9月锁定）覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
+  loadSample();
+}
+function doResetAll(){
+  if(!state.people.length && !Object.keys(state.manual).length){ toast('当前已是空白，无需清空'); return; }
+  if(!confirm('⚠️ 清空全部数据：人员、所有月份排班、请假、节假日、设置都会删除，且不可撤销。\n建议先「⬇ 导出 → 完整备份 JSON」留存。\n\n确定清空并重新开始？')) return;
+  pushSnapshot('清空全部数据');
+  state.people = []; state.manual = {}; state.monthShift = {}; state.spRot = {};
+  state.leave = {}; state.holidays = {}; state.rowOrder = []; state.sampleVer = 0; state.schedMarks = {};
+  histReset(); saveState(); renderAll();
+  toast('🧨 已清空全部数据，可以重新开始');
+}
+const MORE_ACTIONS = {
+  copyMonth: copyMonthToNext,
+  clearNext: doClearNext,
+  clearMan: doClearMan,
+  rotateAll: doRotateAll,
+  rotatePerson: openSpRotModal,
+  snapshot: openSnapModal,
+  holiday: openHolidayModal,
+  sample: doLoadSample,
+  reset: doResetAll
+};
+$('#moreBtn').onclick = ()=> $('#moreMenu').parentElement.classList.toggle('open');
+$$('#moreMenu button').forEach(b=>b.onclick = ()=>{
+  const act = MORE_ACTIONS[b.dataset.act];
+  b.closest('.dd').classList.remove('open');
+  if(act) act();
+  else toast('⚠️ 未实现的操作：' + b.dataset.act);
+});
+
+/* ---------- 流程提示条：按当前状态告诉用户「下一步」 ---------- */
+let flowDismissed = '';
+function flowSignature(){
+  const hasPeople = state.people.length > 0;
+  const shifted = hasPeople && monthScheduled(CUR.key);
+  const viol = shifted ? countViolations() : 0;
+  return [hasPeople ? 1 : 0, shifted ? 1 : 0, viol, CUR.key].join('|');
+}
+function renderFlowBar(){
+  const bar = $('#flowBar');
+  if(!bar) return;
+  const hasPeople = state.people.length > 0;
+  const shifted = hasPeople && monthScheduled(CUR.key);
+  const viol = shifted ? countViolations() : 0;
+  let icon = '', text = '', ops = [], sig = '';
+  if(!hasPeople){
+    icon = '👋';
+    text = '欢迎使用。<b>还没有技术员</b>——先导入已有的排班表，或手动添加人员，30 秒就能上手。';
+    ops = [['⬆ 导入旧排班表', ()=> clickImport()], ['＋ 添加人员', ()=> openPersonModal(null)], ['🧪 看示例数据', doLoadSample]];
+    sig = 'empty';
+  } else if(!shifted){
+    icon = '⚡';
+    text = '<b>' + CUR.y + '年' + CUR.m + '月还没有排班</b>——点「⚡ 自动排班」生成当月基线，之后可手工微调。';
+    ops = [['⚡ 自动排班', ()=> $('#genBtn').click()], ['⬆ 导入这个月的旧表', ()=> clickImport()]];
+    sig = 'nosched';
+  } else if(viol > 0){
+    icon = '⚠️';
+    text = '本月排班有 <b>' + viol + ' 处</b>需要确认（连班 / 当日无人上班），建议先体检一下。';
+    ops = [['🔍 立即体检', ()=> $('#checkBtn').click()]];
+    sig = 'viol' + viol;
+  } else {
+    bar.hidden = true;
+    return;
+  }
+  if(flowDismissed === sig){ bar.hidden = true; return; }
+  $('#fbIco').textContent = icon;
+  $('#fbTxt').innerHTML = text;
+  $('#fbOps').innerHTML = '';
+  ops.forEach(([label, fn])=>{
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.onclick = fn;
+    $('#fbOps').appendChild(btn);
+  });
+  bar.hidden = false;
+}
+$('#fbClose').onclick = ()=>{
+  flowDismissed = flowSignature();
+  $('#flowBar').hidden = true;
+};
+function clickImport(){
+  fileAct = 'table';
+  const fi = $('#fileInput');
+  fi.accept = '.csv,.txt,.xlsx,.xls';
+  fi.value = ''; fi.click();
+}
+
+/* ---------- 空状态引导（无人员时替换掉空表格） ---------- */
+function renderEmptyState(){
+  const es = $('#emptyState');
+  if(!es) return;
+  const show = !state.people.length;
+  es.hidden = !show;
+  const hide = el => { const n = $(el); if(n) n.style.display = show ? 'none' : ''; };
+  hide('#sheetScroll'); hide('#hScrollBar'); hide('#resetRowBtn');
+}
+$$('#emptyState .es-card').forEach(c=>c.onclick = ()=>{
+  const k = c.dataset.es;
+  if(k === 'import') clickImport();
+  else if(k === 'add') openPersonModal(null);
+  else if(k === 'sample') doLoadSample();
+});
+$('#esGuide').onclick = ()=> openGuide(0);
+
+/* ---------- 分步引导（首次打开自动弹出；帮助 → 新手引导可随时再看） ---------- */
+const GUIDE_STEPS = [
+  {
+    s:'准备人员', n:'1',
+    body:'<h4>第 1 步 · 准备技术员名单</h4>'
+      + '<p>三选一，随时可以回来改：</p><ol>'
+      + '<li><b>导入旧排班表</b>（推荐）：支持 Excel <code>.xlsx</code> / <code>.xls</code> 与 <code>.csv</code>，'
+      + '也可以把文件<b>直接拖到页面上</b>。表头复杂也能识别，识别结果会先给你确认。</li>'
+      + '<li><b>手动添加</b>：点右上「＋ 添加」，填姓名、部门（除气 / 转码）、班次规则（固定白班 / 固定夜班 / 月轮转）、休息规则（无休 / 上六休一 / 双休）。</li>'
+      + '<li><b>先看示例</b>：载入 20 人 9 月范例，边看边学，之后可一键清空。</li></ol>',
+    ops:[['⬆ 导入旧排班表', ()=> { closeGuide(); clickImport(); }],
+         ['＋ 添加人员', ()=> { closeGuide(); openPersonModal(null); }],
+         ['🧪 载入示例数据', ()=> { closeGuide(); doLoadSample(); }]]
+  },
+  {
+    s:'自动排班', n:'2',
+    body:'<h4>第 2 步 · 一键生成当月排班</h4>'
+      + '<p>点工具栏蓝色的 <b>⚡ 自动排班</b>，会按人员规则 + 转班日 + 周末负荷生成整月基线，'
+      + '并自动套用<b>连班保护</b>（夜班次日不会排白班）与<b>六休一</b>校验，生成后立刻体检。</p>'
+      + '<ul><li>周末任务多？把第二行「周末」下拉设成 <b>繁忙 🔥</b>，双休人员会被叫回并标为加班。</li>'
+      + '<li>换月只需点顶部 <b>◀ ▶</b> 切月份，再点一次自动排班。</li></ul>',
+    ops:[['⚡ 现在就自动排班', ()=> { closeGuide(); $('#genBtn').click(); }]]
+  },
+  {
+    s:'微调交付', n:'3',
+    body:'<h4>第 3 步 · 微调、检查、交付</h4>'
+      + '<ul>'
+      + '<li><b>改班次</b>：单击格子循环 休→白→夜（悬停先预览结果）；<kbd>Shift</kbd>+单击 = 加班；按住拖动 = 批量刷；右键 = 休 / 请假 / 清除手动。</li>'
+      + '<li><b>查问题</b>：点 <b>🔍 体检</b>，连班、连续上班超限、当日无人上班、节假日无人值班都会列出来，可一键修复连班。</li>'
+      + '<li><b>发出去</b>：<b>⬇ 导出</b> 排班表 / 月度统计（CSV 或 Excel），<b>🖨 打印</b> 横向 A4 贴墙；'
+      + '要给同事填，用「⬇ 导出 → 空白待填表 .xlsx」把人员名单和日期表头发过去，填完再导入回来。</li>'
+      + '<li><b>备份</b>：换电脑前先「⬇ 导出 → 完整备份 JSON」。</li></ul>',
+    ops:[['🔍 打开体检', ()=> { closeGuide(); $('#checkBtn').click(); }],
+         ['⬇ 打开导出', ()=> { closeGuide(); $('#exportMenu').parentElement.classList.add('open'); }]]
+  }
+];
+let guideStep = 0;
+function renderGuide(){
+  const tabs = $('#gdTabs'), body = $('#gdBody'), opsWrap = $('#gdBody');
+  if(!tabs || !body) return;
+  tabs.innerHTML = GUIDE_STEPS.map((st, i)=>
+    '<div class="gd-tab' + (i === guideStep ? ' sel' : (i < guideStep ? ' done' : '')) + '" data-i="' + i + '">'
+    + '<span class="gt-n">' + (i < guideStep ? '✓' : st.n) + '</span><span class="gt-s">' + st.s + '</span></div>').join('');
+  $$('#gdTabs .gd-tab').forEach(t=>t.onclick = ()=>{ guideStep = +t.dataset.i; renderGuide(); });
+  const st = GUIDE_STEPS[guideStep];
+  body.innerHTML = st.body + '<div class="gd-quick">'
+    + st.ops.map((o, i)=>'<button data-q="' + i + '">' + o[0] + '</button>').join('') + '</div>';
+  $$('#gdBody .gd-quick button').forEach(btn=>btn.onclick = ()=> st.ops[+btn.dataset.q][1]());
+  $('#gdPrev').disabled = guideStep === 0;
+  $('#gdNext').textContent = (guideStep === GUIDE_STEPS.length - 1) ? '完成 ✓' : '下一步 →';
+}
+function openGuide(step){
+  guideStep = step || 0;
+  renderGuide();
+  $('#welcomeModal').classList.add('show');
+}
+function closeGuide(){ $('#welcomeModal').classList.remove('show'); }
+$('#gdPrev').onclick = ()=>{ if(guideStep > 0){ guideStep--; renderGuide(); } };
+$('#gdNext').onclick = ()=>{
+  if(guideStep < GUIDE_STEPS.length - 1){ guideStep++; renderGuide(); return; }
+  closeGuide();
+  toast('🚀 引导结束，接下来点蓝色「⚡ 自动排班」就行');
+};
+$('#welcomeModal').addEventListener('click', e=>{ if(e.target.id === 'welcomeModal') closeGuide(); });
+$('#keysClose').onclick = ()=> $('#keysModal').classList.remove('show');
+$('#keysModal').addEventListener('click', e=>{ if(e.target.id === 'keysModal') e.target.classList.remove('show'); });
+const guideBtn2 = $('#guideBtn2'); if(guideBtn2) guideBtn2.onclick = ()=> openGuide(0);
 
 /* ================= 初始化 ================= */
 /* 旧版示例数据自动升级：示例数据打 sampleVer 标记；版本旧于 SAMPLE_VER 且名单匹配旧示例 → 自动替换为新范例 */
@@ -4674,7 +5252,7 @@ if((state.sampleVer||0) < SAMPLE_VER && isOldSample()){
 }
 renderAll();
 if(!state.people.length && !Object.keys(state.manual).length){
-  $('#welcomeModal').classList.add('show');
+  openGuide(0);   // 首次打开：直接进 3 步上手向导（必须先 renderGuide 再 show，否则弹窗空白）
 }
 
 /* ================= 主题切换（深色模式） ================= */
