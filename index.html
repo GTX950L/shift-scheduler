@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#16273d">
-<meta name="description" content="技术员排班助手：除气/转码两部门两班倒月度排班，月轮转、连班保护、周末加班、请假登记、排班体检、CSV 导出，纯单文件 HTML 离线可用">
+<meta name="description" content="技术员排班助手：除气/转码两部门两班倒月度排班，月轮转、连班保护、周末加班、请假登记、排班体检、导入导出 CSV / Excel(.xlsx/.xls)，纯单文件 HTML 离线可用">
 <title>技术员排班助手</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗓️</text></svg>">
 <style>
@@ -222,6 +222,18 @@
   .f-row input[type=text],.f-row select{flex:1}
   .f-hint{font-size:11px;color:var(--muted);margin:-6px 0 10px 100px}
   .modal-ops{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+  /* ===== 表头手动指定（导入兜底） ===== */
+  table.hp-tbl{border-collapse:collapse;font-size:11.5px;width:100%;white-space:nowrap}
+  table.hp-tbl th,table.hp-tbl td{border:1px solid var(--border);padding:4px 7px;max-width:170px;overflow:hidden;text-overflow:ellipsis;color:var(--sec-fg)}
+  table.hp-tbl th{background:linear-gradient(180deg,var(--th-grad1),var(--th-grad2));color:var(--th-fg);font-weight:650;position:sticky;top:0}
+  table.hp-tbl td.hp-no{background:var(--tot-bg);font-weight:700;text-align:center;color:var(--muted);position:sticky;left:0}
+  tr.hp-row{cursor:pointer}
+  tr.hp-row:hover td{background:#eef4fc}
+  tr.hp-row.sel td{background:#dbeafe;box-shadow:inset 0 0 0 2px var(--brand)}
+  /* ===== 拖拽导入 ===== */
+  body.dropping::after{content:'松开鼠标导入排班表（CSV / Excel .xlsx / .xls）';position:fixed;inset:0;z-index:300;
+    display:flex;align-items:center;justify-content:center;background:rgba(47,109,181,.10);
+    border:3px dashed var(--brand);font-size:15px;font-weight:700;color:var(--brand-dark);pointer-events:none}
   .radio-line{display:flex;gap:6px;flex-wrap:wrap;flex:1}
   .radio-line label{flex:0 0 auto;font-weight:400;font-size:12px;display:flex;gap:4px;align-items:center;cursor:pointer}
   /* ===== 引导 ===== */
@@ -379,7 +391,7 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.44</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.45</span></h1>
     <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
   </div>
   <div class="hd-right">
@@ -473,19 +485,27 @@
   <div class="sep"></div>
   <div class="grp">
     <div class="dd">
-      <button id="exportBtn" class="sec" title="导出排班表 CSV 或完整备份 JSON">⬇ 导出 ▾</button>
+      <button id="exportBtn" class="sec" title="导出排班表 / 月度统计（CSV 或 Excel），以及完整备份 JSON">⬇ 导出 ▾</button>
       <div class="dd-menu" id="exportMenu">
-        <div class="dd-title">导出（当前数据）</div>
-        <button data-act="csv">📄 排班表 CSV（含日期，Excel 可打开）</button>
-        <button data-act="stats">📊 月度统计 CSV（白/夜/加班/出勤）</button>
+        <div class="dd-title">排班表（当前中心月）</div>
+        <button data-act="csv">📄 CSV（含日期与星期行，Excel 可打开）</button>
+        <button data-act="xlsx">🟩 Excel 工作簿 .xlsx（日期为真日期）</button>
+        <button data-act="xls">🟩 Excel 97-2003 .xls（老版 Excel/WPS）</button>
+        <div class="dd-sep"></div>
+        <div class="dd-title">月度统计（月底报工）</div>
+        <button data-act="stats">📄 CSV（白/夜/加班/请假/出勤）</button>
+        <button data-act="stats-xlsx">🟩 Excel .xlsx</button>
+        <button data-act="stats-xls">🟩 Excel 97-2003 .xls</button>
+        <div class="dd-sep"></div>
+        <div class="dd-title">备份</div>
         <button data-act="json">💾 完整备份 JSON（含人员/排班/设置）</button>
       </div>
     </div>
     <div class="dd">
-      <button id="importBtn" class="sec" title="导入旧排班表 CSV 或备份 JSON，导入后可用自动排班重做">⬆ 导入 ▾</button>
+      <button id="importBtn" class="sec" title="导入旧排班表（CSV / Excel .xlsx / .xls，可直接拖到页面上）或备份 JSON">⬆ 导入 ▾</button>
       <div class="dd-menu" id="importMenu">
         <div class="dd-title">导入（会合并同名人员）</div>
-        <button data-act="csv">📄 排班表 CSV（人员＋排班）</button>
+        <button data-act="table">📄 排班表 CSV / Excel（.xlsx / .xls）</button>
         <div class="dd-title" style="margin-top:4px">导入（会覆盖当前所有数据）</div>
         <button data-act="json">💾 完整备份 JSON</button>
       </div>
@@ -501,7 +521,7 @@
     </div>
   </div>
 </nav>
-<input type="file" id="fileInput" accept=".csv,.json,.txt" style="display:none">
+<input type="file" id="fileInput" accept=".csv,.txt,.xlsx,.xls,.json" style="display:none">
 
 <main class="wrap">
   <section class="panel sheet-panel">
@@ -526,7 +546,7 @@
         <b>① 添加技术员</b>：设置姓名、工号（选填）、部门、班次规则（固定白班 / 固定夜班 / 月轮转）、休息规则（上六休一可选周六/周日休）。<br>
         <b>② 点「⚡ 自动排班」</b>生成当月排班基线，并自动体检（有问题直接弹报告）。<br>
         <b>③ 微调</b>：点击格子循环切换 休→白→夜（悬停可预览）；<kbd>Shift</kbd>+点击 加班；按住拖拽批量填充；点选格子后可用 <kbd>←→↑↓</kbd> 移动、<kbd>空格</kbd> 循环、<kbd>1~5</kbd> 设值；<kbd>右键</kbd>菜单（休/请假/清除手动）；<kbd>Ctrl+Z/Y</kbd> 撤销/重做。<br>
-        <b>④ 更多功能</b>：周模板（点表头「第N周」，按周一~周日分组）、复制排班（人员卡片「📋」）、调整行序（拖人名行）、周末负荷（周六/周日下拉）、转班、节假日、导入旧表——详见「❓ 帮助」。
+        <b>④ 更多功能</b>：周模板（点表头「第N周」，按周一~周日分组）、复制排班（人员卡片「📋」）、调整行序（拖人名行）、周末负荷（周六/周日下拉）、转班、节假日、导入旧表（CSV / Excel，也可直接拖文件进来）、导出 Excel/CSV——详见「❓ 帮助」。
       </div>
     </section>
   </aside>
@@ -654,7 +674,7 @@
         <li>跨月视图下相邻月底与月初连在一起，可直接观察<b>转班那几天</b>的人员衔接。</li>
         <li>表头显示真实日期与星期，月初列标出月份（如「9月」）；双击任一日期列 = 把<b>前一天</b>的排班复制到该日（跨月自动衔接）。</li>
         <li>表格较宽时，排班表<b>上下均有横向滚动条</b>（表上部滚动条与主表同步联动），右侧日期一目了然。</li>
-        <li>统计 / 图表 / CSV 导出均针对<b>当前中心月</b>（CSV 文件名会标注「跨月」以提示当前视图）；<b>打印</b>内容跟随视图——跨月视图打印前会询问「按当前视图打印」还是「切到本月打印单月」。</li>
+        <li>统计 / 图表 / <b>导出（CSV 与 Excel 一样）</b>均针对<b>当前中心月</b>（CSV 文件名会标注「跨月」以提示当前视图）；<b>打印</b>内容跟随视图——跨月视图打印前会询问「按当前视图打印」还是「切到本月打印单月」。</li>
       </ul>
     </div>
     <div class="help-sec">
@@ -670,10 +690,13 @@
     <div class="help-sec">
       <h4>📄 导入旧排班表（智能识别）</h4>
       <ul>
-        <li>工具栏「⬆ 导入 ▾ → 排班表 CSV」选择旧表。支持多种格式：本工具导出的 CSV、带标题行/双行表头的手工排班表（如「资材部-9月-6休1排班表」）、姓名+日期列的通用表。</li>
-        <li><b>自动识别</b>：标题行 / 表头行 / 星期行 / 负责人行自动跳过，无需手动指定哪一行是表头。</li>
-        <li><b>日期列</b>：支持 第N天 / N / 8/1 / 2026/8/1 / 8月1日 / 8-1；跨月表（如 8/1~9/30）自动拆分写入对应月份。</li>
+        <li>工具栏「⬆ 导入 ▾ → 排班表 CSV / Excel」选择旧表，或<b>把文件直接拖到页面上</b>。支持 <b>.csv / .txt / .xlsx / .xls</b>（以及部分系统导出的「HTML 伪 Excel」）。</li>
+        <li>格式按<b>文件内容</b>判断，不依赖扩展名：本工具导出的表、带标题行/双行表头的手工排班表（如「资材部-9月-6休1排班表」）、姓名+日期列的通用表都能读。</li>
+        <li><b>自动识别</b>：标题行 / 表头行 / 星期行 / 负责人行自动跳过，无需手动指定哪一行是表头；日期列在上一行、姓名列在下一行的<b>双行表头</b>也能识别。</li>
+        <li><b>日期列</b>：支持 第N天 / N / N日 / 8/1 / 8-1 / 8月1日 / 2026/8/1 / 2026年8月1日，以及 Excel 另存后残留的<b>日期序列号</b>（如 46266 = 2026/9/1）；跨月表（如 8/1~9/30）自动拆分写入对应月份。</li>
+        <li><b>多工作表</b>：Excel 有多张表时自动挑选「姓名列 + 日期列」最完整的那张，并在提示中标出所用表名。</li>
         <li><b>单元格文本</b>：休/休息/空、白班/白/日/早班、夜班/夜/晚/中班、加班/加/OT、班/上/√/出勤（按该行班次自动推断白/夜）、请假（事假/病假/年假 自动登记到请假记录）。</li>
+        <li><b>识别不了也不卡住</b>：万一表头太特殊，会弹出「🔧 手动指定表头行」窗口，把文件前若干行原样列出，你点一下哪一行是表头即可按该行解析。</li>
         <li>导入后旧排班会<b>按人员锁定</b>（格子左上角蓝点），人员按姓名<b>合并</b>：同名更新属性、新名新增（工号一并带入）。</li>
         <li>旧表不想用了想重新排：导入完成后按提示点「确定」清空旧排班 → 点「⚡ 自动排班」生成新表 → 再手工微调。</li>
         <li>想保留旧表只改部分：直接点格子修改，或「🧹 清手动」后重新自动排班。</li>
@@ -683,10 +706,11 @@
       <h4>💾 数据</h4>
       <ul>
         <li>所有数据自动保存在本机浏览器（localStorage），关闭页面不丢失。</li>
-        <li>「⬇ 导出 ▾」：排班表 CSV（含真实日期+星期行，Excel 可直接看）/ 月度统计 CSV（白/夜/加班/请假/出勤，月底报工用）/ 完整备份 JSON（备份全部数据）。</li>
+        <li>「⬇ 导出 ▾」：排班表 <b>CSV / Excel(.xlsx) / Excel 97-2003(.xls)</b>（含真实日期+星期行，Excel 可直接看、按日期排序筛选）、月度统计 <b>CSV / .xlsx / .xls</b>（白/夜/加班/请假/出勤，月底报工用）、完整备份 JSON（备份全部数据）。</li>
+        <li>三种表格格式内容一致（同一口径），只是文件类型不同：日常用 .xlsx，老版 Excel/WPS 用 .xls，需要贴到别处用 CSV。</li>
         <li>工具栏「部门」下拉可只查看除气/转码的排班（月度统计与导出仍为全部人员）。</li>
         <li>换电脑 / 换浏览器：导出 JSON 备份 → 新电脑「⬆ 导入 ▾ → 完整备份 JSON」恢复（会覆盖当前数据，导入前有确认）。</li>
-        <li>🔒 防呆保护：删除人员 / 清手动 / 强制转班 / 导入覆盖 等破坏性操作均有<b>确认提示</b>；人员<b>同名</b>会提醒、<b>工号重复</b>会拦截；CSV 支持 GBK/UTF-8 自动识别；导出/打印前会检查是否存在连班违规。</li>
+        <li>🔒 防呆保护：删除人员 / 清手动 / 强制转班 / 导入覆盖 等破坏性操作均有<b>确认提示</b>；人员<b>同名</b>会提醒、<b>工号重复</b>会拦截；CSV 支持 GBK / UTF-8 / UTF-16 自动识别；导出/打印前会检查是否存在连班违规。</li>
         <li>⏪ <b>自动快照</b>：删除人员 / 导入 / 示例覆盖等不可撤销操作前自动保存完整数据（最近 5 份），工具栏「⏪ 快照」可一键恢复；点「↩ 恢复」先弹<b>差异预览</b>（人员名单 / 手工排班格数 / 请假条数 / 受影响月份），看清影响面再确认（恢复前会再存一份当前数据）。</li>
         <li>⚡ <b>自动闭环</b>：切到尚未排班的月份会自动引导「⚡ 自动排班」；点「自动排班」后自动体检——无问题提示通过，有问题直接弹出报告。</li>
       </ul>
@@ -699,6 +723,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.45</b> · 导入导出全面支持 XLS/XLSX/CSV（2026-09-20）：① <b>修「无法识别表头」</b>——根因有二：Excel 另存后表头日期变成<b>日期序列号</b>（如 46266），且真实排班表是「日期列在第 2 行、姓名列在第 3 行」的<b>双行表头</b>，旧逻辑要求姓名与日期同行才认。现改为「取连续日期列最多的那一行当表头」，日期识别新增 序列号 / N日 / YYYY年M月D日，并按「列号连续 + 逐日递增」筛选日期列，避免把偶然出现的数字当成日期；② <b>新增 .xlsx / .xls 导入</b>——纯前端零依赖解析（自研 ZIP/DEFLATE 解压 + OOXML 解析 + OLE 复合文档 + BIFF8 记录解析），读取共享字符串、内联字符串、数字格式（日期/星期格式按 Excel 显示值还原）、多工作表（自动选最合适的一张）；③ <b>新增 .xlsx / .xls 导出</b>——排班表与月度统计均可导出 Excel，日期列写成<b>真日期</b>（可排序/筛选），与 CSV 同一口径；.xls 为真实 BIFF8（Excel 97-2003 / WPS 可开）；④ <b>识别不了也不卡住</b>——新增「🔧 手动指定表头行」弹窗，列出文件前 20 行供点选，彻底消除「无法识别表头」的死路；⑤ <b>拖拽导入</b>——CSV / Excel 文件可直接拖到页面上；⑥ 格式按<b>文件内容</b>判断（不依赖扩展名），编码支持 UTF-8 / GBK / UTF-16，并兼容部分系统导出的「HTML 伪 Excel」。</div>
       <div class="log-ver"><b>v1.44</b> · 口径修复与年度适配（2026-09-06）：① <b>每日人力图口径修复</b>——请假者不再计入白/夜在岗柱，与排班表每日合计、月度统计口径一致（此前请假格在图中仍按在岗统计，图表与表格数字对不上）；② <b>示例数据载入即到位</b>——填入示例后视图自动切到 2026 年 9 月（示例锁定月），不再停留在空白月；③ <b>固定转班日超月提醒</b>——固定转班日超出当月天数（如 31 日遇 2 月）时，「⚡ 自动排班」明确提示轮转班次顺延至下月 1 日切换；④ <b>备份导入结构校验</b>——恢复前校验人员与记录字段，不完整的人员/记录自动剔除并提示，误导入损坏或异项目 JSON 不再白屏；⑤ <b>法定假日引导</b>——「📅 一键标记 2026 法定假日」在 2026 年以外月份点按，提示该年需手动标记；⑥ <b>回归测试一键化</b>——新增 <code>npm run test:all</code>（自动起本地服务并依次运行 smoke / 转班日 / v1.42 三套端到端测试），测试脚本自动兼容 playwright 与 playwright-core。</div>
       <div class="log-ver"><b>v1.43</b> · 排班表显示窗口扩大（2026-09-04）：① 排班表滚动容器最大高度 <code>max-height</code> 由 <code>72vh</code> 提高到 <code>92vh</code>，让屏幕更高的窗口不再过早截断 20+ 名人员列表；② 单元格高度由 <code>33px</code> 微调为 <code>30px</code>（line-height 同步），纵向更紧凑——常规 1080P 显示器一屏可看完全月人员，无须垂直滚动。打印与窄屏断点不受影响。</div>
       <div class="log-ver"><b>v1.42</b> · 使用便捷性四项（2026-09-03）：① <b>循环画笔悬停预览</b>——鼠标悬停格子即浮层提示「点击 → 将变为的班次」，连班自动避让 / 六休一强制休等防呆拦截也一并预告，看清再点防误操作（请假格提示先销假）；② <b>键盘微调</b>——点击格子出现蓝色焦点框后，<kbd>←→↑↓</kbd> 移动、<kbd>空格</kbd>/<kbd>Enter</kbd> 循环切换、<kbd>1</kbd>~<kbd>5</kbd> 直接设值、<kbd>Delete</kbd> 清除手动、<kbd>Esc</kbd> 取消；未选中格子时 <kbd>←→</kbd> 仍为切换月份；③ <b>周模板复制改为可选目标周</b>——点表头「第 N 周」弹出目标周勾选框（默认勾选后续所有完整周，可取消个别周或全不勾取消），逐周标注「已有 N 格手工」防误覆盖，目标周不受限「一刀切复制到后续全部周」；④ <b>快照恢复前差异预览</b>——「↩ 恢复」先在确认框列出差异摘要（人员名单增删 / 手工排班格数增减 / 请假条数 / 受影响月份），看清影响面再确认。同步修正：循环画笔的连班自动替代班次补齐六休一校验，悬停预览与实际写入结果始终一致。</div>
@@ -821,6 +846,19 @@
   <button data-a="leave-y">🌴 年假</button>
   <button data-a="leave-o">📌 其他</button>
   <button data-a="unleave">↩ 取消请假</button>
+</div>
+
+<div class="modal-mask" id="headerPickModal">
+  <div class="modal" style="max-width:940px">
+    <h3>🔧 手动指定表头行</h3>
+    <div id="hpInfo" style="font-size:12.5px;color:var(--sec-fg);line-height:1.7;margin-bottom:8px"></div>
+    <div id="hpTable" style="max-height:330px;overflow:auto;border:1px solid var(--border);border-radius:8px"></div>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:8px">点选某一行后按「用这一行解析」；姓名列与日期列会按该行自动定位（也允许姓名写在相邻行）。</div>
+    <div class="modal-ops">
+      <button class="sec" id="hpCancel">取消</button>
+      <button id="hpOk" disabled>✓ 用这一行解析</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-mask" id="welcomeModal">
@@ -2754,18 +2792,16 @@ function countViolations(){
   }
   return err;
 }
-function exportCSV(){
-  const dim = CUR.dim; const grid = CUR.grid;
-  if(!state.people.length){ toast('👷 暂无可导出的技术员'); return; }
-  const v = countViolations();
-  if(v > 0 && !confirm('⚠️ 当前排班有 ' + v + ' 处违规（连班/无人上班），建议先「🔍 体检」处理。\n确定仍要导出？')) return;
-  // 表头：真实日期（M/D）+ 星期行，方便 Excel 直接查看/报工
-  const dateHead = Array.from({length:dim},(_,i)=> CUR.m + '/' + (i+1));
+/* 排班表二维数据（CSV / XLSX / XLS 共用同一口径，避免不同格式对不上）
+   asDate=true 时日期列写成真日期（Excel 里可排序/筛选），否则写成 M/D 文本 */
+const pad2 = n => String(n).padStart(2, '0');
+function scheduleMatrix(asDate){
+  const dim = CUR.dim, grid = CUR.grid;
+  const dateHead = Array.from({length:dim},(_,i)=> asDate ? ({d: CUR.y + '-' + pad2(CUR.m) + '-' + pad2(i + 1)}) : (CUR.m + '/' + (i+1)));
   const dowHead  = Array.from({length:dim},(_,i)=>'周' + WEEK[dowOf(CUR.y,CUR.m,i+1)]);
   const rows = [['技术员','部门','班次规则','休息规则', ...dateHead]];
   rows.push(['星期','','','', ...dowHead]);
-  const csvPeople = rowOrderPeople(true); // 忽略部门筛选：导出始终为全部人员，保证数据完整
-  for(const p of csvPeople){
+  for(const p of rowOrderPeople(true)){   // 忽略部门筛选：导出始终为全部人员，保证数据完整
     const arr = grid[p.id]||[];
     rows.push([p.name, p.dept, SHIFT_TXT[p.shiftRule]||'月轮转', REST_TXT[p.restRule]||'无休', ...arr.map((c,i)=>{
       const lv = getLeave(p.id, CUR.key, i+1);
@@ -2773,25 +2809,11 @@ function exportCSV(){
       return cellToTxt(c);
     })]);
   }
-  const csv = '\ufeff' + rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
-  const vmTxt = (state.viewMode==='month') ? '' : '跨月';
-  downloadBlob(csv, 'text/csv;charset=utf-8', '排班表_' + CUR.key + (vmTxt ? '_' + vmTxt : '') + '.csv');
-  toast('⬇ 已导出 ' + CUR.y + '年' + CUR.m + '月 排班 CSV（当前视图「' + (VM_NAMES[state.viewMode||'cn']||'本月+下月') + '」，CSV 固定为当前中心月）');
+  return rows;
 }
-function exportJSON(){
-  const data = { app:'shift-scheduler', version:1, savedAt:new Date().toISOString(),
-    state:{ people:state.people, monthShift:state.monthShift, spRot:state.spRot, manual:state.manual, leave:state.leave, holidays:state.holidays, rowOrder:state.rowOrder,
-      satLoad:state.satLoad, sunLoad:state.sunLoad,
-      rotateMode:state.rotateMode, rotateDay:state.rotateDay,
-      viewMode:state.viewMode, deptFilter:state.deptFilter, sampleVer:state.sampleVer,
-      curYear:state.curYear, curMonth:state.curMonth } };
-  downloadBlob(JSON.stringify(data,null,2), 'application/json', '排班备份_' + CUR.key + '.json');
-  toast('💾 已导出完整备份 JSON（含所有月份数据）');
-}
-/* 月度统计导出：每人白班/夜班/加班/请假/休息/出勤，按部门分组（与页面统计一致） */
-function exportStatsCSV(){
+/* 月度统计二维数据（每人白班/夜班/加班/请假/休息/出勤，按部门分组，与页面统计一致） */
+function statsMatrix(){
   const dim = CUR.dim, grid = CUR.grid;
-  if(!state.people.length){ toast('👷 暂无可导出的统计'); return; }
   const rows = [['部门','技术员','白班','夜班','加班','请假','休息','出勤']];
   for(const dept of ['除气','转码']){
     const ps = state.people.filter(p=>p.dept===dept);
@@ -2811,93 +2833,1205 @@ function exportStatsCSV(){
     }
     rows.push([dept + ' 合计', '', dsum, nsum, osum, lsum, rsum, dsum+nsum+osum]);
   }
+  return rows;
+}
+/* 导出前的违规检查（三处导出共用，保持提示一致） */
+function exportGuard(what){
+  if(!state.people.length){ toast('👷 暂无可导出的技术员'); return false; }
+  const v = countViolations();
+  if(v > 0 && !confirm('⚠️ 当前排班有 ' + v + ' 处违规（连班/无人上班），建议先「🔍 体检」处理。\n确定仍要导出' + what + '？')) return false;
+  return true;
+}
+function exportCSV(){
+  if(!exportGuard('')) return;
+  const rows = scheduleMatrix(false);
+  const csv = '\ufeff' + rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const vmTxt = (state.viewMode==='month') ? '' : '跨月';
+  downloadBlob(csv, 'text/csv;charset=utf-8', '排班表_' + CUR.key + (vmTxt ? '_' + vmTxt : '') + '.csv');
+  toast('⬇ 已导出 ' + CUR.y + '年' + CUR.m + '月 排班 CSV（当前视图「' + (VM_NAMES[state.viewMode||'cn']||'本月+下月') + '」，CSV 固定为当前中心月）');
+}
+function exportExcel(fmt, kind){
+  if(!exportGuard(fmt === 'xls' ? '（.xls）' : '（.xlsx）')) return;
+  const isSched = kind === 'sched';
+  const sheets = [{
+    name:(isSched ? '排班表 ' : '月度统计 ') + CUR.key,
+    rows:isSched ? scheduleMatrix(true) : statsMatrix()
+  }];
+  try{
+    const bytes = (fmt === 'xls') ? xlsBuild(sheets) : xlsxBuild(sheets);
+    const blob = new Blob([bytes], { type:'application/vnd.ms-excel' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (isSched ? '排班表_' : '月度统计_') + CUR.key + '.' + fmt;
+    a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+  }catch(err){
+    toast('⚠️ 生成 ' + fmt + ' 失败：' + (err && err.message ? err.message : err));
+    return;
+  }
+  toast('⬇ 已导出 ' + CUR.y + '年' + CUR.m + '月 ' + (isSched ? '排班表' : '月度统计') + ' Excel（.' + fmt + '，当前中心月）');
+}
+function exportJSON(){
+  const data = { app:'shift-scheduler', version:1, savedAt:new Date().toISOString(),
+    state:{ people:state.people, monthShift:state.monthShift, spRot:state.spRot, manual:state.manual, leave:state.leave, holidays:state.holidays, rowOrder:state.rowOrder,
+      satLoad:state.satLoad, sunLoad:state.sunLoad,
+      rotateMode:state.rotateMode, rotateDay:state.rotateDay,
+      viewMode:state.viewMode, deptFilter:state.deptFilter, sampleVer:state.sampleVer,
+      curYear:state.curYear, curMonth:state.curMonth } };
+  downloadBlob(JSON.stringify(data,null,2), 'application/json', '排班备份_' + CUR.key + '.json');
+  toast('💾 已导出完整备份 JSON（含所有月份数据）');
+}
+function exportStatsCSV(){
+  if(!state.people.length){ toast('👷 暂无可导出的统计'); return; }
+  const rows = statsMatrix();
   const csv = '\ufeff' + rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
   downloadBlob(csv, 'text/csv;charset=utf-8', '月度统计_' + CUR.key + '.csv');
   toast('📊 已导出月度统计 CSV（' + CUR.y + '年' + CUR.m + '月）');
 }
-/* ---------- CSV 解析 ---------- */
-function parseCSVText(text){
-  text = text.replace(/^\ufeff/,'').replace(/\r\n?/g,'\n');
-  const rows = []; let row = [], cur = '', inQ = false;
+/* ============================================================
+   表格文件读取/写出引擎（CSV / XLSX / XLS）—— 零依赖纯 JS
+   设计约束：不引入任何外部库、不联网，保持「单文件 HTML 离线可用」。
+   ============================================================ */
+
+/* ---------- 1. raw DEFLATE 解压（供 XLSX 的 ZIP 使用） ---------- */
+const _LBASE = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+const _LEXT  = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+const _DBASE = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+const _DEXT  = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+const _MAX_OUT = 96 * 1024 * 1024; // 单文件解压上限，防 zip 炸弹
+
+function _huffTbl(lens){
+  const counts = new Uint16Array(16), offs = new Uint16Array(16);
+  for(let i=0;i<lens.length;i++) counts[lens[i]]++;
+  counts[0] = 0;
+  for(let i=1;i<16;i++) offs[i] = offs[i-1] + counts[i-1];
+  const symbols = new Uint16Array(lens.length);
+  for(let i=0;i<lens.length;i++) if(lens[i]) symbols[offs[lens[i]]++] = i;
+  return {counts, symbols};
+}
+let _FIX_LIT = null, _FIX_DIST = null;
+function _fixedTables(){
+  if(_FIX_LIT) return;
+  const l = new Uint8Array(288);
+  for(let i=0;i<144;i++) l[i]=8; for(let i=144;i<256;i++) l[i]=9;
+  for(let i=256;i<280;i++) l[i]=7; for(let i=280;i<288;i++) l[i]=8;
+  _FIX_LIT = _huffTbl(l);
+  const d = new Uint8Array(32); d.fill(5); _FIX_DIST = _huffTbl(d);
+}
+function inflateRaw(input){
+  let bp = 0, bb = 0, bc = 0;
+  let out = new Uint8Array(Math.max(4096, Math.min(input.length * 6, 1 << 20))), olen = 0;
+  const grow = need => {
+    if(olen + need <= out.length) return;
+    const want = olen + need;
+    if(want > _MAX_OUT) throw new Error('文件解压后过大（超过 96MB），已中止');
+    let cap = out.length; while(cap < want) cap <<= 1;
+    const nb = new Uint8Array(cap); nb.set(out.subarray(0, olen)); out = nb;
+  };
+  const bits = n => {
+    while(bc < n){ bb |= (bp < input.length ? input[bp] : 0) << bc; bp++; bc += 8; }
+    const v = bb & ((1 << n) - 1); bb >>>= n; bc -= n; return v;
+  };
+  const dec = t => {
+    let code = 0, first = 0, index = 0;
+    for(let len=1; len<=15; len++){
+      code |= bits(1);
+      const cnt = t.counts[len];
+      if(code - first < cnt) return t.symbols[index + code - first];
+      index += cnt; first = (first + cnt) << 1; code <<= 1;
+    }
+    throw new Error('压缩数据损坏（无效的哈夫曼编码）');
+  };
+  const ORDER = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+  let final = 0, guard = 0;
+  do {
+    if(guard++ > 1e7) throw new Error('压缩数据损坏（数据块过多）');
+    final = bits(1);
+    const type = bits(2);
+    if(type === 0){
+      const drop = bc & 7; bb >>>= drop; bc -= drop;
+      bp -= (bc >> 3); bc = 0; bb = 0;
+      if(bp + 4 > input.length) throw new Error('压缩数据损坏（存储块越界）');
+      const len = input[bp] | (input[bp+1] << 8);
+      bp += 4;
+      if(bp + len > input.length) throw new Error('压缩数据损坏（存储块越界）');
+      grow(len); out.set(input.subarray(bp, bp + len), olen); olen += len; bp += len;
+    } else if(type === 3){
+      throw new Error('压缩数据损坏（无效的块类型）');
+    } else {
+      let lt, dt;
+      if(type === 1){ _fixedTables(); lt = _FIX_LIT; dt = _FIX_DIST; }
+      else {
+        const hlit = bits(5) + 257, hdist = bits(5) + 1, hclen = bits(4) + 4;
+        const cl = new Uint8Array(19);
+        for(let i=0;i<hclen;i++) cl[ORDER[i]] = bits(3);
+        const clt = _huffTbl(cl);
+        const lens = new Uint8Array(hlit + hdist);
+        let i = 0, g2 = 0;
+        while(i < hlit + hdist){
+          if(g2++ > 100000) throw new Error('压缩数据损坏（码长表异常）');
+          const sym = dec(clt);
+          if(sym < 16) lens[i++] = sym;
+          else if(sym === 16){ if(i === 0) throw new Error('压缩数据损坏（重复码长无前值）'); const pv = lens[i-1]; let r = 3 + bits(2); while(r-- && i < lens.length) lens[i++] = pv; }
+          else if(sym === 17){ let r = 3 + bits(3); while(r-- && i < lens.length) lens[i++] = 0; }
+          else { let r = 11 + bits(7); while(r-- && i < lens.length) lens[i++] = 0; }
+        }
+        lt = _huffTbl(lens.subarray(0, hlit));
+        dt = _huffTbl(lens.subarray(hlit));
+      }
+      for(;;){
+        const sym = dec(lt);
+        if(sym < 256){ grow(1); out[olen++] = sym; }
+        else if(sym === 256) break;
+        else {
+          const li = sym - 257;
+          if(li >= _LBASE.length) throw new Error('压缩数据损坏（长度码越界）');
+          const len = _LBASE[li] + bits(_LEXT[li]);
+          const ds = dec(dt);
+          if(ds >= _DBASE.length) throw new Error('压缩数据损坏（距离码越界）');
+          const dist = _DBASE[ds] + bits(_DEXT[ds]);
+          if(dist > olen) throw new Error('压缩数据损坏（回溯距离越界）');
+          grow(len);
+          let src = olen - dist;
+          for(let k=0;k<len;k++) out[olen++] = out[src++];
+        }
+      }
+    }
+  } while(!final);
+  return out.subarray(0, olen);
+}
+
+/* ---------- 2. CRC32 / ZIP ---------- */
+let _CRC_TBL = null;
+function crc32(u8){
+  if(!_CRC_TBL){
+    _CRC_TBL = new Uint32Array(256);
+    for(let i=0;i<256;i++){ let c = i; for(let k=0;k<8;k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); _CRC_TBL[i] = c >>> 0; }
+  }
+  let c = 0xFFFFFFFF;
+  for(let i=0;i<u8.length;i++) c = _CRC_TBL[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function unzip(u8){
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let eocd = -1;
+  const from = Math.max(0, u8.length - 66000);
+  for(let i = u8.length - 22; i >= from; i--){ if(dv.getUint32(i, true) === 0x06054b50){ eocd = i; break; } }
+  if(eocd < 0) throw new Error('Excel 文件结构损坏（未找到 ZIP 中央目录）');
+  const cnt = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const files = {};
+  const utf8 = new TextDecoder('utf-8');
+  for(let n=0; n<cnt; n++){
+    if(p + 46 > u8.length || dv.getUint32(p, true) !== 0x02014b50) throw new Error('Excel 文件结构损坏（中央目录条目异常）');
+    const method = dv.getUint16(p + 10, true);
+    const csize  = dv.getUint32(p + 20, true);
+    const nlen   = dv.getUint16(p + 28, true);
+    const elen   = dv.getUint16(p + 30, true);
+    const clen   = dv.getUint16(p + 32, true);
+    const lho    = dv.getUint32(p + 42, true);
+    const name   = utf8.decode(u8.subarray(p + 46, p + 46 + nlen));
+    if(csize === 0xFFFFFFFF) throw new Error('不支持 ZIP64 格式的 Excel 文件');
+    if(lho + 30 > u8.length || dv.getUint32(lho, true) !== 0x04034b50) throw new Error('Excel 文件结构损坏（本地头异常）');
+    const dstart = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+    if(dstart + csize > u8.length) throw new Error('Excel 文件结构损坏（数据段越界）');
+    const raw = u8.subarray(dstart, dstart + csize);
+    if(method === 0) files[name] = raw.slice();
+    else if(method === 8) files[name] = inflateRaw(raw);
+    else throw new Error('不支持的 ZIP 压缩方式（' + method + '），请用 Excel/WPS 重新另存为 .xlsx');
+    p += 46 + nlen + elen + clen;
+  }
+  return files;
+}
+
+/* ---------- 3. 轻量 XML 工具（针对表格 XML 的机器生成格式） ---------- */
+const _XML_ENT = { amp:'&', lt:'<', gt:'>', quot:'"', apos:"'" };
+function xmlUnesc(s){
+  if(s.indexOf('&') < 0) return s;
+  return s.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, e) => {
+    if(e.charCodeAt(0) === 35){
+      const code = (e[1] === 'x' || e[1] === 'X') ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+      return (Number.isFinite(code) && code > 0) ? String.fromCodePoint(code) : m;
+    }
+    return _XML_ENT[e] !== undefined ? _XML_ENT[e] : m;
+  });
+}
+function xmlEsc(s){
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&apos;' }[c]));
+}
+/* 取非嵌套标签的 {attrs, body} 列表。用于 si/c/v/t/row/sheet 等不会嵌套的同名标签。 */
+function sliceTags(xml, tag){
+  const out = [];
+  const re = new RegExp('<' + tag + '(\\s[^>]*)?/?>', 'g');
+  let m;
+  while((m = re.exec(xml)) !== null){
+    const a = m[1] || '';
+    if(m[0].charAt(m[0].length - 2) === '/'){ out.push({attrs:a, body:'', self:true}); continue; }
+    const end = xml.indexOf('</' + tag + '>', re.lastIndex);
+    if(end < 0){ out.push({attrs:a, body:xml.slice(re.lastIndex), self:true}); break; }
+    out.push({attrs:a, body:xml.slice(re.lastIndex, end)});
+    re.lastIndex = end + tag.length + 3;
+  }
+  return out;
+}
+/* 取属性值（支持带命名空间前缀的名字，如 r:id；不匹配以该名字结尾的长名字） */
+function xmlAttr(attrs, name){
+  if(!attrs) return null;
+  const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp('(?:^|\\s)(?:[\\w.-]+:)?' + esc + '\\s*=\\s*"([^"]*)"');
+  const m = re.exec(attrs);
+  return m ? xmlUnesc(m[1]) : null;
+}
+function sliceBody(xml, tag){
+  const i = xml.indexOf('<' + tag);
+  if(i < 0) return '';
+  const gt = xml.indexOf('>', i);
+  if(gt < 0) return '';
+  if(xml.charAt(gt - 1) === '/') return '';
+  const end = xml.indexOf('</' + tag + '>', gt);
+  return end < 0 ? xml.slice(gt + 1) : xml.slice(gt + 1, end);
+}
+
+/* ---------- 4. Excel 日期序列号 ---------- */
+function serialToDateParts(n, date1904){
+  const days = Math.floor(date1904 ? n + 1462 : n);
+  const d = new Date(Date.UTC(1899, 11, 30) + days * 86400000);
+  return { y:d.getUTCFullYear(), m:d.getUTCMonth() + 1, d:d.getUTCDate() };
+}
+function serialToText(n, date1904){
+  const p = serialToDateParts(n, date1904);
+  return p.y + '/' + p.m + '/' + p.d;
+}
+function dateToSerial(y, m, d){
+  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(1899, 11, 30)) / 86400000);
+}
+/* 日期序列号的合理区间（1954-10 ~ 2119-01）：用于挡住「工号/编号」等恰好带日期格式的纯数字 */
+const SERIAL_MIN = 20000, SERIAL_MAX = 80000;
+function serialPlausible(n){ return Number.isFinite(n) && n >= SERIAL_MIN && n <= SERIAL_MAX; }
+const BUILTIN_DATE_FMT = new Set([14,15,16,17,18,19,20,21,22,27,28,29,30,31,32,33,34,35,36,45,46,47,50,51,52,53,54,55,56,57,58]);
+function fmtLooksDate(code){
+  const clean = String(code || '').replace(/"[^"]*"/g, '').replace(/\[[^\]]*\]/g, '').replace(/\\./g, '');
+  return /[ymdhs]/i.test(clean);
+}
+function isDateFmtId(id, custom){
+  if(id === null || id === undefined || id < 0) return false;
+  if(BUILTIN_DATE_FMT.has(id)) return true;
+  return custom && custom[id] !== undefined ? fmtLooksDate(custom[id]) : false;
+}
+/* 「星期」格式（如 [$CN-zh-CN]aaaa;@）：Excel 中显示为「周一」，也按日期处理 */
+const WEEKDAY_CN = ['周日','周一','周二','周三','周四','周五','周六'];
+function isWeekdayFmtId(id, custom){
+  if(id === null || id === undefined || id < 0) return false;
+  const code = custom && custom[id];
+  if(code === undefined) return false;
+  const clean = String(code).replace(/"[^"]*"/g, '').replace(/\[[^\]]*\]/g, '').trim();
+  return /^[a@;\s\-_]+$/i.test(clean) && /a/i.test(clean);
+}
+/* 数值单元格 -> 单元格文本：日期格式转 YYYY/M/D，星期格式转 周一..周日，其余保留原值 */
+function numCellText(v, fmtId, custom, date1904){
+  if(date1904 === undefined) date1904 = false;
+  if(!serialPlausible(v)) return String(v);
+  if(isDateFmtId(fmtId, custom)) return serialToText(v, date1904);
+  if(isWeekdayFmtId(fmtId, custom)) return WEEKDAY_CN[new Date(Date.UTC(1899, 11, 30) + Math.floor(v) * 86400000).getUTCDay()];
+  return String(v);
+}
+
+/* ---------- 5. XLSX 解析 ---------- */
+function colOfRef(ref){
+  let n = 0;
+  for(let i=0;i<ref.length;i++){
+    const c = ref.charCodeAt(i);
+    if(c >= 65 && c <= 90) n = n * 26 + (c - 64);
+    else if(c >= 97 && c <= 122) n = n * 26 + (c - 96);
+    else break;
+  }
+  return n - 1;
+}
+function parseXlsx(u8){
+  const z = unzip(u8);
+  const utf8 = new TextDecoder('utf-8');
+  const txt = n => z[n] ? utf8.decode(z[n]) : '';
+  /* sharedStrings */
+  const shared = [];
+  const ssXml = txt('xl/sharedStrings.xml');
+  if(ssXml){
+    for(const si of sliceTags(ssXml, 'si')){
+      let s = '';
+      for(const t of sliceTags(si.body, 't')) s += xmlUnesc(t.body);
+      shared.push(s);
+    }
+  }
+  /* styles：样式索引 -> 数字格式 id，以及自定义格式串 */
+  const customFmt = {};
+  const xfFmt = [];
+  const stXml = txt('xl/styles.xml');
+  if(stXml){
+    for(const nf of sliceTags(stXml, 'numFmt')){
+      const id = xmlAttr(nf.attrs, 'numFmtId'), fc = xmlAttr(nf.attrs, 'formatCode');
+      if(id !== null && fc !== null) customFmt[+id] = fc;
+    }
+    const cx = sliceTags(stXml, 'cellXfs');
+    if(cx.length) for(const xf of sliceTags(cx[0].body, 'xf')){
+      const nid = xmlAttr(xf.attrs, 'numFmtId');
+      xfFmt.push(nid === null ? 0 : +nid);
+    }
+  }
+  /* workbook：sheet 顺序/名称 + 1904 日期系统 + 关系映射 */
+  const wbXml = txt('xl/workbook.xml');
+  let date1904 = false;
+  for(const wp of sliceTags(wbXml, 'workbookPr')){
+    const v = xmlAttr(wp.attrs, 'date1904');
+    if(v === '1' || v === 'true') date1904 = true;
+  }
+  const relMap = {};
+  const relXml = txt('xl/_rels/workbook.xml.rels');
+  for(const r of sliceTags(relXml, 'Relationship')){
+    const id = xmlAttr(r.attrs, 'Id'), tg = xmlAttr(r.attrs, 'Target');
+    if(id && tg) relMap[id] = tg.replace(/^\/?xl\//, '').replace(/^\//, '');
+  }
+  const sheets = [];
+  const sheetNodes = sliceTags(wbXml, 'sheet');
+  for(const sh of sheetNodes){
+    const nm = xmlAttr(sh.attrs, 'name') || ('Sheet' + (sheets.length + 1));
+    const rid = xmlAttr(sh.attrs, 'id');
+    let path = (rid && relMap[rid]) ? relMap[rid] : ('worksheets/sheet' + (sheets.length + 1) + '.xml');
+    path = path.replace(/^\.\//, '').replace(/^\/?xl\//, '');
+    const buf = z['xl/' + path] || z[path];
+    if(!buf) continue;
+    sheets.push({ name:nm, rows:parseXlsxSheet(utf8.decode(buf), shared, xfFmt, customFmt, date1904) });
+  }
+  if(!sheets.length) throw new Error('Excel 文件中没有可读取的工作表');
+  return sheets;
+}
+function parseXlsxSheet(xml, shared, xfFmt, customFmt, date1904){
+  const out = [];
+  const sd = sliceBody(xml, 'sheetData');
+  const src = sd || xml;
+  let auto = 0;
+  for(const rw of sliceTags(src, 'row')){
+    const rAttr = xmlAttr(rw.attrs, 'r');
+    const idx = rAttr ? (+rAttr - 1) : auto;
+    auto = idx + 1;
+    if(!(idx >= 0)) continue;
+    const cells = {};
+    let maxc = -1;
+    for(const c of sliceTags(rw.body, 'c')){
+      const ref = xmlAttr(c.attrs, 'r') || '';
+      const ci = ref ? colOfRef(ref) : (maxc + 1);
+      if(ci < 0) continue;
+      const t = xmlAttr(c.attrs, 't') || 'n';
+      const sIdx = xmlAttr(c.attrs, 's');
+      const vT = sliceTags(c.body, 'v');
+      const isT = sliceTags(c.body, 'is');
+      let val;
+      if(t === 's'){
+        const i = vT.length ? parseInt(vT[0].body, 10) : -1;
+        val = (i >= 0 && i < shared.length) ? shared[i] : '';
+      } else if(t === 'inlineStr'){
+        let s2 = '';
+        const src2 = isT.length ? isT[0].body : c.body;
+        for(const tt of sliceTags(src2, 't')) s2 += xmlUnesc(tt.body);
+        val = s2;
+      } else if(t === 'str'){
+        val = vT.length ? xmlUnesc(vT[0].body) : '';
+      } else if(t === 'b'){
+        val = (vT.length && vT[0].body.trim() === '1') ? '1' : '0';
+      } else if(t === 'e'){
+        val = '';
+      } else {
+        const raw = vT.length ? vT[0].body.trim() : '';
+        if(raw === '') val = '';
+        else {
+          const n = Number(raw);
+          const fmt = (sIdx !== null && xfFmt[+sIdx] !== undefined) ? xfFmt[+sIdx] : -1;
+          val = Number.isFinite(n) ? numCellText(n, fmt, customFmt, date1904) : raw;
+        }
+      }
+      cells[ci] = String(val === undefined || val === null ? '' : val);
+      if(ci > maxc) maxc = ci;
+    }
+    const arr = [];
+    for(let i=0;i<=maxc;i++) arr.push(cells[i] !== undefined ? cells[i] : '');
+    while(out.length < idx) out.push([]);
+    out[idx] = arr;
+  }
+  return out;
+}
+
+/* ---------- 6. XLS（BIFF8 / OLE 复合文档）解析 ---------- */
+const _FREE = 0xFFFFFFFF, _ENDCHAIN = 0xFFFFFFFE;
+function cfbRead(u8){
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  if(u8.length < 512 || dv.getUint32(0, true) !== 0xE011CFD0 || dv.getUint32(4, true) !== 0xE11AB1A1)
+    throw new Error('不是有效的 .xls 文件（未找到 OLE 复合文档签名）；若确为 Excel 2007+ 格式请改用 .xlsx');
+  const secShift = dv.getUint16(0x1E, true), miniShift = dv.getUint16(0x20, true);
+  if(secShift < 7 || secShift > 20 || miniShift < 2 || miniShift > 12) throw new Error('.xls 扇区参数异常，无法解析');
+  const secSize = 1 << secShift, miniSize = 1 << miniShift;
+  const numFat = dv.getUint32(0x2C, true);
+  const dirStart = dv.getUint32(0x30, true);
+  const miniCutoff = dv.getUint32(0x38, true) || 4096;
+  const miniFatStart = dv.getUint32(0x3C, true);
+  const numDifat = dv.getUint32(0x48, true);
+  const difatStart = dv.getUint32(0x44, true);
+  const secAt = s => u8.subarray((s + 1) * secSize, (s + 1) * secSize + secSize);
+  /* DIFAT：定位 FAT 扇区 */
+  const difat = [];
+  for(let i=0;i<109;i++){ const v = dv.getUint32(0x4C + i * 4, true); if(v !== _FREE) difat.push(v); }
+  let dsx = difatStart;
+  for(let i=0;i<numDifat && dsx !== _FREE && dsx !== _ENDCHAIN; i++){
+    if((dsx + 1) * secSize + secSize > u8.length) break;
+    const sec = secAt(dsx), sdv = new DataView(sec.buffer, sec.byteOffset, sec.byteLength);
+    const per = (secSize / 4) - 1;
+    for(let k=0;k<per;k++){ const v = sdv.getUint32(k * 4, true); if(v !== _FREE) difat.push(v); }
+    dsx = sdv.getUint32(secSize - 4, true);
+  }
+  const fat = [];
+  for(const s of difat){
+    if((s + 1) * secSize + secSize > u8.length) continue;
+    const sec = secAt(s), sdv = new DataView(sec.buffer, sec.byteOffset, sec.byteLength);
+    for(let k=0;k<secSize/4;k++) fat.push(sdv.getUint32(k * 4, true));
+  }
+  const walk = (start, tbl) => {
+    const parts = []; let s = start, guard = 0;
+    while(s !== _FREE && s !== _ENDCHAIN && guard++ < 2e6){
+      if(s >= tbl.length) break;
+      parts.push(s); s = tbl[s];
+    }
+    return parts;
+  };
+  const readFat = (start, size) => {
+    const parts = walk(start, fat);
+    const raw = new Uint8Array(parts.length * secSize);
+    parts.forEach((s, i) => raw.set(secAt(s), i * secSize));
+    return size != null ? raw.subarray(0, size) : raw;
+  };
+  /* 目录项 */
+  const dirBuf = readFat(dirStart, null);
+  const entries = [];
+  for(let o=0; o + 128 <= dirBuf.length; o += 128){
+    const nameLen = dirBuf[o + 0x40] | (dirBuf[o + 0x41] << 8);
+    const type = dirBuf[o + 0x42];
+    if(type !== 1 && type !== 2 && type !== 5) continue;
+    let name = '';
+    if(nameLen > 2) for(let i=0; i + 1 < nameLen - 2; i += 2) name += String.fromCharCode(dirBuf[o + i] | (dirBuf[o + i + 1] << 8));
+    const edv = new DataView(dirBuf.buffer, dirBuf.byteOffset + o, 128);
+    entries.push({ name, type, start:edv.getUint32(0x74, true), size:edv.getUint32(0x78, true) });
+  }
+  const root = entries.find(e => e.type === 5);
+  let miniStream = null, miniFat = [];
+  if(root){
+    miniStream = readFat(root.start, null);
+    const mfStart = dv.getUint32(0x3C, true);
+    for(const s of walk(mfStart, fat)){
+      const sec = secAt(s), sdv = new DataView(sec.buffer, sec.byteOffset, sec.byteLength);
+      for(let k=0;k<secSize/4;k++) miniFat.push(sdv.getUint32(k * 4, true));
+    }
+  }
+  const readMini = (start, size) => {
+    if(!miniStream) throw new Error('.xls 小数据流缺失，无法解析');
+    const parts = walk(start, miniFat);
+    const raw = new Uint8Array(parts.length * miniSize);
+    parts.forEach((s, i) => raw.set(miniStream.subarray(s * miniSize, s * miniSize + miniSize), i * miniSize));
+    return raw.subarray(0, Math.min(size, raw.length));
+  };
+  const streams = {};
+  for(const e of entries){
+    if(e.type !== 2 || !e.name) continue;
+    if(!e.size) { streams[e.name] = new Uint8Array(0); continue; }
+    streams[e.name] = (e.size < miniCutoff) ? readMini(e.start, e.size) : readFat(e.start, e.size);
+  }
+  return streams;
+}
+/* BIFF8 XLUnicodeString：返回 {text, end}（cch 为 2 字节；lenlen=1 时为 ShortXLUnicodeString） */
+function biffStr(u8, o, lenlen){
+  const ll = lenlen || 2;
+  const cch = ll === 1 ? u8[o] : (u8[o] | (u8[o + 1] << 8));
+  if(cch === 0) return { text:'', end:o + ll };
+  let p = o + ll;
+  const flags = u8[p++];
+  const fHigh = flags & 1, fExt = flags & 4, fRich = flags & 8;
+  let cRun = 0, cbExt = 0;
+  if(fRich){ cRun = u8[p] | (u8[p + 1] << 8); p += 2; }
+  if(fExt){ cbExt = (u8[p] | (u8[p + 1] << 8) | (u8[p + 2] << 16) | (u8[p + 3] << 24)) >>> 0; p += 4; }
+  let s = '';
+  if(fHigh) for(let i=0;i<cch;i++){ s += String.fromCharCode(u8[p] | (u8[p + 1] << 8)); p += 2; }
+  else for(let i=0;i<cch;i++) s += String.fromCharCode(u8[p++]);
+  p += cRun * 4 + cbExt;
+  return { text:s, end:p };
+}
+/* SST：字符串常跨 CONTINUE 记录，续段开头会重复 1 字节编码标志位 */
+function parseSst(segs){
+  const out = [];
+  if(!segs.length || segs[0].length < 8) return out;
+  const unique = (segs[0][4] | (segs[0][5] << 8) | (segs[0][6] << 16) | (segs[0][7] << 24)) >>> 0;
+  let si = 0, sp = 8;
+  const avail = () => segs[si].length - sp;
+  const nextSeg = () => { if(si + 1 >= segs.length) throw new Error('.xls 字符串表不完整'); si++; sp = 0; };
+  for(let n=0; n<unique; n++){
+    if(avail() < 3) nextSeg();
+    if(avail() < 3) throw new Error('.xls 字符串表不完整');
+    let cch = segs[si][sp] | (segs[si][sp + 1] << 8); sp += 2;
+    let flags = segs[si][sp++];
+    let fHigh = flags & 1;
+    const fExt = flags & 4, fRich = flags & 8;
+    let cRun = 0, cbExt = 0;
+    if(fRich){ if(avail() < 2) nextSeg(); cRun = segs[si][sp] | (segs[si][sp + 1] << 8); sp += 2; }
+    if(fExt){ if(avail() < 4) nextSeg(); cbExt = (segs[si][sp] | (segs[si][sp + 1] << 8) | (segs[si][sp + 2] << 16) | (segs[si][sp + 3] << 24)) >>> 0; sp += 4; }
+    let s = '', rem = cch;
+    while(rem > 0){
+      const w = fHigh ? 2 : 1;
+      let take = Math.min(Math.floor(avail() / w), rem);
+      if(take <= 0){ nextSeg(); if(avail() < 1) throw new Error('.xls 字符串表不完整'); flags = segs[si][sp++]; fHigh = flags & 1; continue; }
+      if(fHigh) for(let i=0;i<take;i++){ s += String.fromCharCode(segs[si][sp] | (segs[si][sp + 1] << 8)); sp += 2; }
+      else for(let i=0;i<take;i++) s += String.fromCharCode(segs[si][sp++]);
+      rem -= take;
+      if(rem > 0){ nextSeg(); if(avail() < 1) throw new Error('.xls 字符串表不完整'); flags = segs[si][sp++]; fHigh = flags & 1; }
+    }
+    let skip = cRun * 4 + cbExt;
+    while(skip > 0){
+      const a = avail();
+      if(a >= skip){ sp += skip; skip = 0; }
+      else { skip -= a; nextSeg(); }
+    }
+    out.push(s);
+  }
+  return out;
+}
+/* BIFF8 RkNumber：bit0 = fX100、bit1 = fInt（与 xlrd/POI 一致）。
+   fInt=1 → 有符号 30 位整数（右移 2 位）；否则取该 30 位作为 IEEE754 双精度的高 32 位。 */
+function rkValue(rk){
+  let v;
+  if(rk & 2) v = rk >> 2;
+  else {
+    const buf = new ArrayBuffer(8), dv = new DataView(buf);
+    dv.setUint32(0, 0, true);
+    dv.setUint32(4, (rk & 0xFFFFFFFC) >>> 0, true);
+    v = dv.getFloat64(0, true);
+  }
+  if(rk & 1) v /= 100;
+  return v;
+}
+function parseXls(u8){
+  const streams = cfbRead(u8);
+  let wb = streams.Workbook || streams.Book || streams.WORKBOOK || null;
+  if(!wb){ const k = Object.keys(streams).find(n => /^(workbook|book)$/i.test(n)); if(k) wb = streams[k]; }
+  if(!wb) throw new Error('.xls 中没有找到 Workbook 数据流（可能不是 Excel 97-2003 工作簿）');
+  /* 逐条遍历 BIFF 记录 */
+  const recs = [];
+  let p = 0;
+  while(p + 4 <= wb.length){
+    const id = wb[p] | (wb[p + 1] << 8), len = wb[p + 2] | (wb[p + 3] << 8);
+    if(p + 4 + len > wb.length) break;
+    recs.push({ id, off:p + 4, len });
+    p += 4 + len;
+  }
+  const sheets = [], sheetNames = [];
+  let shared = [], xfFmt = [], customFmt = {};
+  let cur = null, inSheet = false, pendingStr = null;
+  const u16 = (o) => wb[o] | (wb[o + 1] << 8);
+  const u32 = (o) => (wb[o] | (wb[o + 1] << 8) | (wb[o + 2] << 16) | (wb[o + 3] << 24)) >>> 0;
+  const put = (r, c, val) => {
+    if(!cur || r < 0 || c < 0 || c > 4096) return;
+    while(cur.rows.length <= r) cur.rows.push([]);
+    const row = cur.rows[r];
+    while(row.length <= c) row.push('');
+    row[c] = String(val === null || val === undefined ? '' : val);
+  };
+  /* 数值单元格：仅当「该单元格的格式是日期格式」且「数值落在合理日期区间」时才转为日期文本，
+     避免把带日期格式的纯数字（如某些表的工号列）误判成日期。 */
+  const numOut = (v, ixfe) => numCellText(v, xfFmt[ixfe], customFmt, false);
+  for(let i=0;i<recs.length;i++){
+    const rc = recs[i], id = rc.id, o = rc.off;
+    if(id === 0x0809){ // BOF
+      const dt = u16(o + 2);
+      if(dt === 0x0010){ cur = { name:'', rows:[] }; sheets.push(cur); inSheet = true; }
+      else inSheet = false;
+      continue;
+    }
+    if(id === 0x000A){ inSheet = false; pendingStr = null; continue; } // EOF
+    if(id === 0x0085){ // BOUNDSHEET：工作表名用 1 字节长度的短字符串
+      sheetNames.push(biffStr(wb, o + 6, 1).text);
+      continue;
+    }
+    if(id === 0x00FC){ // SST：合并后续 CONTINUE
+      const segs = [wb.subarray(o, o + rc.len)];
+      let k = i + 1;
+      while(k < recs.length && recs[k].id === 0x003C){ segs.push(wb.subarray(recs[k].off, recs[k].off + recs[k].len)); k++; }
+      i = k - 1;
+      shared = parseSst(segs);
+      continue;
+    }
+    if(id === 0x041E){ // FORMAT
+      const ifmt = u16(o);
+      customFmt[ifmt] = biffStr(wb, o + 2).text;
+      continue;
+    }
+    if(id === 0x00E0){ xfFmt.push(u16(o + 2)); continue; } // XF -> ifmt
+    if(!inSheet) continue;
+    switch(id){
+      case 0x00FD: put(u16(o), u16(o + 2), shared[u32(o + 6)] !== undefined ? shared[u32(o + 6)] : ''); break; // LABELSST
+      case 0x0204: put(u16(o), u16(o + 2), biffStr(wb, o + 6).text); break; // LABEL
+      case 0x027E: { // RK
+        const ixfe = u16(o + 4), v = rkValue(u32(o + 6));
+        put(u16(o), u16(o + 2), numOut(v, ixfe));
+        break;
+      }
+      case 0x00BD: { // MULRK
+        const row = u16(o), c1 = u16(o + 2);
+        const n = (rc.len - 6) / 6;
+        for(let k=0;k<n;k++){
+          const ixfe = u16(o + 4 + k * 6), v = rkValue(u32(o + 6 + k * 6));
+          put(row, c1 + k, numOut(v, ixfe));
+        }
+        break;
+      }
+      case 0x0203: { // NUMBER
+        const ixfe = u16(o + 4);
+        const dv = new DataView(wb.buffer, wb.byteOffset + o + 6, 8);
+        const v = dv.getFloat64(0, true);
+        put(u16(o), u16(o + 2), numOut(v, ixfe));
+        break;
+      }
+      case 0x0006: { // FORMULA
+        const ixfe = u16(o + 4);
+        if(wb[o + 12] === 0xFF && wb[o + 13] === 0xFF){
+          pendingStr = { r:u16(o), c:u16(o + 2) };
+          put(pendingStr.r, pendingStr.c, '');
+        } else {
+          const dv = new DataView(wb.buffer, wb.byteOffset + o + 6, 8);
+          const v = dv.getFloat64(0, true);
+          put(u16(o), u16(o + 2), numOut(v, ixfe));
+        }
+        break;
+      }
+      case 0x0207: if(pendingStr){ put(pendingStr.r, pendingStr.c, biffStr(wb, o).text); pendingStr = null; } break; // STRING
+      case 0x0205: put(u16(o), u16(o + 2), wb[o + 7] ? '' : (wb[o + 6] ? '1' : '0')); break; // BOOLERR
+      default: break;
+    }
+  }
+  sheets.forEach((s, i) => { s.name = sheetNames[i] || ('Sheet' + (i + 1)); });
+  if(!sheets.length) throw new Error('.xls 中没有找到工作表');
+  return sheets;
+}
+
+/* ---------- 7. 文本类表格（CSV / TSV / HTML 伪 Excel） ---------- */
+function decodeTextBest(u8){
+  if(u8.length >= 2 && u8[0] === 0xFF && u8[1] === 0xFE) return { text:new TextDecoder('utf-16le').decode(u8.subarray(2)), enc:'UTF-16LE' };
+  if(u8.length >= 2 && u8[0] === 0xFE && u8[1] === 0xFF) return { text:new TextDecoder('utf-16be').decode(u8.subarray(2)), enc:'UTF-16BE' };
+  const utf8 = new TextDecoder('utf-8').decode(u8);
+  if(utf8.indexOf('\uFFFD') < 0) return { text:utf8, enc:'UTF-8' };
+  try {
+    const gbk = new TextDecoder('gbk').decode(u8);
+    if(gbk.indexOf('\uFFFD') < 0) return { text:gbk, enc:'GBK（Excel 另存 CSV 的默认编码）' };
+  } catch(e){ /* 浏览器无 GBK 解码器则退回 UTF-8 */ }
+  return { text:utf8, enc:'UTF-8（含无法识别的字符）' };
+}
+function parseCSVText(text, delim){
+  text = text.replace(/^\ufeff/, '').replace(/\r\n?/g, '\n');
+  const D = delim || (text.indexOf('\t') >= 0 && text.indexOf(',') < 0 ? '\t' : ',');
+  const rows = []; let row = [], curv = '', inQ = false;
   for(let i=0;i<text.length;i++){
     const ch = text[i];
     if(inQ){
-      if(ch==='"'){ if(text[i+1]==='"'){ cur+='"'; i++; } else inQ=false; }
-      else cur += ch;
-    } else if(ch==='"'){ inQ=true; }
-    else if(ch===','){ row.push(cur); cur=''; }
-    else if(ch==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
-    else cur += ch;
+      if(ch === '"'){ if(text[i + 1] === '"'){ curv += '"'; i++; } else inQ = false; }
+      else curv += ch;
+    }
+    else if(ch === '"') inQ = true;
+    else if(ch === D){ row.push(curv); curv = ''; }
+    else if(ch === '\n'){ row.push(curv); rows.push(row); row = []; curv = ''; }
+    else curv += ch;
   }
-  if(cur!=='' || row.length){ row.push(cur); rows.push(row); }
-  return rows.filter(r=>r.some(c=>c.trim()!==''));
+  if(curv !== '' || row.length){ row.push(curv); rows.push(row); }
+  return rows.filter(r => r.some(c => String(c).trim() !== ''));
+}
+/* 有些系统导出的「.xls/.csv」其实是 HTML 表格，这里做兜底解析 */
+function looksLikeHtmlTable(text){
+  const head = text.slice(0, 4096).toLowerCase();
+  return head.indexOf('<table') >= 0 || (head.indexOf('<tr') >= 0 && head.indexOf('<td') >= 0);
+}
+function parseHtmlTable(html){
+  const rows = [];
+  const trs = html.match(/<tr[\s\S]*?<\/tr>/gi) || [];
+  for(const tr of trs){
+    const cells = tr.match(/<(t[dh])(\s[^>]*)?>([\s\S]*?)<\/\1>/gi) || [];
+    const row = cells.map(c => {
+      let s = c.replace(/^<[^>]*>/, '').replace(/<\/[^>]*>$/, '');
+      s = s.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '');
+      return xmlUnesc(s).replace(/\u00a0/g, ' ').trim();
+    });
+    if(row.some(c => c !== '')) rows.push(row);
+  }
+  return rows;
+}
+/* 统一入口：按文件签名判断真实格式（不信任扩展名） */
+function readTableBuffer(u8, fname){
+  const ext = String(fname || '').toLowerCase().replace(/^.*\./, '');
+  if(u8.length > 4 && u8[0] === 0x50 && u8[1] === 0x4B) return { kind:'xlsx', sheets:parseXlsx(u8) };
+  if(u8.length > 8 && u8[0] === 0xD0 && u8[1] === 0xCF && u8[2] === 0x11 && u8[3] === 0xE0) return { kind:'xls', sheets:parseXls(u8) };
+  if(u8.length > 4 && u8[0] === 0x3C){ /* 可能直接就是 XML/HTML */ }
+  const dec = decodeTextBest(u8);
+  const text = dec.text;
+  if(looksLikeHtmlTable(text)) return { kind:'html', enc:dec.enc, sheets:[{ name:'', rows:parseHtmlTable(text) }] };
+  return { kind:(ext === 'xls' || ext === 'xlsx') ? 'csv(伪Excel)' : 'csv', enc:dec.enc, sheets:[{ name:'', rows:parseCSVText(text) }] };
+}
+
+/* ---------- 8. XLSX / XLS 写出 ---------- */
+function hexToBytes(h){
+  const a = new Uint8Array(h.length >> 1);
+  for(let i=0;i<a.length;i++) a[i] = parseInt(h.substr(i * 2, 2), 16);
+  return a;
+}
+function colName(i){
+  let s = '';
+  i = i + 1;
+  while(i > 0){ const r = (i - 1) % 26; s = String.fromCharCode(65 + r) + s; i = ((i - r) / 26) | 0; }
+  return s;
+}
+function safeSheetName(n, idx){
+  const s = String(n == null ? '' : n).replace(/[\[\]\*\?\/\\:]/g, '_').replace(/^'+|'+$/g, '').slice(0, 31);
+  return s || ('Sheet' + (idx + 1));
+}
+function zipStore(files){
+  const enc = new TextEncoder();
+  const parts = [], central = [];
+  let offset = 0;
+  for(const f of files){
+    const data = (f.data instanceof Uint8Array) ? f.data : enc.encode(String(f.data));
+    const nameB = enc.encode(f.name);
+    const crc = crc32(data);
+    const lh = new Uint8Array(30 + nameB.length);
+    const dv = new DataView(lh.buffer);
+    dv.setUint32(0, 0x04034b50, true);
+    dv.setUint16(4, 20, true); dv.setUint16(6, 0x0800, true); dv.setUint16(8, 0, true);
+    dv.setUint16(10, 0, true); dv.setUint16(12, 0x21, true);
+    dv.setUint32(14, crc, true); dv.setUint32(18, data.length, true); dv.setUint32(22, data.length, true);
+    dv.setUint16(26, nameB.length, true); dv.setUint16(28, 0, true);
+    lh.set(nameB, 30);
+    parts.push(lh, data);
+    central.push({ nameB, crc, size:data.length, offset });
+    offset += lh.length + data.length;
+  }
+  const cdParts = [];
+  let cdSize = 0;
+  for(const c of central){
+    const cd = new Uint8Array(46 + c.nameB.length);
+    const dv = new DataView(cd.buffer);
+    dv.setUint32(0, 0x02014b50, true);
+    dv.setUint16(4, 20, true); dv.setUint16(6, 20, true); dv.setUint16(8, 0x0800, true);
+    dv.setUint16(10, 0, true); dv.setUint16(12, 0, true); dv.setUint16(14, 0x21, true);
+    dv.setUint32(16, c.crc, true); dv.setUint32(20, c.size, true); dv.setUint32(24, c.size, true);
+    dv.setUint16(28, c.nameB.length, true); dv.setUint32(42, c.offset, true);
+    cd.set(c.nameB, 46);
+    cdParts.push(cd); cdSize += cd.length;
+  }
+  const eocd = new Uint8Array(22);
+  const edv = new DataView(eocd.buffer);
+  edv.setUint32(0, 0x06054b50, true);
+  edv.setUint16(8, central.length, true); edv.setUint16(10, central.length, true);
+  edv.setUint32(12, cdSize, true); edv.setUint32(16, offset, true);
+  const out = new Uint8Array(offset + cdSize + 22);
+  let o = 0;
+  for(const p of parts){ out.set(p, o); o += p.length; }
+  for(const p of cdParts){ out.set(p, o); o += p.length; }
+  out.set(eocd, o);
+  return out;
+}
+const NS_MAIN = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+const NS_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+const NS_PKG = 'http://schemas.openxmlformats.org/package/2006/relationships';
+function xlsxCellXml(ref, v){
+  if(v === null || v === undefined || v === '') return '';
+  if(typeof v === 'object' && v.d){
+    const p = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(v.d));
+    if(p) return '<c r="' + ref + '" s="1"><v>' + dateToSerial(+p[1], +p[2], +p[3]) + '</v></c>';
+  }
+  if(typeof v === 'number' && Number.isFinite(v)) return '<c r="' + ref + '"><v>' + v + '</v></c>';
+  return '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEsc(String(v)) + '</t></is></c>';
+}
+/* sheets: [{name, rows:[[...]]}]；单元格可为 字符串 / 数字 / {d:'YYYY-MM-DD'}（真日期） */
+function xlsxBuild(sheets){
+  const files = [], ct = [], wbSheets = [], rels = [];
+  const decl = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n';
+  sheets.forEach((sh, i) => {
+    const rows = sh.rows || [];
+    const rowXml = rows.map((r, ri) => {
+      const cells = r.map((v, ci) => xlsxCellXml(colName(ci) + (ri + 1), v)).join('');
+      return cells ? '<row r="' + (ri + 1) + '">' + cells + '</row>' : '';
+    }).join('');
+    files.push({ name:'xl/worksheets/sheet' + (i + 1) + '.xml',
+      data:decl + '<worksheet xmlns="' + NS_MAIN + '"><sheetData>' + rowXml + '</sheetData></worksheet>' });
+    ct.push('<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>');
+    wbSheets.push('<sheet name="' + xmlEsc(safeSheetName(sh.name, i)) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>');
+    rels.push('<Relationship Id="rId' + (i + 1) + '" Type="' + NS_REL + '/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>');
+  });
+  files.push({ name:'xl/styles.xml', data:decl + '<styleSheet xmlns="' + NS_MAIN + '">'
+    + '<numFmts count="1"><numFmt numFmtId="164" formatCode="m/d"/></numFmts>'
+    + '<fonts count="1"><font><sz val="11"/><name val="宋体"/></font></fonts>'
+    + '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>'
+    + '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+    + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+    + '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+    + '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>'
+    + '<cellStyles count="1"><cellStyle name="常规" xfId="0" builtinId="0"/></cellStyles>'
+    + '</styleSheet>' });
+  files.push({ name:'xl/workbook.xml', data:decl + '<workbook xmlns="' + NS_MAIN + '" xmlns:r="' + NS_REL + '"><sheets>' + wbSheets.join('') + '</sheets></workbook>' });
+  files.push({ name:'xl/_rels/workbook.xml.rels', data:decl + '<Relationships xmlns="' + NS_PKG + '">' + rels.join('')
+    + '<Relationship Id="rId' + (sheets.length + 1) + '" Type="' + NS_REL + '/styles" Target="styles.xml"/></Relationships>' });
+  files.push({ name:'_rels/.rels', data:decl + '<Relationships xmlns="' + NS_PKG + '"><Relationship Id="rId1" Type="' + NS_REL + '/officeDocument" Target="xl/workbook.xml"/></Relationships>' });
+  files.push({ name:'[Content_Types].xml', data:decl
+    + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+    + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+    + '<Default Extension="xml" ContentType="application/xml"/>'
+    + '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+    + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+    + ct.join('') + '</Types>' });
+  return zipStore(files);
+}
+
+/* ===== BIFF8(.xls) 写出 =====
+   记录取值与 xlwt 生成的真实 .xls 逐字节对齐（对照脚本 _dumpbiff.py，样本见 test-fixtures/）。
+   字体名为「宋体」（中文表格默认字体）；只写必需记录，Excel 97-2003 / WPS 均可打开。 */
+const XLS_SHEET_PRE = '0908100000061000bb0dcc0700000000060000000d00020001000c00020064000f000200010011000200000010000800fca9f1d24d62503f5f0002000000800008000000000001000000250204000000ff0081000200010c';
+const XLS_SHEET_POST = '2a00020000002b00020000008200020001001b00020000001a000200000014000500020000265015000500020000264683000200010084000200000026000800333333333333d33f27000800333333333333d33f2800080085eb51b81e85e33f29000800ae47e17a14aed73fa10022000900640001000100010083002c012c019a9999999999b93f9a9999999999b93f0100120002000000dd0002000000190002000000630002000000130002000000';
+const XLS_WINDOW2 = '3e021200b60200000000400000000000000000000000';
+function xlsStrBytes(s){
+  s = String(s == null ? '' : s);
+  let high = false;
+  for(let i=0;i<s.length;i++) if(s.charCodeAt(i) > 0xFF){ high = true; break; }
+  const out = [s.length & 0xFF, (s.length >> 8) & 0xFF, high ? 1 : 0];
+  for(let i=0;i<s.length;i++){
+    const c = s.charCodeAt(i);
+    if(high) out.push(c & 0xFF, (c >> 8) & 0xFF); else out.push(c & 0xFF);
+  }
+  return out;
+}
+/* BIFF8 短字符串（ShortXLUnicodeString）：cch 为 1 字节，用于 BOUNDSHEET 等记录 */
+function xlsShortStrBytes(s){
+  s = String(s == null ? '' : s);
+  let high = false;
+  for(let i=0;i<s.length;i++) if(s.charCodeAt(i) > 0xFF){ high = true; break; }
+  const out = [s.length & 0xFF, high ? 1 : 0];
+  for(let i=0;i<s.length;i++){
+    const c = s.charCodeAt(i);
+    if(high) out.push(c & 0xFF, (c >> 8) & 0xFF); else out.push(c & 0xFF);
+  }
+  return out;
+}
+function xlsRec(id, data){
+  const arr = Array.isArray(data) ? data : Array.prototype.slice.call(data);
+  return [id & 0xFF, (id >> 8) & 0xFF, arr.length & 0xFF, (arr.length >> 8) & 0xFF].concat(arr);
+}
+function xlsBuild(sheets){
+  const bytes = [];
+  const push = a => { for(let i=0;i<a.length;i++) bytes.push(a[i] & 0xFF); };
+  const u16 = v => [v & 0xFF, (v >> 8) & 0xFF];
+  const u32 = v => [v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >>> 24) & 0xFF];
+  push(xlsRec(0x0809, [0x00,0x06, 0x05,0x00, 0xBB,0x0D, 0xCC,0x07, 0x41,0x00,0x00,0x00, 0x06,0x00,0x00,0x00])); /* BOF(workbook globals)：vers=0x0600 dt=0x0005 */
+  push(xlsRec(0x00E1, u16(0x04B0)));   /* INTERFACEHDR */
+  push(xlsRec(0x00C1, u16(0)));        /* MMS */
+  push(xlsRec(0x00E2, []));            /* INTERFACEEND */
+  const waName = 'shift-scheduler', wa = [];
+  for(let i=0;i<112;i++) wa.push(i < waName.length ? waName.charCodeAt(i) : 0x20);
+  push(xlsRec(0x005C, wa));            /* WRITEACCESS */
+  push(xlsRec(0x0042, u16(0x04B0)));   /* CODEPAGE = 1200 (UTF-16) */
+  push(xlsRec(0x0161, u16(0)));        /* DSF */
+  push(xlsRec(0x013D, u16(1)));        /* TABID */
+  push(xlsRec(0x009C, u16(14)));       /* FNGROUPCOUNT */
+  push(xlsRec(0x0019, u16(0)));        /* WINDOWPROTECT */
+  push(xlsRec(0x0012, u16(0)));        /* PROTECT */
+  push(xlsRec(0x0063, u16(0)));        /* OBJPROTECT */
+  push(xlsRec(0x0013, u16(0)));        /* PASSWORD */
+  push(xlsRec(0x01BC, u16(0)));        /* PROT4REVPASS */
+  push(xlsRec(0x0040, u16(0)));        /* BACKUP */
+  push(xlsRec(0x008D, u16(0)));        /* HIDEOBJ */
+  push(xlsRec(0x003D, hexToBytes('e0015a00cf3f4e2a38000000000001005802')));  /* WINDOW1 */
+  push(xlsRec(0x0022, u16(0)));        /* DATEMODE：1900 日期系统 */
+  push(xlsRec(0x000E, u16(1)));        /* PRECISION */
+  push(xlsRec(0x01B7, u16(0)));        /* REFRESHALL */
+  push(xlsRec(0x00DA, u16(0)));        /* BOOKBOOL */
+  const font = [0xC8,0x00, 0x00,0x00, 0xFF,0x7F, 0x90,0x01, 0x00,0x00, 0x00, 0x00, 0x86, 0x00, 2, 1, 0x8B, 0x5B, 0x53, 0x4F];
+  for(let i=0;i<8;i++) push(xlsRec(0x0031, font));                    /* FONT × 8 = 宋体 */
+  push(xlsRec(0x041E, u16(164).concat(xlsStrBytes('General'))));       /* FORMAT 164 */
+  push(xlsRec(0x041E, u16(165).concat(xlsStrBytes('m/d'))));           /* FORMAT 165 */
+  const styleXf = [0x06,0x00, 0xA4,0x00, 0xF5,0xFF, 0x20,0x00,0x00,0xF4, 0,0,0,0,0,0,0,0, 0xC0,0x20];
+  const cellXf = f => [0x06,0x00, f & 0xFF, (f >> 8) & 0xFF, 0x01,0x00, 0x20,0x00,0x00,0xF8, 0,0,0,0,0,0,0,0, 0xC0,0x20];
+  for(let i=0;i<16;i++) push(xlsRec(0x00E0, styleXf));                /* 样式 XF 0~15 */
+  push(xlsRec(0x00E0, cellXf(164)));                                   /* 单元格 XF 16 = 常规 */
+  push(xlsRec(0x00E0, cellXf(165)));                                   /* 单元格 XF 17 = m/d */
+  push(xlsRec(0x0293, hexToBytes('008000ff')));                        /* STYLE */
+  const sstIdx = new Map(), sstList = [];
+  const idxOf = s => { if(sstIdx.has(s)) return sstIdx.get(s); const i = sstList.length; sstIdx.set(s, i); sstList.push(s); return i; };
+  const sheetCells = sheets.map(sh => (sh.rows || []).map(r => r.map(v => {
+    if(v === null || v === undefined || v === '') return { t:'blank' };
+    if(typeof v === 'object' && v.d){
+      const p = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(v.d));
+      if(p) return { t:'num', v:dateToSerial(+p[1], +p[2], +p[3]), date:true };
+    }
+    if(typeof v === 'number' && Number.isFinite(v)) return { t:'num', v };
+    return { t:'str', i:idxOf(String(v)) };
+  })));
+  const bsOffset = [];
+  sheets.forEach((sh, i) => {
+    bsOffset.push(bytes.length + 4);                                   /* lbPlyPos 位于记录数据开头 */
+    push(xlsRec(0x0085, u32(0).concat([0, 0], xlsShortStrBytes(safeSheetName(sh.name, i)))));
+  });
+  /* SST：字符串按段写入，续段用 CONTINUE（在字符串边界切分，无需重复标志位） */
+  const perRec = 8224;
+  let seg = u32(sstList.length).concat(u32(sstList.length)), wroteSst = false;
+  for(let i=0;i<sstList.length;i++){
+    const b = xlsStrBytes(sstList[i]);
+    if(seg.length + b.length > perRec){
+      push(xlsRec(wroteSst ? 0x003C : 0x00FC, seg)); wroteSst = true; seg = [];
+    }
+    seg = seg.concat(b);
+  }
+  push(xlsRec(wroteSst ? 0x003C : 0x00FC, seg));
+  push(xlsRec(0x000A, []));                                            /* EOF(globals) */
+  const sheetLens = sheets.map((sh, si) => {
+    let len = (XLS_SHEET_PRE.length >> 1) + 18 + (XLS_SHEET_POST.length >> 1) + (XLS_WINDOW2.length >> 1) + 4;
+    sheetCells[si].forEach(r => r.forEach(c => { if(c.t !== 'blank') len += 4 + (c.t === 'str' ? 10 : 14); }));
+    return len;
+  });
+  let cur = bytes.length;
+  sheets.forEach((sh, si) => {
+    const off = cur; cur += sheetLens[si];
+    const o = bsOffset[si];
+    bytes[o] = off & 0xFF; bytes[o + 1] = (off >> 8) & 0xFF; bytes[o + 2] = (off >> 16) & 0xFF; bytes[o + 3] = (off >>> 24) & 0xFF;
+  });
+  sheets.forEach((sh, si) => {
+    const cells = sheetCells[si];
+    let maxRow = 0, maxCol = 0;
+    cells.forEach((r, ri) => { if(r.length) maxRow = ri + 1; r.forEach((c, ci) => { if(c.t !== 'blank' && ci + 1 > maxCol) maxCol = ci + 1; }); });
+    push(hexToBytes(XLS_SHEET_PRE));
+    push(xlsRec(0x0200, u32(0).concat(u32(maxRow), u16(0), u16(maxCol), u16(0))));   /* DIMENSIONS */
+    push(hexToBytes(XLS_SHEET_POST));
+    cells.forEach((r, ri) => {
+      r.forEach((c, ci) => {
+        if(c.t === 'blank') return;
+        if(c.t === 'str') push(xlsRec(0x00FD, u16(ri).concat(u16(ci), u16(16), u32(c.i))));
+        else {
+          const dv = new DataView(new ArrayBuffer(8));
+          dv.setFloat64(0, c.v, true);
+          const arr = [];
+          for(let k=0;k<8;k++) arr.push(dv.getUint8(k));
+          push(xlsRec(0x0203, u16(ri).concat(u16(ci), u16(c.date ? 17 : 16), arr)));
+        }
+      });
+    });
+    push(hexToBytes(XLS_WINDOW2));
+    push(xlsRec(0x000A, []));                                          /* EOF(sheet) */
+  });
+  /* OLE 复合文档（512 字节扇区；Workbook 流补零到 ≥4096 字节，走 FAT 而非 mini 流） */
+  const SEC = 512;
+  while(bytes.length % SEC) bytes.push(0);
+  while(bytes.length < 4096) bytes.push(0);
+  const wbLen = bytes.length, nData = wbLen / SEC;
+  let nFat = 1, nTotal = 0;
+  for(;;){
+    nTotal = nFat + 1 + nData;
+    const need = Math.ceil(nTotal * 4 / SEC);
+    if(need <= nFat) break;
+    nFat = need;
+  }
+  const dirSector = nFat, dataStart = nFat + 1;
+  const fat = new Uint32Array(nFat * (SEC / 4)).fill(0xFFFFFFFF);
+  for(let i=0;i<nFat;i++) fat[i] = 0xFFFFFFFD;
+  fat[dirSector] = 0xFFFFFFFE;
+  for(let i=0;i<nData;i++) fat[dataStart + i] = (i === nData - 1) ? 0xFFFFFFFE : (dataStart + i + 1);
+  /* 注意：第 1 个扇区（文件头）占前 512 字节，故总长度 = (扇区数 + 1) × 512 */
+  const out = new Uint8Array((nTotal + 1) * SEC);
+  const odv = new DataView(out.buffer);
+  odv.setUint32(0, 0xE011CFD0, true); odv.setUint32(4, 0xE11AB1A1, true);
+  odv.setUint16(0x18, 0x003E, true); odv.setUint16(0x1A, 0x0003, true);
+  odv.setUint16(0x1C, 0xFFFE, true); odv.setUint16(0x1E, 9, true); odv.setUint16(0x20, 6, true);
+  odv.setUint32(0x2C, nFat, true);
+  odv.setUint32(0x30, dirSector, true);
+  odv.setUint32(0x38, 4096, true);
+  odv.setUint32(0x3C, 0xFFFFFFFE, true); odv.setUint32(0x40, 0, true);
+  odv.setUint32(0x44, 0xFFFFFFFE, true); odv.setUint32(0x48, 0, true);
+  for(let i=0;i<109;i++) odv.setUint32(0x4C + i * 4, i < nFat ? i : 0xFFFFFFFF, true);
+  for(let i=0;i<nFat;i++) for(let k=0;k<SEC/4;k++) odv.setUint32((i + 1) * SEC + k * 4, fat[i * (SEC/4) + k], true);
+  const dirOff = (dirSector + 1) * SEC;
+  const writeDir = (entry, name, type, start, size) => {
+    const o = dirOff + entry * 128;
+    for(let i=0;i<name.length;i++) odv.setUint16(o + i * 2, name.charCodeAt(i), true);
+    odv.setUint16(o + 0x40, (name.length + 1) * 2, true);
+    odv.setUint8(o + 0x42, type);
+    odv.setUint8(o + 0x43, 1);
+    odv.setUint32(o + 0x44, 0xFFFFFFFF, true);
+    odv.setUint32(o + 0x48, 0xFFFFFFFF, true);
+    odv.setUint32(o + 0x4C, type === 5 ? 1 : 0xFFFFFFFF, true);
+    odv.setUint32(o + 0x74, start, true);
+    odv.setUint32(o + 0x78, size, true);
+  };
+  writeDir(0, 'Root Entry', 5, 0xFFFFFFFE, 0);
+  writeDir(1, 'Workbook', 2, dataStart, wbLen);
+  for(let i=0;i<bytes.length;i++) out[(dataStart + 1) * SEC + i] = bytes[i];
+  return out;
 }
 /* ================= 智能导入（兼容多种排班表格式） =================
    支持的表格形态：
-   - 本工具导出的 CSV（表头含 技术员/部门/班次规则/休息规则 + M/D 日期列 + 星期行）
-   - 带标题行/多行表头的手工排班表（如「资材部-9月-6休1排班表」：标题行 + 工号/日期表头 + 星期行）
-   - 姓名+日期列的通用表（日期可写 第N天 / N / M/D / YYYY/M/D / M月D日 / M-D）
-   - 跨月表自动拆分（如 8/1~9/30 → 分别写入 8 月、9 月）
-   单元格文本：休/休息/空、白班/白/日/早班、夜班/夜/晚/中班、加班/加/OT、班/上/√/出勤（按行内班次推断）、请假（自动登记到请假记录） */
+   - 本工具导出的 CSV / Excel（技术员 + 部门 + 班次规则 + 休息规则 + 日期列 + 星期行）
+   - 手工排班表（如「资材部-9月-6休1排班表」）：标题行 / 双行表头 / 星期行 / 负责人行自动跳过
+     —— 日期列在上一行、姓名列在下一行（合并单元格写成「星期\n姓名」）同样能识别
+   - 姓名 + 日期列的通用表
+   日期写法：第N天 / N / N日 / M/D / M-D / M.D / YYYY/M/D / M月D日 / YYYY年M月D日 / Excel 日期序列号（如 46266）
+   单元格文本：休/休息/空、白班/白/日/早班、夜班/夜/晚/中班、加班/加/OT、班/上/√/出勤（按行内班次推断）、请假（自动登记）
+   文件格式与编码：.csv/.txt（UTF-8 / GBK / UTF-16 自动识别）、.xlsx、.xls，以及部分系统导出的「HTML 伪 Excel」。
+   识别失败时不再直接报错，而是弹出「点选表头行」的兜底界面（见 openHeaderPicker）。 */
+const normCell = c => String(c == null ? '' : c).replace(/\u00a0/g, ' ').trim();
+/* 表头关键字：这些字样出现在「姓名列」上时说明该行不是数据行 */
+const HDR_WORDS = /合计|总计|小计|部门|技术员|星期|负责人|标题|姓名|日期|工号|编号|备注|序号|班次|班制|休息|休法|排休|规则|部门长|制表|审核|单位/;
+function isHeaderishName(s){
+  const v = normCell(s).replace(/\s+/g, '');
+  if(!v) return true;
+  if(v.length > 16) return true;
+  return HDR_WORDS.test(v);
+}
+/* 日期识别。type: 'date' 带明确 年/月/日；'dayN' 只有第几天（归到当前中心月） */
 function smartParseDate(t){
-  const s = String(t||'').trim().toLowerCase();
-  if(!s) return null;
+  const raw = String(t == null ? '' : t).replace(/[\s\u00a0]/g, '');
+  if(!raw) return null;
+  const s = raw.toLowerCase();
   let m = s.match(/^第?(\d{1,2})天?$/);
-  if(m) return {type:'dayN', n:+m[1]};
+  if(m && +m[1] >= 1 && +m[1] <= 31) return {type:'dayN', n:+m[1]};
   m = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+  if(m) return {type:'date', y:+m[1], m:+m[2], d:+m[3]};
+  m = s.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?$/);
   if(m) return {type:'date', y:+m[1], m:+m[2], d:+m[3]};
   m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})$/);
   if(m) return {type:'date', y:null, m:+m[1], d:+m[2]};
   m = s.match(/^(\d{1,2})月(\d{1,2})日?$/);
   if(m) return {type:'date', y:null, m:+m[1], d:+m[2]};
+  m = s.match(/^(\d{1,2})日$/);
+  if(m && +m[1] >= 1 && +m[1] <= 31) return {type:'dayN', n:+m[1]};
+  /* Excel 把日期存成序列号（1900 日期系统），另存 CSV 后会原样保留，如 46266 → 2026/9/1 */
+  m = s.match(/^(\d{4,5})(?:\.0*)?$/);
+  if(m && +m[1] >= SERIAL_MIN && +m[1] <= SERIAL_MAX){
+    const p = serialToDateParts(+m[1]);
+    return {type:'date', y:p.y, m:p.m, d:p.d};
+  }
   return null;
 }
 /* 星期行识别：首列含"星期"，或多数单元格为 周X/星期X/公式残留 */
 function smartIsWeekRow(row){
-  const s = String(row[0]||'').trim();
-  if(/星期|周几/.test(s)) return true;
+  if(smartRowHasText(row, /星期|周几/)) return true;
   let wk = 0;
-  for(const c of row){ const v = String(c||'').trim();
+  for(const c of (row||[])){ const v = normCell(c);
     if(/^周?[日一二三四五六]$/.test(v) || /^(星期|礼拜)[日一二三四五六]$/.test(v) || /^=[A-Z]+\d+$/.test(v)) wk++; }
   return wk >= 3;
 }
-/* 智能定位表头行与各列角色：扫描前 8 行，取含姓名/工号关键字且日期列 ≥2 的行作表头 */
-function smartFindHeader(rows){
-  const nameKws = ['姓名','名字','技术员','人员','职员','员工'];
-  let headRow = -1;
-  for(let r=0; r<Math.min(rows.length,8); r++){
-    const row = rows[r].map(c=>String(c||'').trim());
-    const hasName = row.some(h=>nameKws.some(k=>h.includes(k)));
-    const hasWork = row.some(h=>/工号|编号|员工号|^id$/i.test(h));
-    const dates = row.filter(h=>smartParseDate(h)).length;
-    if((hasName || hasWork) && dates >= 2){ headRow = r; break; }
+function smartRowHasText(row, re){
+  return (row||[]).some(c => re.test(normCell(c)));
+}
+/* 把解析结果换算成绝对日（用于判断日期列是否逐日递增） */
+function resolveYMD(p){
+  if(p.type === 'dayN') return {y:CUR.y, m:CUR.m, d:p.n};
+  return {y:(p.y != null ? p.y : CUR.y), m:p.m, d:p.d};
+}
+function ordOfYMD(ymd){ return Math.round(Date.UTC(ymd.y, ymd.m - 1, ymd.d) / 86400000); }
+function isNextDay(a, b){
+  const A = resolveYMD(a), B = resolveYMD(b);
+  let ob = ordOfYMD(B);
+  if(b.y == null && A.m === 12 && B.m === 1) ob = ordOfYMD({y:A.y + 1, m:1, d:B.d});  // 跨年
+  return ob - ordOfYMD(A) === 1;
+}
+/* 取一行里「列号连续且逐日递增」的最长日期段：避免把表格中偶然出现的日期或 5 位数字当成日期列 */
+function dateRunOf(row, skip){
+  const cols = [];
+  (row||[]).forEach((h, i) => { if(skip && skip.has(i)) return; const p = smartParseDate(h); if(p) cols.push({i, p}); });
+  let best = [], cur = [];
+  for(const c of cols){
+    if(cur.length && c.i === cur[cur.length - 1].i + 1 && isNextDay(cur[cur.length - 1].p, c.p)) cur.push(c);
+    else { if(cur.length > best.length) best = cur; cur = [c]; }
   }
-  if(headRow<0){ for(let r=0; r<Math.min(rows.length,5); r++){ if(rows[r].some(h=>nameKws.some(k=>String(h).includes(k)))){ headRow=r; break; } } }
-  if(headRow<0) headRow = 0;
-  // 列名搜索范围：表头行 及其上下各 1 行（兼容双行表头，如「工号/日期」第2行 + 「姓名」第3行）
+  if(cur.length > best.length) best = cur;
+  return {cols, run:best};
+}
+/* 智能定位表头行与各列角色。
+   表头行 = 「连续日期列最多」的那一行（日期列与姓名列分处上下两行的双行表头也能定位）；
+   再在表头行 ±2 行范围内找姓名/工号/部门/班次/休息各列。 */
+function smartFindHeader(rows, forceHeadRow){
+  const nameKws = ['姓名','名字','技术员','人员','职员','员工','责任人','操作员'];
+  const maxScan = Math.min(rows.length, 30);
+  const info = [];
+  for(let r=0; r<maxScan; r++){
+    const row = (rows[r]||[]).map(normCell);
+    info.push({
+      r, row,
+      hasName: row.some(h => nameKws.some(k => h.includes(k))),
+      hasWork: row.some(h => /工号|编号|员工号|^id$/i.test(h)),
+      run: dateRunOf(row, null).run
+    });
+  }
+  let headRow;
+  if(forceHeadRow != null && forceHeadRow >= 0 && forceHeadRow < rows.length){
+    headRow = forceHeadRow;
+  } else {
+    let cand = info.filter(x => x.run.length >= 3);
+    if(!cand.length) cand = info.filter(x => x.run.length >= 2);
+    if(cand.length){
+      cand.sort((a, b) => (b.run.length - a.run.length)
+        || (((b.hasName || b.hasWork) ? 1 : 0) - ((a.hasName || a.hasWork) ? 1 : 0))
+        || (a.r - b.r));
+      headRow = cand[0].r;
+    } else {
+      const h = info.find(x => x.hasName);
+      headRow = h ? h.r : 0;
+    }
+  }
+  /* 列名搜索：表头行优先，其次向下 1~2 行（姓名常写在第二行表头），再向上 1 行 */
   const find = names => {
-    for(const r of [headRow, headRow+1, headRow-1]){
-      if(r<0 || r>=rows.length) continue;
-      const row = rows[r].map(c=>String(c||'').trim());
-      const i = row.findIndex(h=>names.some(n=>h.toLowerCase().includes(n.toLowerCase())));
-      if(i>=0) return i;
+    for(const r of [headRow, headRow + 1, headRow + 2, headRow - 1]){
+      if(r < 0 || r >= rows.length) continue;
+      const row = (rows[r]||[]).map(normCell);
+      const i = row.findIndex(h => names.some(n => h.toLowerCase().includes(n.toLowerCase())));
+      if(i >= 0) return i;
     }
     return -1;
   };
-  const nameIdx = find(nameKws);
+  const nameIdxKw = find(nameKws);
   const workIdIdx = find(['工号','编号','员工号']);
   const deptIdx = find(['部门','组别','班组','车间','线别']);
   const shiftIdx = find(['班次','班制','轮转']);
   const restIdx = find(['休息','休法','排休']);
-  const head = rows[headRow].map(c=>String(c||'').trim());
-  const skip = new Set([nameIdx,workIdIdx,deptIdx,shiftIdx,restIdx].filter(i=>i>=0));
-  const dateCols = [];
-  head.forEach((h,i)=>{ if(skip.has(i)) return; const p = smartParseDate(h); if(p) dateCols.push({i, p}); });
-  if(!dateCols.length && nameIdx>=0){ // 兜底：姓名列之后找连续 第N天/纯数字
-    for(let i=nameIdx+1;i<head.length;i++){ const p = smartParseDate(head[i]); if(p && p.type==='dayN') dateCols.push({i, p}); }
+  const skip = new Set([nameIdxKw, workIdIdx, deptIdx, shiftIdx, restIdx].filter(i => i >= 0));
+  const head = (rows[headRow]||[]).map(normCell);
+  let dateCols = dateRunOf(head, skip).run;
+  if(!dateCols.length){
+    /* 兜底：表头行没有日期时，改用上下相邻行里的日期列（按列号对齐） */
+    for(const r of [headRow + 1, headRow - 1]){
+      if(r < 0 || r >= rows.length) continue;
+      const cand = dateRunOf((rows[r]||[]).map(normCell), skip).run;
+      if(cand.length > dateCols.length) dateCols = cand;
+    }
   }
-  let dataStart = headRow+1;
-  if(dataStart < rows.length && smartIsWeekRow(rows[dataStart])) dataStart++;
+  /* 姓名列兜底：整表都没有「姓名/技术员」字样时，取最左侧「非日期、非纯数字、非表头词」的文本列 */
+  let nameIdx = nameIdxKw;
+  if(nameIdx < 0){
+    const dateSet = new Set(dateCols.map(dc => dc.i));
+    const probe = [];
+    for(let r = Math.max(0, headRow); r < Math.min(rows.length, headRow + 12); r++) probe.push((rows[r]||[]).map(normCell));
+    const nCols = probe.reduce((mx, r) => Math.max(mx, r.length), 0);
+    let best = -1, bestN = 0;
+    for(let c = 0; c < Math.min(nCols, 10); c++){
+      if(skip.has(c) || dateSet.has(c)) continue;
+      let n = 0;
+      for(const r of probe){
+        const v = r[c] || '';
+        if(v && v.length <= 10 && !smartParseDate(v) && !/^\d+(\.\d+)?$/.test(v) && !isHeaderishName(v)) n++;
+      }
+      if(n > bestN){ bestN = n; best = c; }
+    }
+    if(best >= 0 && bestN >= 2) nameIdx = best;
+  }
+  /* 数据起始行：跳过星期行 / 仍是表头的行 / 姓名列为空的行（最多探 4 行） */
+  let dataStart = headRow + 1, guard = 0;
+  while(dataStart < rows.length && guard++ < 4){
+    if(nameIdx < 0) break;
+    const cell = normCell((rows[dataStart]||[])[nameIdx]);
+    if(smartIsWeekRow(rows[dataStart]) || isHeaderishName(cell)){ dataStart++; continue; }
+    break;
+  }
   return {headRow, nameIdx, workIdIdx, deptIdx, shiftIdx, restIdx, dateCols, dataStart};
 }
 /* 智能单元格：返回 {ch, leave}；ch: '_'未设 '.'休 'd'白 'n'夜 'D'白加 'N'夜加 'w'班(待行级推断) */
@@ -3003,26 +4137,34 @@ function inferRest(chars, y, m, dim){
   return 'none';
 }
 /* ---------- 导入应用 ---------- */
-let importMode = 'merge'; // 人员合并策略（CSV 固定按姓名合并；JSON 全量覆盖）
-function applyCSVImport(rows){
-  if(!rows.length){ toast('⚠️ 文件为空或格式无法识别'); return; }
-  const H = smartFindHeader(rows);
-  if(H.nameIdx<0 || !H.dateCols.length){ toast('⚠️ 无法识别表头：需要「姓名/技术员」列和日期列（如 第1天 / 1 / 8/1 / 2026/8/1）'); return; }
+let importMode = 'merge'; // 人员合并策略（表格固定按姓名合并；JSON 全量覆盖）
+function applyCSVImport(rows, opts){
+  opts = opts || {};
+  if(!rows || !rows.length){ toast('⚠️ 文件为空或没有可读取的内容'); return false; }
+  const H = smartFindHeader(rows, opts.headRow);
+  if(H.nameIdx < 0 || H.dateCols.length < 2){
+    if(opts.pickedOnce){ toast('⚠️ 该行仍无法定位「姓名列 + 日期列」，请检查表头是否同时含姓名与日期'); return false; }
+    openHeaderPicker(rows, opts);
+    return false;
+  }
   const groups = buildDateGroups(H.dateCols);
   const monthKeys = Object.keys(groups).sort();
-  if(!monthKeys.length){ toast('⚠️ 未能解析出有效日期列'); return; }
+  if(!monthKeys.length){
+    if(opts.pickedOnce){ toast('⚠️ 选中的行里没有找到有效日期'); return false; }
+    openHeaderPicker(rows, opts);
+    return false;
+  }
   const dims = {};
   monthKeys.forEach(k=>dims[k]=daysInMonth(+k.split('-')[0], +k.split('-')[1]));
   // 防呆：导入会按姓名合并/更新人员并锁定排班，且不可撤销（Ctrl+Z 无效）
-  if(state.people.length && !confirm('⚠️ 将导入 ' + (rows.length-H.dataStart) + ' 行数据：按姓名合并/更新人员并锁定排班（' + monthKeys.length + ' 个月' + (monthKeys.length>1 ? '，跨月自动拆分' : '') + '），不可撤销（Ctrl+Z 无效）。\n建议先「⬇ 导出 → 完整备份 JSON」留存当前数据。确定继续？')) return;
-  pushSnapshot('导入排班 CSV');
+  if(state.people.length && !confirm('⚠️ 将导入 ' + (rows.length-H.dataStart) + ' 行数据：按姓名合并/更新人员并锁定排班（' + monthKeys.length + ' 个月' + (monthKeys.length>1 ? '，跨月自动拆分' : '') + '），不可撤销（Ctrl+Z 无效）。\n建议先「⬇ 导出 → 完整备份 JSON」留存当前数据。确定继续？')) return false;
+  pushSnapshot('导入排班表');
   let added=0, updated=0, cells=0, leaveN=0, skipped=0;
   const mergedSet = new Set();
-  const skipNames = /^(合计|总计|小计|部门|技术员|星期|负责人|标题)$/;
   for(let r=H.dataStart; r<rows.length; r++){
     const row = rows[r];
-    const name = String(row[H.nameIdx]||'').trim();
-    if(!name || skipNames.test(name)){ skipped++; continue; }
+    const name = normCell(row[H.nameIdx]).replace(/\s+/g, '');
+    if(!name || isHeaderishName(name)){ skipped++; continue; }
     // 1) 逐月解析单元格（跨月拆分；请假单独收集）
     const perMonth = {};
     monthKeys.forEach(k=>perMonth[k]={chs:[], leaves:{}});
@@ -3100,6 +4242,70 @@ function applyCSVImport(rows){
       toast('🧹 旧排班已清空，请点「⚡ 自动排班」生成新表');
     }
   }, 300);
+  return true;
+}
+/* ---------- 表头识别兜底：手动点选表头行 ----------
+   自动识别失败时不再只弹一句「无法识别表头」，而是把文件前若干行原样展示出来，
+   由用户点选「哪一行是表头」，再按该行重新解析。 */
+let pendingPick = null;   // { rows, opts, sel }
+function openHeaderPicker(rows, opts){
+  opts = opts || {};
+  const head = Math.min(rows.length, 20);
+  const cols = Math.min(Math.max(...rows.slice(0, head).map(r => (r||[]).length), 0), 14);
+  pendingPick = { rows, opts, sel:-1 };
+  const srcTxt = opts.kind ? ('文件类型：' + opts.kind) : '';
+  $('#hpInfo').innerHTML = '自动识别表头失败——没在同一行里找到「姓名/技术员」列和日期列。<br>'
+    + '请在下方点选<b>表头行</b>（含「姓名」和日期的那一行），再点「用这一行解析」。'
+    + (srcTxt ? '<br>' + srcTxt : '');
+  let html = '<table class="hp-tbl"><tr><th>行</th>';
+  for(let c=0;c<cols;c++) html += '<th>' + colName(c) + '</th>';
+  html += '</tr>';
+  for(let r=0;r<head;r++){
+    html += '<tr class="hp-row" data-r="' + r + '"><td class="hp-no">' + (r+1) + '</td>';
+    for(let c=0;c<cols;c++) html += '<td>' + escapeHtml(String((rows[r]||[])[c] == null ? '' : (rows[r]||[])[c]).slice(0, 24)) + '</td>';
+    html += '</tr>';
+  }
+  html += '</table>';
+  $('#hpTable').innerHTML = html;
+  $$('#hpTable .hp-row').forEach(tr => tr.onclick = () => {
+    $$('#hpTable .hp-row').forEach(x => x.classList.remove('sel'));
+    tr.classList.add('sel');
+    pendingPick.sel = +tr.dataset.r;
+    $('#hpOk').disabled = false;
+  });
+  $('#hpOk').disabled = true;
+  $('#headerPickModal').classList.add('show');
+}
+function closeHeaderPicker(){
+  $('#headerPickModal').classList.remove('show');
+  pendingPick = null;
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+/* ---------- 表格文件导入总入口：按文件签名识别真实格式，多工作表自动挑最合适的一张 ---------- */
+function importTableBuffer(buf, fname){
+  let parsed;
+  try{
+    parsed = readTableBuffer(buf, fname);
+  }catch(err){
+    toast('⚠️ 文件解析失败：' + (err && err.message ? err.message : err));
+    return;
+  }
+  const sheets = (parsed.sheets || []).filter(s => s.rows && s.rows.length);
+  if(!sheets.length){ toast('⚠️ 文件里没有找到可读取的表格数据'); return; }
+  if(parsed.enc && /GBK|UTF-16/.test(parsed.enc)) toast('📄 检测到 ' + parsed.enc + ' 编码，已自动转码');
+  /* 多工作表：优先选「姓名列 + 最长连续日期列」得分最高的一张 */
+  let best = sheets[0], bestScore = -1;
+  for(const sh of sheets){
+    const H = smartFindHeader(sh.rows);
+    const score = (H.nameIdx >= 0 ? 1000 : 0) + (H.dateCols.length >= 2 ? H.dateCols.length : 0);
+    if(score > bestScore){ bestScore = score; best = sh; }
+  }
+  const kindTxt = { csv:'CSV 文本', xlsx:'Excel 工作簿(.xlsx)', xls:'Excel 97-2003(.xls)', html:'HTML 表格' }[parsed.kind] || '表格';
+  if(bestScore < 1002){ openHeaderPicker(best.rows, { kind:kindTxt, sheetName:best.name }); return; }
+  if(sheets.length > 1 && best.name) toast('📄 已选用工作表「' + best.name + '」（文件共 ' + sheets.length + ' 张表）');
+  applyCSVImport(best.rows, { headRow:smartFindHeader(best.rows).headRow, kind:kindTxt, sheetName:best.name });
 }
 /* v1.44 备份结构校验：防「合法 JSON 但结构损坏」（误导入其它项目备份 / 字段被手工改坏）
    导致渲染期异常白屏。只保留合规人员及其对应记录，坏数据计数并入提示。 */
@@ -3223,50 +4429,66 @@ document.addEventListener('click', e=>{
   if(!e.target.closest('.dd')) $$('.dd').forEach(d=>d.classList.remove('open'));
 });
 $$('#exportMenu button').forEach(b=>b.onclick = ()=>{
-  if(b.dataset.act==='csv') exportCSV();
-  else if(b.dataset.act==='stats') exportStatsCSV();
+  const act = b.dataset.act;
+  if(act === 'csv') exportCSV();
+  else if(act === 'stats') exportStatsCSV();
+  else if(act === 'xlsx') exportExcel('xlsx', 'sched');
+  else if(act === 'xls') exportExcel('xls', 'sched');
+  else if(act === 'stats-xlsx') exportExcel('xlsx', 'stats');
+  else if(act === 'stats-xls') exportExcel('xls', 'stats');
   else exportJSON();
   b.closest('.dd').classList.remove('open');
 });
 $$('#importMenu button').forEach(b=>b.onclick = ()=>{
   fileAct = b.dataset.act; b.closest('.dd').classList.remove('open');
   const fi = $('#fileInput');
-  fi.accept = fileAct==='csv' ? '.csv,.txt' : '.json';
+  fi.accept = (fileAct === 'json') ? '.json' : '.csv,.txt,.xlsx,.xls';
   fi.value = ''; fi.click();
 });
-$('#fileInput').addEventListener('change', ()=>{
-  const f = $('#fileInput').files[0]; if(!f || !fileAct) return;
+function handleImportFile(f){
+  if(!f) return;
+  const nm = (f.name || '').toLowerCase();
+  const act = (/\.json$/.test(nm)) ? 'json' : 'table';
   const reader = new FileReader();
   reader.onload = ()=>{
     try{
-      const buf = reader.result; // ArrayBuffer
-      let text;
-      if(fileAct==='json'){
-        text = new TextDecoder('utf-8').decode(buf);
-      } else {
-        // 防呆：中国区 Excel 另存 CSV 默认为 GBK（ANSI）编码，先按 UTF-8 解码，
-        // 出现替换符 \ufffd 且含中文时判定为 GBK，自动转码（避免整表乱码）
-        const utf8 = new TextDecoder('utf-8').decode(buf);
-        if(utf8.indexOf('\ufffd') >= 0){
-          try{
-            const gbk = new TextDecoder('gbk').decode(buf);
-            text = (gbk.indexOf('\ufffd') >= 0) ? utf8 : gbk;
-            if(text === gbk) toast('📄 检测到 GBK 编码（Excel 另存 CSV 默认格式），已自动转码');
-          }catch(e){ text = utf8; }
-        } else text = utf8;
-      }
-      if(fileAct==='json'){
-        importJSONData(JSON.parse(text));
-      } else {
-        applyCSVImport(parseCSVText(text));
-      }
+      const buf = new Uint8Array(reader.result);   // ArrayBuffer → Uint8Array
+      if(act === 'json') importJSONData(JSON.parse(decodeTextBest(buf).text));
+      else importTableBuffer(buf, f.name);
     }catch(err){
-      toast('⚠️ 导入失败：' + err.message);
+      toast('⚠️ 导入失败：' + (err && err.message ? err.message : err));
     }
     fileAct = null;
   };
+  reader.onerror = ()=>{ toast('⚠️ 文件读取失败，请重试或换一个文件'); fileAct = null; };
   reader.readAsArrayBuffer(f);
+}
+$('#fileInput').addEventListener('change', ()=>{
+  const f = $('#fileInput').files[0];
+  if(!f || !fileAct) return;
+  handleImportFile(f);
 });
+/* 拖拽导入：把 CSV / Excel 文件直接拖到页面上任意位置 */
+let _dragDepth = 0;
+const hasFiles = e => !!(e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0);
+window.addEventListener('dragenter', e=>{ if(!hasFiles(e)) return; e.preventDefault(); _dragDepth++; document.body.classList.add('dropping'); });
+window.addEventListener('dragover', e=>{ if(!hasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+window.addEventListener('dragleave', e=>{ if(!hasFiles(e)) return; _dragDepth = Math.max(0, _dragDepth - 1); if(!_dragDepth) document.body.classList.remove('dropping'); });
+window.addEventListener('drop', e=>{
+  if(!hasFiles(e)) return;
+  e.preventDefault(); _dragDepth = 0; document.body.classList.remove('dropping');
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f) handleImportFile(f);
+});
+/* 表头手动指定弹窗 */
+$('#hpCancel').onclick = closeHeaderPicker;
+$('#headerPickModal').addEventListener('click', e=>{ if(e.target.id === 'headerPickModal') closeHeaderPicker(); });
+$('#hpOk').onclick = ()=>{
+  if(!pendingPick || pendingPick.sel < 0) return;
+  const { rows, opts, sel } = pendingPick;
+  closeHeaderPicker();
+  applyCSVImport(rows, Object.assign({}, opts, { headRow:sel, pickedOnce:true }));
+};
 $('#printBtn').onclick = ()=>{
   if(!state.people.length){ toast('👷 暂无可打印的技术员'); return; }
   const v = countViolations();
@@ -3412,9 +4634,9 @@ $('#wStart').onclick = ()=>{
 };
 $('#wImport').onclick = ()=>{
   const wm = $('#welcomeModal'); if(wm) wm.classList.remove('show');
-  fileAct = 'csv';
+  fileAct = 'table';
   const fi = $('#fileInput');
-  fi.accept = '.csv,.txt';
+  fi.accept = '.csv,.txt,.xlsx,.xls';
   fi.value = ''; fi.click();
 };
 
