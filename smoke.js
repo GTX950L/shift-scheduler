@@ -54,6 +54,15 @@ const { chromium } = pw;
     if (zCheck.open) await page.click('#checkClose').catch(() => {});
     ok('2d. 9月示例体检零违规', zCheck.open && !/发现\s*\d+\s*个违规/.test(zCheck.txt), zCheck.txt.slice(0, 60));
 
+    // 2e. v1.48 口径一致性：提示条 / 导出拦阻（countViolations）与体检弹窗（computeChecks）结论必须一致
+    //     此前两套实现分叉，出现「提示条报 1 处、体检却通过」；现统一走 computeChecks
+    const v2e = await page.evaluate(() => ({
+      viol: countViolations(),
+      flowHidden: document.getElementById('flowBar').hidden,
+      flowTxt: document.getElementById('flowBar').hidden ? '' : document.getElementById('flowBar').textContent.slice(0, 40)
+    }));
+    ok('2e. 提示条与体检口径一致（示例零违规）', v2e.viol === 0 && v2e.flowHidden, 'countViolations=' + v2e.viol + ' 提示条隐藏=' + v2e.flowHidden);
+
     // 3. 排班表行数（23 人 + 合计行 = 24）
     const rowN = await page.evaluate(() => document.querySelectorAll('#sheet tbody tr[data-pid]').length);
     const colN = await page.evaluate(() => document.querySelectorAll('#sheet thead tr:nth-child(2) th:not(.corner)').length);

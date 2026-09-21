@@ -518,7 +518,7 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.47</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.48</span></h1>
     <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
   </div>
   <div class="hd-right">
@@ -935,6 +935,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.48</b> · 检查口径统一 + 两处修复（2026-09-22）：① <b>体检检查统一为一套实现</b>——此前「提示条 / 导出拦阻」用轻量版 countViolations（连班 + 无人上班）、「🔍 体检」用完整版，两套逻辑各写一遍；v1.47 为停线日豁免修改了完整版，轻量版未同步，导致「提示条报 1 处、点开体检却通过」的口径分叉。现 countViolations 改为 computeChecks 的薄包装（<code>computeChecks(false)</code> 只取数量、不更新红框标记），删除整套重复检查代码，今后检查规则只需维护一处。<br>② <b>「复制到下月」请假按天数截断</b>——班次复制会按下月天数截断（31 日→30 天月），请假记录此前按原样搬移，残留 31 日越界脏数据（不显示但不清除）；现与班次同口径过滤，超出下月天数的请假日不再搬移。<br>③ 修正 genMonth 内留守字符（x/y）的过时注释（该功能 v1.33 已移除，代码仅作旧数据兼容）。<br>④ 回归补齐：新增 smoke 断言「示例载入后提示条与体检口径一致」，防止两套口径问题复发。</div>
       <div class="log-ver"><b>v1.47</b> · 示例模板更新为 9.20 版（2026-09-21）：① <b>人员 20→23 人</b>——新增王琦、程尊、龙欢三名（王琦/程尊 9/19、龙欢 9/5 才排班，入职前锁定为休）；② <b>新增「A班/B班」班组维度</b>——负责人姜雄（不参与排班）统辖 A/B 两班组，班组并入人员 note 显示（除气 A 班 9 人、转码 A 班 3 人、除气 B 班 8 人、转码 B 班 3 人）；③ <b>8 月锁定表重排</b>——8/1~8/23「班/休」标记按该人 8/24~28 班次推断白/夜，8/29~8/30 月末周末转班、8/31 起新班次与 9/1 无缝衔接；④ <b>9 月锁定表重排</b>——全月班次按 9.20 版真实排班更新（周洪发 9/7 白转夜、郑高鑫/孙子恒固定白班不变）；⑤ 示例版本升至 20，旧范例用户打开页面自动升级。</div>
       <div class="log-ver"><b>v1.46</b> · 界面简化 + 导入体验（2026-09-21）：① <b>工具栏重组为两行</b>——第一行只放主操作（⚡自动排班 做成蓝色主按钮、导入旧表 / 导出 / 体检 / 打印 / 帮助，撤销重做与「⋯ 更多」靠右），第二行是紧凑的快捷设置（画笔 / 视图 / 部门 / 周末 / 转班）；低频操作（复制到下月、清下月、清手动、转班、快照、节假日、示例、清空全部数据）全部收进「⋯ 更多」，新手不用再面对 20 个按钮。<br>② <b>流程提示条</b>——表格上方按当前状态提示「下一步做什么」（还没有人员 / 本月未排班 / 有 N 处违规），并直接给出可点的动作按钮，可一键关闭本次提示。<br>③ <b>空状态引导</b>——没有人员时用三张卡片替代空表格（导入旧表 / 手动添加 / 看示例），直接点卡片开始。<br>④ <b>3 步上手向导</b>——首开自动弹出分步向导（准备人员 → 自动排班 → 微调交付），每步都有「现在就做」按钮；帮助菜单新增「🚀 新手引导」与「⌨️ 快捷键一览」。<br>⑤ <b>操作指引改为可折叠 5 步</b>，默认只显示标题，点开才看细节，侧栏不再是一大段文字。<br>⑥ <b>导入预览确认</b>——导入前先弹识别结果（几人 / 几天 / 覆盖哪些月份 / 姓名在第几列 / 前几行映射效果），确认后才落库，不放心可「🔧 换表头行」重选。<br>⑦ <b>识别再增强</b>——支持「日期竖排 / 人员横排」的转置表（自动转置）、合并单元格的姓名与部门列自动向下填充、同一人被拆成多行时按格合并、日期新增 M/D/YYYY 与「N号」并自动去掉时间后缀、班次新增 早 / 大夜 / 放假 / ○●◯ 等写法；占位行不再被多算成一个人。<br>⑧ <b>新增空白待填表</b>——「⬇ 导出 → 空白待填表 .xlsx」导出「人员名单 + 日期表头」的空白表（首行附填写说明），发给同事填完再导入回来。<br>⑨ <b>视觉打磨</b>——排班表按部门加分隔线、鼠标悬停高亮整行姓名格；人员卡片改为信息分层 + 出勤进度条；统一细滚动条与焦点样式。</div>
       <div class="log-ver"><b>v1.45</b> · 导入导出全面支持 XLS/XLSX/CSV（2026-09-20）：① <b>修「无法识别表头」</b>——根因有二：Excel 另存后表头日期变成<b>日期序列号</b>（如 46266），且真实排班表是「日期列在第 2 行、姓名列在第 3 行」的<b>双行表头</b>，旧逻辑要求姓名与日期同行才认。现改为「取连续日期列最多的那一行当表头」，日期识别新增 序列号 / N日 / YYYY年M月D日，并按「列号连续 + 逐日递增」筛选日期列，避免把偶然出现的数字当成日期；② <b>新增 .xlsx / .xls 导入</b>——纯前端零依赖解析（自研 ZIP/DEFLATE 解压 + OOXML 解析 + OLE 复合文档 + BIFF8 记录解析），读取共享字符串、内联字符串、数字格式（日期/星期格式按 Excel 显示值还原）、多工作表（自动选最合适的一张）；③ <b>新增 .xlsx / .xls 导出</b>——排班表与月度统计均可导出 Excel，日期列写成<b>真日期</b>（可排序/筛选），与 CSV 同一口径；.xls 为真实 BIFF8（Excel 97-2003 / WPS 可开）；④ <b>识别不了也不卡住</b>——新增「🔧 手动指定表头行」弹窗，列出文件前 20 行供点选，彻底消除「无法识别表头」的死路；⑤ <b>拖拽导入</b>——CSV / Excel 文件可直接拖到页面上；⑥ 格式按<b>文件内容</b>判断（不依赖扩展名），编码支持 UTF-8 / GBK / UTF-16，并兼容部分系统导出的「HTML 伪 Excel」。</div>
@@ -1285,7 +1286,7 @@ function genMonth(y, m, noCross){
   // 每人当月班次（含轮转继承）
   people.forEach(p => ensureMonthShift(p.id, key));
   // 1) 基线：按班次 + 休息规则（轮转人员从转班日起班次互换）
-  const grid = {}; // pid -> arr[day]，单元使用单字符：.=休 d=白 n=夜 D=白加 N=夜加 x=白留 y=夜留
+  const grid = {}; // pid -> arr[day]，单元使用单字符：.=休 d=白 n=夜 D=白加 N=夜加（x/y=旧数据遗留的白/夜留守，仅兼容读取）
   const rstart = rotateStartDay(y, m, dim);
   const spRot = state.spRot || {};
   for(const p of people){
@@ -2435,13 +2436,15 @@ function copyMonthToNext(){
     if(/[^_]/.test(ns)) copied[pid] = ns;
   }
   // 请假随班次一起搬移（结构：state.leave[key] = {pid: {day:原因}}）
+  // 与班次同口径：超出下月天数的请假日（如 31 日的假复制到 30 天月）不搬移，避免越界脏数据
   const srcLeave = state.leave[key] || {};
   const copiedLeave = {};
   for(const pid in srcLeave){
     const lm = srcLeave[pid];
     if(!lm || !Object.keys(lm).length) continue;
-    copiedLeave[pid] = {};
-    for(const d in lm) copiedLeave[pid][d] = lm[d];
+    const keep = {};
+    for(const d in lm){ if(+d <= ndim) keep[d] = lm[d]; }
+    if(Object.keys(keep).length) copiedLeave[pid] = keep;
   }
   histBegin();
   histPush({t:'copyMonth', key, nk, before:JSON.stringify(tgt||{}), after:JSON.stringify(copied)});
@@ -2911,10 +2914,14 @@ $('#holAdd').onclick = ()=>{
 $('#holClose').onclick = ()=> $('#holidayModal').classList.remove('show');
 $('#holidayModal').addEventListener('click', e=>{ if(e.target.id==='holidayModal') e.target.classList.remove('show'); });
 /* ---------- 排班体检 ---------- */
-function computeChecks(){
+/* 全量体检（唯一检查实现，v1.48 起不再维护第二套轻量版）
+   markViol=false 时不更新红框标记（供提示条 / 导出拦阻等只取数量的场景调用，避免污染体检状态） */
+function computeChecks(markViol){
   const key = CUR.key, dim = CUR.dim, grid = CUR.grids[key];
   const people = state.people;
-  const issues = []; checkViol = {};
+  const issues = [];
+  const mark = (markViol !== false);
+  if(mark) checkViol = {};
   const nameOf = id => { const p = state.people.find(x=>x.id===id); return p?p.name:'?'; };
   // 0) 跨月边界：上月末夜班 → 本月 1 日白班（0 小时间隔连班）
   {
@@ -2928,7 +2935,7 @@ function computeChecks(){
       const night = (lastC==='n'||lastC==='N'||lastC==='y'), dayN = (firstN==='d'||firstN==='D'||firstN==='x');
       if(night && dayN && !getLeave(p.id, key, 1)){
         issues.push({lvl:'err', txt: nameOf(p.id) + '：' + pm2 + '月' + pdim + '日 夜班 → ' + CUR.m + '月1日 白班（跨月 0 小时间隔连班，建议' + CUR.m + '月1日休息）', p:p.id, d:1});
-        checkViol[key+'|'+p.id+'|1'] = true;
+        if(mark) checkViol[key+'|'+p.id+'|1'] = true;
       }
     }
   }
@@ -2940,7 +2947,7 @@ function computeChecks(){
       const night = (c==='n'||c==='N'||c==='y'), dayN = (n==='d'||n==='D'||n==='x');
       if(night && dayN && !getLeave(p.id, key, d+1)){
         issues.push({lvl:'err', txt: nameOf(p.id) + '：' + d + '日 夜班 → ' + (d+1) + '日 白班（0 小时间隔连班，建议' + (d+1) + '日休息）', p:p.id, d:d+1});
-        checkViol[key+'|'+p.id+'|'+(d+1)] = true;
+        if(mark) checkViol[key+'|'+p.id+'|'+(d+1)] = true;
       }
     }
   }
@@ -3010,36 +3017,11 @@ function cellToTxt(c){
   if(c==='D') return '白班(加班)'; if(c==='N') return '夜班(加班)';
   return '休';
 }
-/* 导出/打印前轻量体检：返回 err 级违规数（连班 / 无人上班），仅用于拦阻提示，不弹报告 */
+/* 违规计数（err 级：连班 / 无人上班）——统一走 computeChecks（唯一检查实现），
+   不再维护第二套轻量检查：此前两套实现曾出现「提示条报 1 处、体检却通过」的口径分叉。
+   markViol=false：只取数量，不更新红框标记（提示条 / 导出拦阻等场景） */
 function countViolations(){
-  const key = CUR.key, dim = CUR.dim, grid = CUR.grids[key];
-  let err = 0;
-  for(const p of state.people){
-    for(let d=1; d<dim; d++){
-      const c = (grid[p.id]||[])[d-1], n = (grid[p.id]||[])[d];
-      if(!c || !n) continue;
-      if(isNightC(c) && isDayC(n) && !getLeave(p.id, key, d+1)) err++;
-    }
-  }
-  {
-    const py2 = CUR.m===1 ? CUR.y-1 : CUR.y, pm2 = CUR.m===1 ? 12 : CUR.m-1;
-    const pk = ym(py2,pm2);
-    const pgrid = mergeManualInto(genMonth(py2,pm2), pk);
-    const pdim = daysInMonth(py2,pm2);
-    for(const p of state.people){
-      const lastC = (pgrid[p.id]||[])[pdim-1], firstN = (grid[p.id]||[])[0];
-      if(lastC && firstN && isNightC(lastC) && isDayC(firstN) && !getLeave(p.id, key, 1)) err++;
-    }
-  }
-  for(let d=1; d<=dim; d++){
-    let on=0;
-    for(const p of state.people){
-      const c = (grid[p.id]||[])[d-1];
-      if(c && c!=='.' && !getLeave(p.id, key, d)) on++;
-    }
-    if(state.people.length && on===0) err++;
-  }
-  return err;
+  return computeChecks(false).filter(i=>i.lvl==='err').length;
 }
 /* 排班表二维数据（CSV / XLSX / XLS 共用同一口径，避免不同格式对不上）
    asDate=true 时日期列写成真日期（Excel 里可排序/筛选），否则写成 M/D 文本 */
