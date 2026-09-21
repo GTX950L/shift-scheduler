@@ -74,7 +74,7 @@ const ok = (name, pass, extra) => {
       sheetVisible: getComputedStyle(document.getElementById('sheetScroll')).display !== 'none',
       flowHidden: document.getElementById('flowBar').hidden
     }));
-    ok('5. 空状态卡片 → 载入示例 → 表格回归', s1.n === 20 && s1.esHidden && s1.sheetVisible,
+    ok('5. 空状态卡片 → 载入示例 → 表格回归', s1.n === 23 && s1.esHidden && s1.sheetVisible,
       '人员=' + s1.n + ' 空状态已隐藏=' + s1.esHidden + ' 提示条已隐藏=' + s1.flowHidden);
 
     /* 6. 流程提示条：切到未排班月份 → 提示自动排班 */

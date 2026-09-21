@@ -30,7 +30,7 @@ const { chromium } = pw;
     await page.evaluate(() => { const b = document.getElementById('wSampleSmall'); if (b) b.click(); });
     await page.waitForTimeout(800);
     const pCount = await page.evaluate(() => document.querySelectorAll('.p-card').length);
-    ok('2. 示例数据 20 人', pCount === 20, '实际 ' + pCount + ' 人');
+    ok('2. 示例数据 23 人', pCount === 23, '实际 ' + pCount + ' 人');
 
     // 2b. v1.39 模板回归：周洪发 9/7 白班→夜班（9/1-5白 · 9/6休缓冲 · 9/7起夜 · 9/30夜）+ 徽标=固定夜班
     const zhou = await page.evaluate(() => {
@@ -54,10 +54,10 @@ const { chromium } = pw;
     if (zCheck.open) await page.click('#checkClose').catch(() => {});
     ok('2d. 9月示例体检零违规', zCheck.open && !/发现\s*\d+\s*个违规/.test(zCheck.txt), zCheck.txt.slice(0, 60));
 
-    // 3. 排班表行数（20 人 + 合计行 = 21）
+    // 3. 排班表行数（23 人 + 合计行 = 24）
     const rowN = await page.evaluate(() => document.querySelectorAll('#sheet tbody tr[data-pid]').length);
     const colN = await page.evaluate(() => document.querySelectorAll('#sheet thead tr:nth-child(2) th:not(.corner)').length);
-    ok('3. 排班表渲染', rowN === 20 && colN >= 30, rowN + ' 行 × ' + colN + ' 列（9月示例31天）');
+    ok('3. 排班表渲染', rowN === 23 && colN >= 30, rowN + ' 行 × ' + colN + ' 列（9月示例31天）');
 
     // 4. 统计表 + KPI + 图表
     const statsRows = await page.evaluate(() => document.querySelectorAll('#statsTable tbody tr').length);
@@ -73,7 +73,7 @@ const { chromium } = pw;
     const checkModalOpen = await page.evaluate(() => document.getElementById('checkModal').classList.contains('show'));
     if (checkModalOpen) await page.click('#checkClose');
     const sheet10 = await page.evaluate(() => document.querySelectorAll('#sheet tbody tr[data-pid]').length);
-    ok('5. 10月自动排班', sheet10 === 20, '10 月排班表 ' + sheet10 + ' 行，体检弹窗=' + checkModalOpen);
+    ok('5. 10月自动排班', sheet10 === 23, '10 月排班表 ' + sheet10 + ' 行，体检弹窗=' + checkModalOpen);
 
     // 6. 点击格子 → 手动蓝点（画笔切「休」强制写入，避免 cycle 被连班防呆拦截）
     const tdSel = '#sheet tbody tr[data-pid] td.cell';

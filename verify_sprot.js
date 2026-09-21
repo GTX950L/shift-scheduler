@@ -27,46 +27,46 @@ const { chromium } = pw;
     await page.evaluate(() => { const b = document.getElementById('wSampleSmall'); if (b) b.click(); });
     await page.waitForTimeout(900);
 
-    // 1. 切到 10 月（未锁月）→ 郑高鑫(p6 fixed-day) 设「从第7日起换班」
+    // 1. 切到 10 月（未锁月）→ 郑高鑫(p19 fixed-day) 设「从第7日起换班」
     await page.click('#nextMonth'); await page.waitForTimeout(700);
     await pw.moreAction(page, 'rotatePerson', 500);
     const modalOpen = await page.evaluate(() => document.getElementById('spRotModal').classList.contains('show'));
-    await page.selectOption('#spRotPerson', 'p6'); await page.waitForTimeout(200);
+    await page.selectOption('#spRotPerson', 'p19'); await page.waitForTimeout(200);
     await page.selectOption('#spRotDay', '7');
     await page.click('#spRotAdd'); await page.waitForTimeout(500);
     ok('1. 指定转班弹窗可用', modalOpen, '弹窗打开=' + modalOpen);
 
     // 2. 排班生效：10/1-6 白 · 10/7 起夜 · 周日休保留
-    const a1 = await cellCls('p6', '2026-10', 1);
-    const a6 = await cellCls('p6', '2026-10', 6);
-    const a7 = await cellCls('p6', '2026-10', 7);
-    const a8 = await cellCls('p6', '2026-10', 8);
-    const a11 = await cellCls('p6', '2026-10', 11); // 周日休
-    const a30 = await cellCls('p6', '2026-10', 30);
+    const a1 = await cellCls('p19', '2026-10', 1);
+    const a6 = await cellCls('p19', '2026-10', 6);
+    const a7 = await cellCls('p19', '2026-10', 7);
+    const a8 = await cellCls('p19', '2026-10', 8);
+    const a11 = await cellCls('p19', '2026-10', 11); // 周日休
+    const a30 = await cellCls('p19', '2026-10', 30);
     ok('2. 白班→第7日起夜班', a1.includes('day') && a6.includes('day') && a7.includes('night') && a8.includes('night') && a30.includes('night'),
       '10/1=' + a1.split(' ')[1] + ' 10/6=' + a6.split(' ')[1] + ' 10/7=' + a7.split(' ')[1] + ' 10/30=' + a30.split(' ')[1]);
     ok('3. 周日休保留', a11.includes('rest'), '10/11(周日)=' + a11.split(' ')[1]);
 
     // 4. 状态持久化（reload 后仍在）+ 弹窗列表显示条目
     await page.reload(); await page.waitForTimeout(900);
-    const r7 = await cellCls('p6', '2026-10', 7);
+    const r7 = await cellCls('p19', '2026-10', 7);
     ok('4. 设定持久化(reload)', r7.includes('night'), 'reload后 10/7=' + r7.split(' ')[1]);
 
     // 5. 列表显示 + 取消按钮生效 → 回落按规则(全白)
     await pw.moreAction(page, 'rotatePerson', 500);
     const listTxt = await page.evaluate(() => document.getElementById('spRotList').textContent);
-    await page.click('#spRotList button[data-clear="p6"]'); await page.waitForTimeout(500);
-    const c7 = await cellCls('p6', '2026-10', 7);
+    await page.click('#spRotList button[data-clear="p19"]'); await page.waitForTimeout(500);
+    const c7 = await cellCls('p19', '2026-10', 7);
     ok('5. 列表展示 + 取消生效', listTxt.includes('郑高鑫') && c7.includes('day'), '列表=' + listTxt.slice(0, 30) + ' 取消后10/7=' + c7.split(' ')[1]);
 
     // 6. Ctrl+Z / Ctrl+Y（设定→撤销→重做 全链）
-    await page.selectOption('#spRotPerson', 'p6'); await page.waitForTimeout(150);
+    await page.selectOption('#spRotPerson', 'p19'); await page.waitForTimeout(150);
     await page.selectOption('#spRotDay', '7'); await page.waitForTimeout(150);
     await page.click('#spRotAdd'); await page.waitForTimeout(500);
     await page.keyboard.press('Control+z'); await page.waitForTimeout(500);
-    const u7 = await cellCls('p6', '2026-10', 7);
+    const u7 = await cellCls('p19', '2026-10', 7);
     await page.keyboard.press('Control+y'); await page.waitForTimeout(500);
-    const r7b = await cellCls('p6', '2026-10', 7);
+    const r7b = await cellCls('p19', '2026-10', 7);
     ok('6. 撤销/重做', u7.includes('day') && r7b.includes('night'), '撤销后10/7=' + u7.split(' ')[1] + ' 重做后=' + r7b.split(' ')[1]);
     await page.click('#spRotClose').catch(() => {});
 

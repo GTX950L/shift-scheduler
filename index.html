@@ -518,7 +518,7 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.46</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.47</span></h1>
     <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
   </div>
   <div class="hd-right">
@@ -606,7 +606,7 @@
           <div class="dd-title">记录与标记</div>
           <button data-act="snapshot" title="删除人员 / 导入 / 示例覆盖等操作前会自动快照，可一键恢复">⏪ 操作前快照（最近 5 份）</button>
           <button data-act="holiday">🏮 节假日 / 停线日</button>
-          <button data-act="sample" title="用 20 人 9 月排班范例覆盖当前内容">🧪 载入示例数据</button>
+          <button data-act="sample" title="用 23 人 9 月排班范例覆盖当前内容">🧪 载入示例数据</button>
           <div class="dd-sep"></div>
           <button data-act="reset">🧨 清空全部数据（重新开始）</button>
         </div>
@@ -689,7 +689,7 @@
         <button class="es-card" data-es="sample">
           <span class="es-n">3</span>
           <b>先看示例数据</b>
-          <em>载入 20 人 9 月范例，边看边学（可随时清空）</em>
+          <em>载入 23 人 9 月范例，边看边学（可随时清空）</em>
         </button>
       </div>
       <button class="es-guide" id="esGuide">🚀 打开 3 步上手引导</button>
@@ -703,7 +703,7 @@
 
   <aside class="side">
     <section class="panel">
-      <h2><span class="t">👷 技术员</span><button class="sm sec" id="wSampleSmall" title="用除气/转码 9月排班范例覆盖当前内容（20人+9月排班）">🧪 示例数据</button><button class="sm" id="addPersonBtn">＋ 添加</button></h2>
+      <h2><span class="t">👷 技术员</span><button class="sm sec" id="wSampleSmall" title="用除气/转码 9月排班范例覆盖当前内容（23人+9月排班）">🧪 示例数据</button><button class="sm" id="addPersonBtn">＋ 添加</button></h2>
       <div class="people-list" id="peopleList"></div>
     </section>
     <section class="panel">
@@ -888,7 +888,7 @@
     <div class="help-sec">
       <h4>🔁 转班</h4>
       <ul>
-        <li>默认「月末周末」：轮转人员每月<b>最靠近月末的周六起</b>白夜互换（周六、周日完成转班），跨月视图可直观看到衔接；范例（9 月）已按此排定（8/31 转班完成，仅组长因人员调整于 9/7 白班转夜班）。</li>
+        <li>默认「月末周末」：轮转人员每月<b>最靠近月末的周六起</b>白夜互换（周六、周日完成转班），跨月视图可直观看到衔接；范例（9 月）已按此排定（8/29~8/30 转班完成，仅周洪发因人员调整于 9/7 白班转夜班）。</li>
         <li>也可在工具栏改为「固定日期」并设 1~31 号（如 20 = 每月 20 日起换班）。</li>
         <li><b>连班保护（全员·防呆）</b>：任何人「夜班 → 次日白班」都是 0 小时间隔连班，自动排班会<b>自动在转班点插入一天休息</b>；「白班 → 次日夜班」（16 小时间隔）允许，不处理。周末繁忙叫回的加班同样受此保护。</li>
         <li><b>手动防呆</b>：手工点击 / 拖拽 / 复制时，若会产生「夜班→次日白班」连班会被<b>拦截</b>——夜班后一天只能设「休」或「夜」；循环画笔会自动跳过违规班次。</li>
@@ -935,6 +935,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.47</b> · 示例模板更新为 9.20 版（2026-09-21）：① <b>人员 20→23 人</b>——新增王琦、程尊、龙欢三名（王琦/程尊 9/19、龙欢 9/5 才排班，入职前锁定为休）；② <b>新增「A班/B班」班组维度</b>——负责人姜雄（不参与排班）统辖 A/B 两班组，班组并入人员 note 显示（除气 A 班 9 人、转码 A 班 3 人、除气 B 班 8 人、转码 B 班 3 人）；③ <b>8 月锁定表重排</b>——8/1~8/23「班/休」标记按该人 8/24~28 班次推断白/夜，8/29~8/30 月末周末转班、8/31 起新班次与 9/1 无缝衔接；④ <b>9 月锁定表重排</b>——全月班次按 9.20 版真实排班更新（周洪发 9/7 白转夜、郑高鑫/孙子恒固定白班不变）；⑤ 示例版本升至 20，旧范例用户打开页面自动升级。</div>
       <div class="log-ver"><b>v1.46</b> · 界面简化 + 导入体验（2026-09-21）：① <b>工具栏重组为两行</b>——第一行只放主操作（⚡自动排班 做成蓝色主按钮、导入旧表 / 导出 / 体检 / 打印 / 帮助，撤销重做与「⋯ 更多」靠右），第二行是紧凑的快捷设置（画笔 / 视图 / 部门 / 周末 / 转班）；低频操作（复制到下月、清下月、清手动、转班、快照、节假日、示例、清空全部数据）全部收进「⋯ 更多」，新手不用再面对 20 个按钮。<br>② <b>流程提示条</b>——表格上方按当前状态提示「下一步做什么」（还没有人员 / 本月未排班 / 有 N 处违规），并直接给出可点的动作按钮，可一键关闭本次提示。<br>③ <b>空状态引导</b>——没有人员时用三张卡片替代空表格（导入旧表 / 手动添加 / 看示例），直接点卡片开始。<br>④ <b>3 步上手向导</b>——首开自动弹出分步向导（准备人员 → 自动排班 → 微调交付），每步都有「现在就做」按钮；帮助菜单新增「🚀 新手引导」与「⌨️ 快捷键一览」。<br>⑤ <b>操作指引改为可折叠 5 步</b>，默认只显示标题，点开才看细节，侧栏不再是一大段文字。<br>⑥ <b>导入预览确认</b>——导入前先弹识别结果（几人 / 几天 / 覆盖哪些月份 / 姓名在第几列 / 前几行映射效果），确认后才落库，不放心可「🔧 换表头行」重选。<br>⑦ <b>识别再增强</b>——支持「日期竖排 / 人员横排」的转置表（自动转置）、合并单元格的姓名与部门列自动向下填充、同一人被拆成多行时按格合并、日期新增 M/D/YYYY 与「N号」并自动去掉时间后缀、班次新增 早 / 大夜 / 放假 / ○●◯ 等写法；占位行不再被多算成一个人。<br>⑧ <b>新增空白待填表</b>——「⬇ 导出 → 空白待填表 .xlsx」导出「人员名单 + 日期表头」的空白表（首行附填写说明），发给同事填完再导入回来。<br>⑨ <b>视觉打磨</b>——排班表按部门加分隔线、鼠标悬停高亮整行姓名格；人员卡片改为信息分层 + 出勤进度条；统一细滚动条与焦点样式。</div>
       <div class="log-ver"><b>v1.45</b> · 导入导出全面支持 XLS/XLSX/CSV（2026-09-20）：① <b>修「无法识别表头」</b>——根因有二：Excel 另存后表头日期变成<b>日期序列号</b>（如 46266），且真实排班表是「日期列在第 2 行、姓名列在第 3 行」的<b>双行表头</b>，旧逻辑要求姓名与日期同行才认。现改为「取连续日期列最多的那一行当表头」，日期识别新增 序列号 / N日 / YYYY年M月D日，并按「列号连续 + 逐日递增」筛选日期列，避免把偶然出现的数字当成日期；② <b>新增 .xlsx / .xls 导入</b>——纯前端零依赖解析（自研 ZIP/DEFLATE 解压 + OOXML 解析 + OLE 复合文档 + BIFF8 记录解析），读取共享字符串、内联字符串、数字格式（日期/星期格式按 Excel 显示值还原）、多工作表（自动选最合适的一张）；③ <b>新增 .xlsx / .xls 导出</b>——排班表与月度统计均可导出 Excel，日期列写成<b>真日期</b>（可排序/筛选），与 CSV 同一口径；.xls 为真实 BIFF8（Excel 97-2003 / WPS 可开）；④ <b>识别不了也不卡住</b>——新增「🔧 手动指定表头行」弹窗，列出文件前 20 行供点选，彻底消除「无法识别表头」的死路；⑤ <b>拖拽导入</b>——CSV / Excel 文件可直接拖到页面上；⑥ 格式按<b>文件内容</b>判断（不依赖扩展名），编码支持 UTF-8 / GBK / UTF-16，并兼容部分系统导出的「HTML 伪 Excel」。</div>
       <div class="log-ver"><b>v1.44</b> · 口径修复与年度适配（2026-09-06）：① <b>每日人力图口径修复</b>——请假者不再计入白/夜在岗柱，与排班表每日合计、月度统计口径一致（此前请假格在图中仍按在岗统计，图表与表格数字对不上）；② <b>示例数据载入即到位</b>——填入示例后视图自动切到 2026 年 9 月（示例锁定月），不再停留在空白月；③ <b>固定转班日超月提醒</b>——固定转班日超出当月天数（如 31 日遇 2 月）时，「⚡ 自动排班」明确提示轮转班次顺延至下月 1 日切换；④ <b>备份导入结构校验</b>——恢复前校验人员与记录字段，不完整的人员/记录自动剔除并提示，误导入损坏或异项目 JSON 不再白屏；⑤ <b>法定假日引导</b>——「📅 一键标记 2026 法定假日」在 2026 年以外月份点按，提示该年需手动标记；⑥ <b>回归测试一键化</b>——新增 <code>npm run test:all</code>（自动起本地服务并依次运行 smoke / 转班日 / v1.42 三套端到端测试），测试脚本自动兼容 playwright 与 playwright-core。</div>
@@ -2953,8 +2954,10 @@ function computeChecks(){
     }
     if(maxRun>7) issues.push({lvl:'warn', txt: nameOf(p.id) + '：最长连续上班 ' + maxRun + ' 天（到 ' + end + ' 日，建议 ≤7 天）', p:p.id, d:null});
   }
-  // 3) 每日无人上班（有人员时）
+  // 3) 每日无人上班（有人员时；已标记节假日/停线日的日期全员休属正常，不视为违规）
+  const hol = state.holidays[key] || {};
   for(let d=1; d<=dim; d++){
+    if(hol[d]) continue; // 节假日/停线日全员休不报「无人上班」
     let on=0;
     for(const p of people){
       const c = (grid[p.id]||[])[d-1];
@@ -2962,9 +2965,9 @@ function computeChecks(){
     }
     if(people.length && on===0) issues.push({lvl:'err', txt: d + ' 日 无人上班（所有人休息/请假）', p:null, d:d});
   }
-  // 4) 节假日无人值班
-  const hol = state.holidays[key] || {};
+  // 4) 节假日无人值班（停线日=全厂停产，无需值班，不提醒）
   for(const dd in hol){
+    if(/停线/.test(hol[dd])) continue;
     let on=0;
     for(const p of people){
       const c = (grid[p.id]||[])[(+dd)-1];
@@ -4932,77 +4935,98 @@ $('#logModal').addEventListener('click', e=>{ if(e.target.id==='logModal') e.tar
 $('#personModal').addEventListener('click', e=>{ if(e.target.id==='personModal') e.target.classList.remove('show'); });
 
 /* ================= 示例数据 & 引导 ================= */
-/* 范例人员（源自《複本 62.68.77除气转码9月排班表.xlsx》）：20 人含工号，9月休息日错峰（周六休15人/周日休5人） */
+/* 范例人员（源自《62.68.77除气转码9月排班表9.20(2).xlsx》）：23 人含工号+A/B班组，9月休息日错峰 */
 function samplePeople(){
+  // 源自《62.68.77除气转码9月排班表9.20(2).xlsx》· 资材部-9月-6休1排班表（23人，A/B 两班组）
+  // 负责人：姜雄（不参与排班）；班组并入 note 显示（A班/B班）
   return [
-    {id:'p1', workId:'2413324', name:'周洪发', dept:'除气', shiftRule:'fixed-night', initialShift:'day', restRule:'sixOne', restOffset:0, note:'组长 · 9/7 起转夜班'},
-    {id:'p2', workId:'2617230', name:'吴兆哲', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p3', workId:'2627909', name:'冯少帅', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p4', workId:'2640154', name:'黄湛江', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p5', workId:'2603373', name:'段高翔', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p6', workId:'2603374', name:'郑高鑫', dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', restOffset:0, note:'不转班'},
-    {id:'p7', workId:'2626890', name:'金凡', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p8', workId:'2525667', name:'李冉', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:0, note:''},
-    {id:'p9', workId:'2422671', name:'徐强', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:0, note:''},
-    {id:'p10', workId:'2514103', name:'李晓东', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p11', workId:'2525198', name:'刘进', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p12', workId:'2531099', name:'段帅帅', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p13', workId:'2629260', name:'张云鹏', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p14', workId:'2630447', name:'蒋豪', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p15', workId:'2527332', name:'宋心阳', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p16', workId:'2602581', name:'喻来', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p17', workId:'2627905', name:'陈红浩', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p18', workId:'2500589', name:'罗铭', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
-    {id:'p19', workId:'2525196', name:'孙子恒', dept:'转码', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', restOffset:0, note:''},
-    {id:'p20', workId:'2529793', name:'程稳', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:''},
+    {id:'p1', workId:'2413324', name:'周洪发', dept:'除气', shiftRule:'fixed-night', initialShift:'day', restRule:'sixOne', restOffset:0, note:'A班 · 9/7白转夜'},
+    {id:'p2', workId:'2603373', name:'段高翔', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:'A班'},
+    {id:'p3', workId:'2617230', name:'吴兆哲', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:'A班'},
+    {id:'p4', workId:'2626890', name:'金凡', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:'A班'},
+    {id:'p5', workId:'2627909', name:'冯少帅', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:'A班'},
+    {id:'p6', workId:'2640154', name:'黄湛江', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:'A班'},
+    {id:'p7', workId:'2525667', name:'李冉', dept:'除气', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:0, note:'A班'},
+    {id:'p8', workId:'2650479', name:'王琦', dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', restOffset:0, note:'A班 · 9/19入职'},
+    {id:'p9', workId:'2650481', name:'程尊', dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', restOffset:0, note:'A班 · 9/19入职'},
+    {id:'p10', workId:'2422671', name:'徐强', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:0, note:'A班'},
+    {id:'p11', workId:'2514103', name:'李晓东', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:'A班'},
+    {id:'p12', workId:'2525198', name:'刘进', dept:'转码', shiftRule:'rotate', initialShift:'night', restRule:'sixOne', restOffset:6, note:'A班'},
+    {id:'p13', workId:'2602581', name:'喻来', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:'B班'},
+    {id:'p14', workId:'2627905', name:'陈红浩', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:'B班'},
+    {id:'p15', workId:'2630447', name:'蒋豪', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:'B班'},
+    {id:'p16', workId:'2531099', name:'段帅帅', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:'B班'},
+    {id:'p17', workId:'2629260', name:'张云鹏', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:'B班'},
+    {id:'p18', workId:'2646889', name:'龙欢', dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', restOffset:6, note:'B班 · 9/5入职'},
+    {id:'p19', workId:'2603374', name:'郑高鑫', dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', restOffset:0, note:'B班 · 不转班'},
+    {id:'p20', workId:'2527332', name:'宋心阳', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:'B班'},
+    {id:'p21', workId:'2525196', name:'孙子恒', dept:'转码', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', restOffset:0, note:'B班'},
+    {id:'p22', workId:'2500589', name:'罗铭', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:'B班'},
+    {id:'p23', workId:'2529793', name:'程稳', dept:'转码', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:'B班'},
   ];
 }
 
-/* 8月排班锁定（源自 MTW10/MTW30 6休1排班计划表，v1.39 恢复）
-   与 9 月锁定表同载：8/31 转班完成后的班次与 9/1 无缝衔接，跨月体检不再报 8/31 夜→9/1 白连班 */
+/* 8月排班锁定（源自《62.68.77除气转码9月排班表9.20(2).xlsx》·资材部-9月-6休1排班表）
+   8/1~8/31 全月锁定；8/1~8/23 为「班/休」标记（已按 8/24~28 该人班次推断白/夜），8/24 起「白/夜」明确
+   转班于 8/29~8/30（月末周末）完成，8/31 起新班次，与 9/1 无缝衔接
+   ★ 新员工王琦/程尊/龙欢 8 月未排班（锁定为休） */
 function sampleManual8(){
-  const m = {"p1": "..dddddd.dddddd.dddddd.dddddd.d", "p2": "..dddddd.dddddd.ddddd.dddddd.dd", "p3": "d.dddddd.dddddd.ddddd.dddddd.dd", "p4": "..dddddd.dddddd.dddddd.dddddd.d", "p5": "..ddddd.dddddd.dddddd.dddddd.dd", "p6": ".dddddd.dddddd.dddddd.dddddd.dd", "p7": "..ddddd.dddddd.dddddd.dddddd.dd", "p8": ".dddddd.dddddd.dddddd.dddddd.dd", "p9": ".dddddd..dddddd.dddddd.dddddd.d", "p10": "..dddddd.dddddd.ddddd.dddddd.dd", "p11": "d.ddddd.dddddd.dddddd.dddddd.dd", "p12": "..nnnnnn.nnnnnn.nnnnnn.nnnnnn.n", "p13": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p14": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.nn", "p15": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p16": "n.nnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p17": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn", "p18": "n.nnnnnn.nnnnnn.nnnnnn.nnnnnn.n", "p19": "..nnnnnn.nnnnnn.nnnnn.nnnnnn..d", "p20": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.nn"};
-  // 8月锁定表按「月末周末转班」修正：8/29（2026年8月最后周六）起轮转人员班次翻转，周末完成切换
-  // p19 孙子恒另修正：v1.31 起改固定白班，8/29~8/30 双休缓冲、8/31 起白班（与 9/1 锁定白班无缝衔接，避免跨月连班）
-  const rot = {};
-  for(const p of samplePeople()){ if(p.shiftRule==='rotate') rot[p.id] = true; }
-  for(const pid in m){
-    if(!rot[pid]) continue;
-    const a = m[pid].split('');
-    for(let d=29; d<=31; d++){
-      if(a[d-1]==='d') a[d-1]='n';
-      else if(a[d-1]==='n') a[d-1]='d';
-    }
-    m[pid] = a.join('');
-  }
-  return m;
+  return {
+    "p1": "..dddddd.dddddd.dddddd.dddddd.d",
+    "p2": "..ddddd.dddddd.dddddd.dddddd.nn",
+    "p3": "..dddddd.dddddd.ddddd.dddddd.nn",
+    "p4": "..ddddd.dddddd.dddddd.dddddd.nn",
+    "p5": "d.dddddd.dddddd.ddddd.dddddd.nn",
+    "p6": "..dddddd.dddddd.dddddd.dddddd.n",
+    "p7": ".dddddd.dddddd.dddddd.dddddd..n",
+    "p8": "...............................",
+    "p9": "...............................",
+    "p10": ".dddddd..dddddd.dddddd.dddddd.n",
+    "p11": "..dddddd.dddddd.ddddd.dddddd.nn",
+    "p12": "d.ddddd.dddddd.dddddd.dddddd.nn",
+    "p13": "n.nnnnn.nnnnnn.nnnnnn.nnnnnn.dd",
+    "p14": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.dd",
+    "p15": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.dd",
+    "p16": "..nnnnnn.nnnnnn.nnnnnn.nnnnn.dd",
+    "p17": "..nnnnnn.nnnnnn.nnnnn.nnnnnn.dd",
+    "p18": "...............................",
+    "p19": ".dddddd.dddddd.dddddd.dddddd..d",
+    "p20": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn..d",
+    "p21": "..dddddd.dddddd.ddddd.dddddd..d",
+    "p22": "n.nnnnnn.nnnnnn.nnnnnn.nnnnn.dd",
+    "p23": ".nnnnnn.nnnnnn.nnnnnn.nnnnnn.dd"
+  };
 }
 
-/* 9月排班锁定（源自《複本 62.68.77除气转码9月排班表.xlsx》·资材部-9月-6休1排班表）
-   9/1~9/30 全月锁定；转班已于 8/31 完成（8/30 周日休缓冲）
-   ★ p1 周洪发例外：9/7（周一）白班转夜班，9/7~9/30 排夜班（周日休不变） */
+/* 9月排班锁定（源自《62.68.77除气转码9月排班表9.20(2).xlsx》·资材部-9月-6休1排班表）
+   9/1~9/30 全月锁定；转班已于 8/29~8/30 完成，与 8/31 无缝衔接
+   ★ p1 周洪发：9/6 休后 9/7（周一）白班转夜班，9/7~9/30 排夜班（周日休不变）
+   ★ 新员工王琦/程尊 9/19、龙欢 9/5 起才排班（入职前锁定为休） */
 function sampleManual9(){
   return {
-    "p1": "ddddd.nnnnnn.nnnnnn.nnnnnn.nnn",
-    "p2": "nnnn.nnnnnn.nnnnnn.nnnnnn.nnnn",
-    "p3": "nnnn.nnnnnn.nnnnnn.nnnnnn.nnnn",
-    "p4": "nnnn.nnnnnn.nnnnnn.nnnnnn.nnnn",
-    "p5": "nnnn.nnnnnn.nnnnnn.nnnnnn.nnnn",
-    "p6": "ddddd.dddddd.dddddd.dddddd.ddd",
-    "p7": "nnnn.nnnnnn.nnnnnn.nnnnnn.nnnn",
-    "p8": "nnnnn.nnnnnn.nnnnnn.nnnnnn.nnn",
-    "p9": "nnnnn.nnnnnn.nnnnnn.nnnnnn.nnn",
-    "p10": "nnnn.nnnnnn.nnnnnn.nnnnnn.nnnn",
-    "p11": "nnnn.nnnnnn.nnnnnn.nnnnnn.nnnn",
-    "p12": "dddd.dddddd.dddddd.dddddd.dddd",
-    "p13": "dddd.dddddd.dddddd.dddddd.dddd",
-    "p14": "dddd.dddddd.dddddd.dddddd.dddd",
-    "p15": "dddd.dddddd.dddddd.dddddd.dddd",
-    "p16": "dddd.dddddd.dddddd.dddddd.dddd",
-    "p17": "dddd.dddddd.dddddd.dddddd.dddd",
-    "p18": "dddd.dddddd.dddddd.dddddd.dddd",
-    "p19": "ddddd.dddddd.dddddd.dddddd.ddd",
-    "p20": "dddd.dddddd.dddddd.dddddd.dddd"
+    "p1": "ddddd.nnnnnn.nnnnnn.nnnn.nnnnn",
+    "p2": "nnnn.nnnnnn.nnnnnn.nnnnn.nnnnn",
+    "p3": "nnnn.nnnnnn.nnnnnn.nnnnn.nnnnn",
+    "p4": "nnnn.nnnnnn.nnnnnn.nnnnn.nnnnn",
+    "p5": "nnnn.nnnnnn.nnnnnn.nnnnn.nnnnn",
+    "p6": "nnnn.nnnnnn.nnnnnn.nnnnn.nnnnn",
+    "p7": "nnnnn.nnnnnn.nnnnnn.nnnn.nnnnn",
+    "p8": "....................dddd.ddddd",
+    "p9": "....................dddd.ddddd",
+    "p10": "nnnnn.nnnnnn.nnnnnn.nnnn.nnnnn",
+    "p11": "nnnn.nnnnnn.nnnnnn.nnnnn.nnnnn",
+    "p12": "nnnn.nnnnnn.nnnnnn.nnnnn.nnnnn",
+    "p13": "dddd.dddddd.dddddd.ddddd.ddddd",
+    "p14": "dddd.dddddd.dddddd.ddddd.ddddd",
+    "p15": "dddd.dddddd..dddddd.dddd.ddddd",
+    "p16": "dddd.dddddd.dddddd.ddddd.ddddd",
+    "p17": "dddd.dddddd.dddddd.ddddd.ddddd",
+    "p18": "......dddddd.dddddd.dddd.ddddd",
+    "p19": "ddddd.dddddd.dddddd.dddd.ddddd",
+    "p20": "dddd.dddddd.dddddd.ddddd.ddddd",
+    "p21": "ddddd.dddddd.dddddd.dddd.ddddd",
+    "p22": "dddd.dddddd.dddddd.ddddd.ddddd",
+    "p23": "dddd.dddddd.dddddd.ddddd.ddddd"
   };
 }
 
@@ -5014,14 +5038,16 @@ function loadSample(){
   // 示例锁定在 2026-08/09：视图必须落在示例月（2026-09），避免停留在空白月误以为载入失败（v1.44）
   state.curYear = 2026; state.curMonth = 9;
   state.manual['2026-08'] = sampleManual8(); // 8月锁定（与9月表衔接，跨月体检/上月视图无连班）
-  state.manual['2026-09'] = sampleManual9(); // 9月锁定《複本 62.68.77除气转码9月排班表》
+  state.manual['2026-09'] = sampleManual9(); // 9月锁定《62.68.77除气转码9月排班表9.20(2)》
   state.satLoad = 'normal'; state.sunLoad = 'busy'; // 周六正常、周日任务多
+  state.holidays = state.holidays || {};
+  state.holidays['2026-09'] = Object.assign(state.holidays['2026-09'] || {}, {'25':'停线日'}); // 9/25 全员休（停线），标记消除「无人上班」体检提示
   state.sampleVer = SAMPLE_VER; // 示例版本标记（供旧示例自动升级判定）
   state.schedMarks = state.schedMarks || {};
   Object.keys(state.manual).forEach(k => { state.schedMarks[k] = true; });   // 示例锁定的月份视为已排班
   histReset(); saveState(); renderAll();
   const wm = $('#welcomeModal'); if(wm) wm.classList.remove('show');
-  toast('🧪 已填入 20 名技术员（除气/转码 9月6休1排班，8/9 月排班已锁定，视图已切到 2026 年 9 月）');
+  toast('🧪 已填入 23 名技术员（除气/转码 A/B 两班组 9月6休1排班，8/9 月排班已锁定，视图已切到 2026 年 9 月）');
 }
 
 /* 是否与示例锁定值一致（一致的格子不显示手动蓝点，用户改过的才显示） */
@@ -5060,7 +5086,7 @@ window.addEventListener('beforeunload', e=>{
    设计原则：主操作一眼可见、低频操作收进「⋯ 更多」、随时给出「下一步该做什么」的提示。 */
 /* ---------- ⋯ 更多：低频操作集中管理 ---------- */
 function doLoadSample(){
-  if(state.people.length && !confirm('⚠️ 用 9月排班范例（20 人 · 9月锁定）覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
+  if(state.people.length && !confirm('⚠️ 用 9月排班范例（23 人 · 9月锁定）覆盖当前人员与排班？\n（当前 ' + state.people.length + ' 人将被替换）')) return;
   loadSample();
 }
 function doResetAll(){
@@ -5174,7 +5200,7 @@ const GUIDE_STEPS = [
       + '<li><b>导入旧排班表</b>（推荐）：支持 Excel <code>.xlsx</code> / <code>.xls</code> 与 <code>.csv</code>，'
       + '也可以把文件<b>直接拖到页面上</b>。表头复杂也能识别，识别结果会先给你确认。</li>'
       + '<li><b>手动添加</b>：点右上「＋ 添加」，填姓名、部门（除气 / 转码）、班次规则（固定白班 / 固定夜班 / 月轮转）、休息规则（无休 / 上六休一 / 双休）。</li>'
-      + '<li><b>先看示例</b>：载入 20 人 9 月范例，边看边学，之后可一键清空。</li></ol>',
+      + '<li><b>先看示例</b>：载入 23 人 9 月范例，边看边学，之后可一键清空。</li></ol>',
     ops:[['⬆ 导入旧排班表', ()=> { closeGuide(); clickImport(); }],
          ['＋ 添加人员', ()=> { closeGuide(); openPersonModal(null); }],
          ['🧪 载入示例数据', ()=> { closeGuide(); doLoadSample(); }]]
@@ -5235,20 +5261,21 @@ const guideBtn2 = $('#guideBtn2'); if(guideBtn2) guideBtn2.onclick = ()=> openGu
 
 /* ================= 初始化 ================= */
 /* 旧版示例数据自动升级：示例数据打 sampleVer 标记；版本旧于 SAMPLE_VER 且名单匹配旧示例 → 自动替换为新范例 */
-const SAMPLE_VER = 19;
-const SAMPLE_NAMES = ['周洪发','吴兆哲','冯少帅','黄湛江','段高翔','郑高鑫','金凡','李冉','徐强','李晓东','刘进','段帅帅','张云鹏','蒋豪','宋心阳','喻来','陈红浩','罗铭','孙子恒','程稳'];
+const SAMPLE_VER = 20;
+const SAMPLE_NAMES = ['周洪发','段高翔','吴兆哲','金凡','冯少帅','黄湛江','李冉','王琦','程尊','徐强','李晓东','刘进','喻来','陈红浩','蒋豪','段帅帅','张云鹏','龙欢','郑高鑫','宋心阳','孙子恒','罗铭','程稳'];
 const OLD8_NAMES  = ['陈建国','刘志强','王丽华','赵永刚','钱文杰','孙秀兰','周晓峰','吴国庆'];
 function isOldSample(){
   if(!state.people || !state.people.length) return false;
   const names = state.people.map(p=>p.name);
   if(names.length === 8 && OLD8_NAMES.every(n=>names.includes(n))) return true;
   if(names.length === 20 && SAMPLE_NAMES.every(n=>names.includes(n))) return true;
+  if(names.length === 23 && SAMPLE_NAMES.every(n=>names.includes(n))) return true;
   return false;
 }
 loadState(); initMonth();
 if((state.sampleVer||0) < SAMPLE_VER && isOldSample()){
   loadSample(); // 自动升级为 9月新范例（loadSample 内会设置 sampleVer 并保存）
-  setTimeout(()=>toast('✨ 检测到旧版示例，已自动升级为 20人新范例（工号+9月排班锁定）'), 600);
+  setTimeout(()=>toast('✨ 检测到旧版示例，已自动升级为 23人新范例（工号+A/B班组+9月排班锁定）'), 600);
 }
 renderAll();
 if(!state.people.length && !Object.keys(state.manual).length){
