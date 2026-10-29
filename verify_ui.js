@@ -77,6 +77,75 @@ const ok = (name, pass, extra) => {
     ok('5. 空状态卡片 → 载入示例 → 表格回归', s1.n === 22 && s1.esHidden && s1.sheetVisible,
       '人员=' + s1.n + ' 空状态已隐藏=' + s1.esHidden + ' 提示条已隐藏=' + s1.flowHidden);
 
+    /* 5b. v1.50 合计行：在岗主数字 + 白/夜副行 + 粘在表格底部 */
+    const tot = await page.evaluate(() => {
+      const row = document.querySelector('#sheet tr.tot-row');
+      if(!row) return { exists: false };
+      const td = row.querySelectorAll('td')[0];
+      const cs = getComputedStyle(td);
+      const mkey = CUR.months[0].key, d = 1;
+      let day = 0, night = 0;
+      for(const p of state.people){
+        const c = (CUR.grids[mkey][p.id] || [])[d-1] || '.';
+        if(getLeave(p.id, mkey, d)) continue;
+        if(c === 'd' || c === 'D') day++; else if(c === 'n' || c === 'N') night++;
+      }
+      return { exists: true, sticky: cs.position === 'sticky', bottom: cs.bottom,
+        total: (td.querySelector('.t-total') || {}).textContent || '',
+        sub: (td.querySelector('.t-sub') || {}).textContent || '',
+        expectTotal: String(day + night), expectSub: day + '/' + night,
+        hasBar: !!td.querySelector('.t-bar') };
+    });
+    ok('5b. 合计行粘底 + 在岗数与白/夜副行一致',
+      tot.exists && tot.sticky && tot.bottom === '0px' && tot.total === tot.expectTotal
+        && tot.sub === tot.expectSub && tot.hasBar,
+      '在岗=' + tot.total + '(应' + tot.expectTotal + ') 白/夜=' + tot.sub + '(应' + tot.expectSub
+        + ') sticky=' + tot.sticky + ' 柱条=' + tot.hasBar);
+
+    /* 5c. v1.50 提示条 hidden 时真的不占位（此前 .flow-bar{display:flex} 覆盖了 [hidden]） */
+    const fbBox = await page.evaluate(() => {
+      const bar = document.getElementById('flowBar');
+      return { hidden: bar.hidden, disp: getComputedStyle(bar).display,
+        h: Math.round(bar.getBoundingClientRect().height) };
+    });
+    ok('5c. 提示条隐藏时不占布局', fbBox.hidden && fbBox.h === 0,
+      'hidden=' + fbBox.hidden + ' 高度=' + fbBox.h + 'px display=' + fbBox.disp);
+
+    /* 5d. v1.50 人员卡片紧凑模式：一行一人，全员工一屏看全 */
+    const comp = await page.evaluate(async () => {
+      const list = document.getElementById('peopleList');
+      const hDetail = list.scrollHeight;                       // 详细模式：列表内容总高
+      document.getElementById('densityBtn').click();
+      await new Promise(r => setTimeout(r, 320));
+      const c = document.querySelector('.p-card');
+      const out = { cards: document.querySelectorAll('.p-card').length,
+        cardH: c ? Math.round(c.getBoundingClientRect().height) : 0,
+        hDetail, hCompact: list.scrollHeight, clientH: list.clientHeight,
+        hasBadge: !!document.querySelector('.p-card .pmeta .badge') };
+      document.getElementById('densityBtn').click();
+      await new Promise(r => setTimeout(r, 220));
+      return out;
+    });
+    // 断言用相对量：紧凑内容总高应不到详细的一半，且单卡 ≤40px（不依赖视口高度）
+    ok('5d. 紧凑模式大幅压缩人员列表', comp.cards === 22 && comp.cardH < 40
+      && comp.hCompact < comp.hDetail * 0.6 && comp.hasBadge,
+      '卡片高=' + comp.cardH + 'px 列表总高 ' + comp.hDetail + '→' + comp.hCompact
+        + 'px（容器 ' + comp.clientH + 'px，' + (comp.hCompact <= comp.clientH + 1 ? '一屏放得下' : '需滚动') + '）');
+
+    /* 5e. v1.50 姓名搜索：输入即高亮，清空即移除 */
+    const srch = await page.evaluate(async () => {
+      const box = document.getElementById('nameSearch');
+      box.value = '王'; box.dispatchEvent(new Event('input'));
+      await new Promise(r => setTimeout(r, 320));
+      const ids = [...document.querySelectorAll('#sheet tbody tr.search-hit')].map(r => r.dataset.pid);
+      const names = ids.map(id => (state.people.find(p => p.id === id) || {}).name);
+      box.value = ''; box.dispatchEvent(new Event('input'));
+      await new Promise(r => setTimeout(r, 200));
+      return { names, cleared: document.querySelectorAll('#sheet tbody tr.search-hit').length };
+    });
+    ok('5e. 姓名搜索高亮并定位', srch.names.length === 2 && srch.names.every(n => n && n.indexOf('王') >= 0)
+      && srch.cleared === 0, '命中=' + srch.names.join('/') + ' 清空后高亮=' + srch.cleared);
+
     /* 6. 流程提示条：切到未排班月份 → 提示自动排班 */
     const f1 = await page.evaluate(async () => {
       state.schedMarks = {}; state.monthShift = {}; state.manual = {};   // 模拟「这个月还没排班」

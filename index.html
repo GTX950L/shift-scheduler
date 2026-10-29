@@ -127,7 +127,7 @@
   .sheet-panel{flex:1 1 858px;min-width:0;max-width:calc(100% - 353px)}
   .side{flex:0 0 329px;display:flex;flex-direction:column;gap:18px}
   /* ===== 排班表 ===== */
-  .sheet-scroll{overflow:auto;max-height:92vh;border:1px solid var(--border);border-radius:10px;background:var(--sheet-bg)}
+  .sheet-scroll{overflow:auto;max-height:max(380px,calc(100vh - 300px));border:1px solid var(--border);border-radius:10px;background:var(--sheet-bg)}
   .print-title{display:none}
   /* 表上部横向滚动条：与 sheet-scroll 同步滚动（内容超宽时显示） */
   .h-scroll-bar{overflow-x:auto;overflow-y:hidden;max-height:12px;display:none;margin-bottom:4px;padding-bottom:0}
@@ -176,9 +176,17 @@
   th.col-now{outline:2px solid var(--brand);outline-offset:-2px;z-index:6;background:linear-gradient(180deg,var(--col-now1),var(--col-now2))!important}
   td.dow-sat,td.dow-sun{background:var(--c-weekend)}
   td.dow-busy{background:var(--busy-bg)}
-  tr.tot-row th{font-weight:700;color:var(--heading);background:var(--tot-bg)}
-  tr.tot-row td{font-size:10px;padding:2px 0;line-height:1.4;background:var(--tot-bg);border-top:1px solid var(--border)}
-  tr.tot-row .t-num{font-weight:800}
+  tr.tot-row th{font-weight:700;color:var(--heading);background:var(--tot-bg);font-size:10px;text-align:center;
+    position:sticky;bottom:0;z-index:8;border-top:1px solid var(--border)}
+  tr.tot-row td{font-size:10px;text-align:center;padding:1px 0;line-height:1.2;background:var(--tot-bg);
+    border-top:1px solid var(--border);position:sticky;bottom:0;z-index:8}
+  tr.tot-row .t-total{display:block;font-size:13px;font-weight:800;color:var(--heading);line-height:1.15}
+  tr.tot-row .t-sub{display:block;font-size:9px;font-style:normal;color:var(--muted);line-height:1.15}
+  tr.tot-row td.t-zero .t-total{color:#c0392b}
+  tr.tot-row td{overflow:hidden}
+  tr.tot-row .t-bar{position:absolute;left:3px;right:3px;bottom:0;background:var(--brand,#3f7fc4);opacity:.16;
+    border-radius:3px 3px 0 0;pointer-events:none}
+  tr.tot-row .t-total,tr.tot-row .t-sub{position:relative;z-index:1}
   .t-day{color:var(--c-day-t)} .t-night{color:var(--c-night-t)} .t-rest{color:var(--c-rest-t)}
   .t-ot{color:var(--c-ot-t)} .t-leave{color:#78716c}
   /* ===== 图例 ===== */
@@ -187,6 +195,7 @@
   .legend .sw{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid var(--border)}
   /* ===== 人员面板 ===== */
   .people-list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto;padding-right:2px}
+  .people-list.dense{max-height:max(420px,calc(100vh - 205px));gap:4px}   /* v1.50：紧凑模式放开高度，22 人一屏看全 */
   .p-card{border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:var(--p-card-bg)}
   .p-card .row1{display:flex;align-items:center;justify-content:space-between;gap:6px}
   .p-card .pname{font-weight:700;font-size:13px}
@@ -196,10 +205,28 @@
   .p-card .ops button{background:none;color:var(--sec-fg);padding:2px 5px;font-size:11px;border-radius:6px}
   .p-card .ops button:hover{background:var(--tag-bg);color:#1e4d8c}
   .p-card.src-hl{border-color:var(--brand);box-shadow:0 0 0 2px rgba(47,109,181,.35);cursor:pointer;background:var(--p-card-src)}
+  .cell-pick{position:absolute;z-index:400;display:flex;gap:4px;background:var(--p-card-bg,#fff);
+    border:1px solid var(--border);border-radius:10px;padding:5px;box-shadow:0 8px 24px rgba(16,32,64,.20)}
+  .cell-pick[hidden]{display:none}
+  .cell-pick button{padding:5px 10px;font-size:12.5px;border-radius:7px;border:1px solid var(--border);
+    background:transparent;color:var(--fg);cursor:pointer;white-space:nowrap}
+  .cell-pick button:hover{background:var(--tag-bg,#eef4fb);border-color:var(--brand,#3f7fc4)}
+  tr.search-hit>th{background:#ffe9a8 !important;color:#7a4a00 !important;box-shadow:inset 3px 0 0 #e8a33d}
+  .side h2 .t{white-space:nowrap}
+  #densityBtn.on{background:var(--brand,#3f7fc4);color:#fff;border-color:var(--brand,#3f7fc4)}
   .p-empty{text-align:center;padding:26px 12px;color:var(--muted);font-size:13px}
   .p-empty .big{font-size:15px;color:var(--sec-fg);font-weight:700;margin-bottom:6px}
   /* v1.46：卡片信息分层 + 出勤进度条 */
   .p-card{transition:border-color .12s,box-shadow .12s,transform .12s}
+  /* v1.50：紧凑密度——一行一人，22 人一屏看全；hover 才出操作按钮 */
+  .p-card.compact{padding:4px 8px;border-radius:8px}
+  .p-card.compact .row1{gap:6px}
+  .p-card.compact .pname{font-size:12.5px;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .p-card.compact .pmeta{margin-top:0;flex:1;justify-content:flex-end;flex-wrap:nowrap;overflow:hidden;gap:5px}
+  .p-card.compact .pmeta .badge{font-size:9px;padding:0 5px;line-height:15px;white-space:nowrap}
+  .p-card.compact .pmeta .pm{font-size:10.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .p-card.compact .ops{opacity:0;max-width:0;overflow:hidden;transition:opacity .12s,max-width .12s}
+  .p-card.compact:hover .ops{opacity:1;max-width:72px}
   .p-card:hover{border-color:#bcd3ee;box-shadow:0 3px 12px rgba(16,32,64,.09)}
   .p-card .pmeta .pm{font-size:11px;color:var(--muted)}
   .p-att{display:flex;align-items:center;gap:7px;margin-top:6px}
@@ -450,6 +477,7 @@
     background:linear-gradient(90deg,#eaf3ff,#f6faff);border:1px solid #c5dcf7;border-radius:12px;
     padding:11px 16px;box-shadow:var(--shadow-sm)}
   html[data-theme=dark] .flow-bar{background:linear-gradient(90deg,#22334c,#1d2b40);border-color:#33507a}
+  .flow-bar[hidden]{display:none}   /* v1.50：.flow-bar 的 display:flex 会覆盖 [hidden] 的 display:none，需显式还原 */
   .flow-bar .fb-ico{font-size:18px;line-height:1}
   .flow-bar .fb-txt{font-size:13px;color:var(--fg);line-height:1.6;flex:1;min-width:0}
   .flow-bar .fb-txt b{color:var(--brand-dark)}
@@ -518,7 +546,7 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.49</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.50</span></h1>
     <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
   </div>
   <div class="hd-right">
@@ -529,6 +557,7 @@
       <button class="sec sm" id="nextMonth" title="下一月">▶</button>
       <button class="sec sm" id="todayBtn" title="回到本月">今天</button>
     </div>
+    <button class="sec sm" id="resetRowBtn" style="display:none" title="恢复默认部门排序（除气在上、转码在下）">🔄 部门排序</button>
     <div class="drop" id="toolsDrop">
       <button class="sec sm" id="toolsBtn" title="相关工具：设备问题共性分析 / Cpk 过程能力分析 / WPS 图片修复 / GitHub 主页">🔗 工具 ▾</button>
       <div class="drop-menu" id="toolsMenu" style="min-width:248px">
@@ -655,10 +684,19 @@
         <option value="fixed">固定日期</option>
       </select>
       <input type="number" id="rotateDay" min="1" max="31" step="1" title="固定转班日（1~31），选「固定日期」时生效" style="width:50px;text-align:center">
+      <span class="sep"></span>
+      <input id="nameSearch" type="search" placeholder="🔍 找人" title="输入姓名快速定位（自动滚动到该人并高亮；Esc 清除）" style="width:94px">
     </div>
   </div>
 </nav>
 <input type="file" id="fileInput" accept=".csv,.txt,.xlsx,.xls,.json" style="display:none">
+<!-- v1.50：双击格子的「一步到位」班次选择器 -->
+<div class="cell-pick" id="cellPick" hidden>
+  <button data-v="d" title="设为白班（受连班 / 六休一防呆约束）">☀️ 白</button>
+  <button data-v="n" title="设为夜班（受连班 / 六休一防呆约束）">🌙 夜</button>
+  <button data-v="." title="设为休息">🟢 休</button>
+  <button data-v="ot" title="标记加班（Shift+点击格子同效）">🔺 加</button>
+</div>
 
 <main class="wrap">
   <!-- 流程提示条：按当前状态提示「下一步做什么」，无事可做时自动隐藏 -->
@@ -669,8 +707,7 @@
     <button class="fb-x" id="fbClose" title="本次不再提示">✕</button>
   </div>
   <section class="panel sheet-panel">
-    <h2><span class="t">📋 排班表 <span id="sheetTitle" style="font-size:12px;color:var(--muted);font-weight:600"></span></span>
-      <span style="display:inline-flex;gap:6px;align-items:center"><button id="resetRowBtn" class="sm" style="display:none" title="恢复默认部门排序（除气在上、转码在下）">🔄 部门排序</button></span></h2>
+    <h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">📋 排班表</h2>
     <div class="h-scroll-bar" id="hScrollBar"><div class="h-scroll-inner"></div></div>
     <div class="empty-state" id="emptyState" hidden>
       <div class="es-ico">🗓️</div>
@@ -703,7 +740,7 @@
 
   <aside class="side">
     <section class="panel">
-      <h2><span class="t">👷 技术员</span><button class="sm sec" id="wSampleSmall" title="用除气/转码 11月排班范例覆盖当前内容（22人+8~11月排班）">🧪 示例数据</button><button class="sm" id="addPersonBtn">＋ 添加</button></h2>
+      <h2><span class="t">👷 技术员</span><button class="sm sec" id="densityBtn" title="切换人员卡片密度">📐</button><button class="sm sec" id="wSampleSmall" title="用除气/转码 11月排班范例覆盖当前内容（22人+8~11月排班）">🧪 示例数据</button><button class="sm" id="addPersonBtn">＋ 添加</button></h2>
       <div class="people-list" id="peopleList"></div>
     </section>
     <section class="panel">
@@ -935,6 +972,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.50</b> · 交互升级：合计行抬头可见 + 首屏还给表格（2026-10-29）：① <b>修复提示条撤不掉的样式 bug</b>——<code>.flow-bar</code> 的 <code>display:flex</code> 覆盖了 <code>[hidden]</code> 的 <code>display:none</code>，JS 里置 hidden 无效，导致 22 人已排班、体检通过时页面顶部仍常驻「还没有技术员」，白占 69px（VBS 测试只查了属性、没查 computedStyle，所以一直没暴露）；② <b>合计行重做</b>——原来是 33px 宽格子里塞「白10 夜10 休2」三行 10px 字，现在主数字=在岗人数（13px 加粗）、副行=白/夜，格内嵌一条按当月峰值归一的高度条（等于把每日人力柱状图压进合计行），整行 sticky 粘在表格底部，滚到哪都看得见；③ <b>表格改为定高内部滚动</b>（<code>max(380px, 100vh-300px)</code>），页面不再被 22 行撑长；④ <b>删掉表格卡片标题栏</b>（与 header 月份重复），「部门排序」迁到 header、操作提示挪进表头 tooltip，表格起始位置上移 124px；⑤ <b>人员卡片加「紧凑」切换</b>（标题栏 📐 按钮）——一行一人（姓名 + 班次规则 + 出勤），22 人列表 2074px → 784px，一屏看全；⑥ <b>双击格子弹「白/夜/休/加」选择器</b>一步到位，<b>Shift + 点行首/列首</b>按当前画笔批量填充整行/整列（连班与六休一防呆拦截的自动跳过）；⑦ <b>工具栏新增姓名搜索</b>，输入即高亮并滚动定位，表格重建后自动重放。</div>
       <div class="log-ver"><b>v1.49</b> · 示例数据更新为 11 月版（2026-10-29）：① <b>依据《X8222&amp;9610&amp;7077中段11月排班表.xlsx》重建内置示例</b>（资材部-11月-6休1排班表），人员 <b>23→22 人</b>——程尊/陈红浩/蒋豪/龙欢 已不在名单，新增 周文龙/吴超群/王万宇，王琦 由 A 班调入 B 班；② <b>锁定月份由 8~9 月扩到 8~11 月</b>（四个月全量锁定），载入示例后视图直接落在 2026 年 11 月；③ <b>郑高鑫/孙子恒 班次规则由「固定白班」改为「月轮转」</b>——10 月起随 A/B 组整体对倒，与真实排班一致；④ <b>新增 10 月国庆节假日标记</b>（10/1~10/3 全员休），消除体检「无人上班」误报；⑤ 示例版本升至 21，旧范例用户打开页面自动升级。</div>
       <div class="log-ver"><b>v1.48</b> · 检查口径统一 + 两处修复（2026-09-22）：① <b>体检检查统一为一套实现</b>——此前「提示条 / 导出拦阻」用轻量版 countViolations（连班 + 无人上班）、「🔍 体检」用完整版，两套逻辑各写一遍；v1.47 为停线日豁免修改了完整版，轻量版未同步，导致「提示条报 1 处、点开体检却通过」的口径分叉。现 countViolations 改为 computeChecks 的薄包装（<code>computeChecks(false)</code> 只取数量、不更新红框标记），删除整套重复检查代码，今后检查规则只需维护一处。<br>② <b>「复制到下月」请假按天数截断</b>——班次复制会按下月天数截断（31 日→30 天月），请假记录此前按原样搬移，残留 31 日越界脏数据（不显示但不清除）；现与班次同口径过滤，超出下月天数的请假日不再搬移。<br>③ 修正 genMonth 内留守字符（x/y）的过时注释（该功能 v1.33 已移除，代码仅作旧数据兼容）。<br>④ 回归补齐：新增 smoke 断言「示例载入后提示条与体检口径一致」，防止两套口径问题复发。</div>
       <div class="log-ver"><b>v1.47</b> · 示例模板更新为 9.20 版（2026-09-21）：① <b>人员 20→23 人</b>——新增王琦、程尊、龙欢三名（王琦/程尊 9/19、龙欢 9/5 才排班，入职前锁定为休）；② <b>新增「A班/B班」班组维度</b>——负责人姜雄（不参与排班）统辖 A/B 两班组，班组并入人员 note 显示（除气 A 班 9 人、转码 A 班 3 人、除气 B 班 8 人、转码 B 班 3 人）；③ <b>8 月锁定表重排</b>——8/1~8/23「班/休」标记按该人 8/24~28 班次推断白/夜，8/29~8/30 月末周末转班、8/31 起新班次与 9/1 无缝衔接；④ <b>9 月锁定表重排</b>——全月班次按 9.20 版真实排班更新（周洪发 9/7 白转夜、郑高鑫/孙子恒固定白班不变）；⑤ 示例版本升至 20，旧范例用户打开页面自动升级。</div>
@@ -1390,7 +1428,7 @@ function renderAll(){
   }
   CUR.grid = CUR.grids[CUR.key]; // 中心月（统计/图表/导出用）
   $('#monthLabel').textContent = CUR.y + '年' + CUR.m + '月';
-  $('#sheetTitle').textContent = CUR.y + '-' + String(CUR.m).padStart(2,'0') + ' · 双击列头复制前一天 · 统计/导出为当前月';
+  const _st = $('#sheetTitle'); if(_st) _st.textContent = CUR.y + '-' + String(CUR.m).padStart(2,'0');
   $('#satLoad').value = state.satLoad; $('#sunLoad').value = state.sunLoad;
   $('#viewMode').value = state.viewMode || 'cn';
   $('#deptFilter').value = state.deptFilter || 'all';
@@ -1442,6 +1480,19 @@ function rowOrderPeople(ignoreFilter){
   if(df !== 'all' && !ignoreFilter) list = list.filter(p=>p.dept===df);
   return list;
 }
+/* v1.50：姓名搜索——高亮匹配行并把首个结果滚到视野中间（重建表格后自动重放） */
+function applySearchHighlight(scroll){
+  const el = $('#nameSearch'); if(!el) return;
+  const q = (el.value || '').trim();
+  let first = null;
+  $$('#sheet tbody tr[data-pid]').forEach(tr=>{
+    const p = state.people.find(x=>x.id === tr.dataset.pid);
+    const hit = !!q && !!p && p.name.indexOf(q) >= 0;
+    tr.classList.toggle('search-hit', hit);
+    if(hit && !first) first = tr;
+  });
+  if(first && scroll) first.scrollIntoView({ block: 'center' });
+}
 function renderSheet(){
   const tb = $('#sheet'); const tt = today();
   const pt = $('#printTitle'); if(pt) pt.textContent = CUR.y + '年' + CUR.m + '月排班表';
@@ -1455,7 +1506,7 @@ function renderSheet(){
     }
   }
   // 表头第一行：周分组（按日历周「周一~周日」，点击复制到后续完整周）；第二行：日期列
-  let h = '<thead><tr><th class="corner" rowspan="2">技术员 / 日期</th>';
+  let h = '<thead><tr><th class="corner" rowspan="2" title="双击日期列头可复制前一天的排班；统计与导出均以当前中心月为准">技术员 / 日期</th>';
   const wkGroups = buildWeekGroups();
   for(let i=0;i<wkGroups.length;i++){
     const w = wkGroups[i];
@@ -1490,27 +1541,33 @@ function renderSheet(){
     }
     h += '</tr>';
   }
-  // 每日合计行（跟随部门筛选显示）
-  h += '<tr class="tot-row"><th>合计</th>';
-  for(const c of cols){
-    const grid = CUR.grids[c.key]; if(!grid) continue;
+  // 每日在岗合计行（v1.50）：主数字=在岗人数（白+夜，含加班），副行=白/夜；
+  // 格内嵌高度条按当月峰值归一，等于把「每日人力柱状图」压进合计格，不再单独占一段高度
+  const totArr = cols.map(c=>{
+    const grid = CUR.grids[c.key];
     let day=0,night=0,rest=0,ot=0,leaveN=0;
-    for(const p of rowOrderPeople()){
+    if(grid) for(const p of rowOrderPeople()){
       const cc = (grid[p.id]||[])[c.d-1] || '.';
       if(getLeave(p.id, c.key, c.d)){ leaveN++; continue; }
       if(cc==='d') day++; else if(cc==='n') night++; else if(cc==='.') rest++;
-      else if(cc==='D'||cc==='N') ot++;
+      else if(cc==='D'){ ot++; day++; } else if(cc==='N'){ ot++; night++; }
     }
-    const parts = [];
-    if(day) parts.push('<span class="t-day">白' + day + '</span>');
-    if(night) parts.push('<span class="t-night">夜' + night + '</span>');
-    if(ot) parts.push('<span class="t-ot">加' + ot + '</span>');
-    if(leaveN) parts.push('<span class="t-leave">假' + leaveN + '</span>');
-    if(rest) parts.push('<span class="t-rest">休' + rest + '</span>');
-    h += '<td class="t-num">' + parts.join(' ') + '</td>';
+    const on = day + night;
+    const tip = '在岗 ' + on + ' 人（白 ' + day + ' · 夜 ' + night
+      + (ot ? ' · 其中加班 ' + ot : '') + (leaveN ? ' · 请假 ' + leaveN : '') + ' · 休 ' + rest + '）';
+    return { on, day, night, tip };
+  });
+  const maxOn = Math.max(1, ...totArr.map(t=>t.on));
+  h += '<tr class="tot-row"><th>在岗</th>';
+  for(const t of totArr){
+    const pct = t.on ? Math.max(8, Math.round(t.on / maxOn * 100)) : 0;
+    h += '<td' + (t.on===0 ? ' class="t-zero"' : '') + ' title="' + t.tip + '">'
+      + '<i class="t-bar" style="height:' + pct + '%"></i>'
+      + '<b class="t-total">' + t.on + '</b><i class="t-sub">' + t.day + '/' + t.night + '</i></td>';
   }
   h += '</tr></tbody>';
   tb.innerHTML = h;
+  applySearchHighlight(false);
   syncHSBar();
   // 重建后恢复键盘焦点高亮（焦点格失效时自动清除）
   applyKbSel();
@@ -1536,8 +1593,18 @@ function syncHSBar(){
 hss.addEventListener('scroll', ()=>{ hsb.scrollLeft = hss.scrollLeft; });
 hsb.addEventListener('scroll', ()=>{ hss.scrollLeft = hsb.scrollLeft; });
 window.addEventListener('resize', ()=>{ syncHSBar(); });
+/* v1.50：人员卡片密度开关（紧凑 = 一行一人；持久化到 localStorage） */
+let compactPeople = (function(){ try{ return localStorage.getItem('shift-compact') === '1'; }catch(e){ return false; } })();
+function syncDensityBtn(){
+  const b = $('#densityBtn'); if(!b) return;
+  b.classList.toggle('on', !!compactPeople);
+  b.title = compactPeople
+    ? '当前：紧凑卡片（一行一人）· 点击切回详细卡片（含工号、出勤进度条）'
+    : '当前：详细卡片 · 点击切换紧凑卡片（一行一人，一屏看全所有人）';
+}
 function renderPeople(){
   const box = $('#peopleList');
+  if(box) box.classList.toggle('dense', compactPeople);
   if(!state.people.length){
     box.innerHTML = '<div class="p-empty"><div class="big">还没有技术员</div>点击「＋ 添加」或先填入示例数据体验</div>';
     return;
@@ -1560,18 +1627,30 @@ function renderPeople(){
         if(getLeave(p.id, CUR.key, d)) continue;
         if(c!=='.') workDays++;
       }
-      html += '<div class="p-card' + (copySrc===p.id ? ' src-hl' : '') + '" data-id="' + p.id + '"><div class="row1"><span class="pname">' + esc(p.name)
-        + (p.note ? '<span class="badge b-yellow">' + esc(p.note) + '</span>' : '') + '</span>'
-        + '<span class="ops"><button class="op-copy" data-id="' + p.id + '" title="复制当月排班到其他技术员">📋</button>'
+      const badgeCls = p.shiftRule==='rotate'?'b-rot':p.shiftRule==='fixed-night'?'b-night':'b-yellow';
+      const opsHtml = '<span class="ops"><button class="op-copy" data-id="' + p.id + '" title="复制当月排班到其他技术员">📋</button>'
         + '<button class="op-edit" data-id="' + p.id + '" title="编辑">✏️</button>'
-        + '<button class="op-del" data-id="' + p.id + '" title="删除">🗑</button></span></div>'
-        + '<div class="pmeta">'
-        + (p.workId ? '<span class="pm">工号 ' + esc(p.workId) + '</span>' : '')
-        + '<span class="badge ' + (p.shiftRule==='rotate'?'b-rot':p.shiftRule==='fixed-night'?'b-night':'b-yellow') + '">' + shTxt + '</span>'
-        + '<span class="pm">本月 ' + shNow + '</span><span class="pm">' + restTxt + '</span></div>'
-        + '<div class="p-att" title="本月出勤 ' + workDays + ' 天（不含请假），当月共 ' + CUR.dim + ' 天">'
-        + '<div class="p-att-bar"><i style="width:' + Math.min(100, Math.round(workDays / CUR.dim * 100)) + '%"></i></div>'
-        + '<span class="p-att-t">出勤 ' + workDays + '/' + CUR.dim + '</span></div></div>';
+        + '<button class="op-del" data-id="' + p.id + '" title="删除">🗑</button></span>';
+      // v1.50：紧凑模式——一行一人（姓名 / 班次规则 / 出勤），22 人一屏看全；hover 出操作按钮
+      if(compactPeople){
+        html += '<div class="p-card compact' + (copySrc===p.id ? ' src-hl' : '') + '" data-id="' + p.id
+          + '" title="' + esc(p.name) + (p.workId ? ' · 工号 ' + esc(p.workId) : '') + (p.note ? ' · ' + esc(p.note) : '')
+          + ' · ' + shTxt + ' · ' + restTxt + ' · 出勤 ' + workDays + '/' + CUR.dim + '">'
+          + '<div class="row1"><span class="pname">' + esc(p.name) + '</span>'
+          + '<span class="pmeta"><span class="badge ' + badgeCls + '">' + shTxt + '</span>'
+          + '<span class="pm">' + workDays + '/' + CUR.dim + '</span></span>' + opsHtml + '</div></div>';
+      } else {
+        html += '<div class="p-card' + (copySrc===p.id ? ' src-hl' : '') + '" data-id="' + p.id + '"><div class="row1"><span class="pname">' + esc(p.name)
+          + (p.note ? '<span class="badge b-yellow">' + esc(p.note) + '</span>' : '') + '</span>'
+          + opsHtml + '</div>'
+          + '<div class="pmeta">'
+          + (p.workId ? '<span class="pm">工号 ' + esc(p.workId) + '</span>' : '')
+          + '<span class="badge ' + badgeCls + '">' + shTxt + '</span>'
+          + '<span class="pm">本月 ' + shNow + '</span><span class="pm">' + restTxt + '</span></div>'
+          + '<div class="p-att" title="本月出勤 ' + workDays + ' 天（不含请假），当月共 ' + CUR.dim + ' 天">'
+          + '<div class="p-att-bar"><i style="width:' + Math.min(100, Math.round(workDays / CUR.dim * 100)) + '%"></i></div>'
+          + '<span class="p-att-t">出勤 ' + workDays + '/' + CUR.dim + '</span></div></div>';
+      }
     }
   }
   box.innerHTML = html;
@@ -2032,11 +2111,89 @@ function brushValue(){
   return null; // cycle
 }
 let painted = false;
+
+/* ============ v1.50 单元格交互增强 ============
+   ① 双击格子 → 弹「白/夜/休/加」一步到位选择器（不再需要循环点击 休→白→夜）
+   ② Shift + 点行首姓名 → 整行按当前画笔批量填充；Shift + 点列首日期 → 整列批量
+   ③ 双击表头日期复制前一天（原有功能，保持不变）
+*/
+let _lastCellDown = {pid:'', mkey:'', d:0, t:0};
+const _cellPick = $('#cellPick');
+let _pickTarget = null;
+function openCellPick(td, pid, mkey, d){
+  _pickTarget = {pid, mkey, d};
+  _cellPick.hidden = false;
+  const r = td.getBoundingClientRect(), w = _cellPick.offsetWidth || 210;
+  let x = r.left + window.scrollX + r.width / 2 - w / 2;
+  let y = r.bottom + window.scrollY + 6;
+  x = Math.max(8, Math.min(x, window.innerWidth - w - 8));
+  if(y + 44 > window.innerHeight + window.scrollY) y = r.top + window.scrollY - 46;
+  _cellPick.style.left = x + 'px'; _cellPick.style.top = y + 'px';
+}
+function closeCellPick(){ _cellPick.hidden = true; _pickTarget = null; }
+_cellPick.addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b || !_pickTarget) return;
+  const t = _pickTarget; closeCellPick();
+  histBegin(); paintCell(t.pid, t.mkey, t.d, b.dataset.v); histCommit('设置班次');
+  renderSheet(); renderStats(); renderChart();
+});
+document.addEventListener('mousedown', e=>{
+  if(!_cellPick.hidden && !_cellPick.contains(e.target) && !e.target.closest('td.cell')) closeCellPick();
+});
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && !_cellPick.hidden) closeCellPick(); });
+/* 批量填充（Shift + 行首 / 列首）、双击弹选择器 */
+function bulkFillRow(pid, ch){
+  histBegin(); let n = 0;
+  for(const mo of CUR.months){
+    for(let dd = 1; dd <= mo.dim; dd++){
+      const before = currentCellChar(pid, mo.key, dd);
+      paintCell(pid, mo.key, dd, ch);
+      if(currentCellChar(pid, mo.key, dd) !== before) n++;
+    }
+  }
+  histCommit('整行批量填充'); renderSheet(); renderStats(); renderChart();
+  return n;
+}
+function bulkFillCol(mkey, d, ch){
+  histBegin(); let n = 0;
+  for(const p of rowOrderPeople()){
+    const before = currentCellChar(p.id, mkey, d);
+    paintCell(p.id, mkey, d, ch);
+    if(currentCellChar(p.id, mkey, d) !== before) n++;
+  }
+  histCommit('整列批量填充'); renderSheet(); renderStats(); renderChart();
+  return n;
+}
+const BRUSH_LABEL = {d:'白班', n:'夜班', rest:'休', '.':'休', ot:'加班'};
 $('#sheet').addEventListener('mousedown', e=>{
+  // Shift + 行首/列首：整行 / 整列批量填充
+  if(e.shiftKey){
+    const thRow = e.target.closest('tbody tr[data-pid] > th');
+    const thCol = e.target.closest('thead th[data-d]');
+    if(thRow || thCol){
+      e.preventDefault();
+      const bv = brushValue();
+      if(!bv){ toast('💡 先把画笔选成具体班次（白 / 夜 / 休），再 Shift+点行首或列首批量填充'); return; }
+      const n = thRow ? bulkFillRow(thRow.parentElement.dataset.pid, bv)
+                      : bulkFillCol(thCol.dataset.m, +thCol.dataset.d, bv);
+      toast('✏️ 已批量设为「' + (BRUSH_LABEL[bv] || bv) + '」：' + n + ' 格（连班 / 六休一防呆拦截的已跳过）');
+      return;
+    }
+  }
   const td = e.target.closest('td.cell'); if(!td || e.button===2) return;
+  const pid = td.dataset.p, mkey = td.dataset.m, d = +td.dataset.d;
+  // 300ms 内二次按下同一格 = 双击 → 弹一步到位选择器
+  const now = Date.now();
+  if(now - _lastCellDown.t < 320 && _lastCellDown.pid===pid
+     && _lastCellDown.mkey===mkey && _lastCellDown.d===d){
+    e.preventDefault();
+    _lastCellDown = {pid:'', mkey:'', d:0, t:0};
+    openCellPick(td, pid, mkey, d);
+    return;
+  }
+  _lastCellDown = {pid, mkey, d, t: now};
   e.preventDefault();
   histBegin();
-  const pid = td.dataset.p, mkey = td.dataset.m, d = +td.dataset.d;
   if(e.shiftKey){ paintCell(pid, mkey, d, 'ot'); }
   else { const bv = brushValue(); paintCell(pid, mkey, d, bv); painting = bv; }
   updateCellDOM(td); painted = true;
@@ -2352,6 +2509,21 @@ function delPerson(id){
   histReset(); saveState(); renderAll(); toast('已删除 ' + p.name);
 }
 $('#addPersonBtn').onclick = ()=> openPersonModal(null);
+/* v1.50：人员卡片密度切换（紧凑 / 详细），状态存 localStorage */
+$('#densityBtn').onclick = ()=>{
+  compactPeople = !compactPeople;
+  try{ localStorage.setItem('shift-compact', compactPeople ? '1' : '0'); }catch(e){}
+  syncDensityBtn(); renderPeople();
+};
+syncDensityBtn();
+/* v1.50：工具栏姓名搜索 */
+(function(){
+  const box = $('#nameSearch'); if(!box) return;
+  box.addEventListener('input', ()=> applySearchHighlight(true));
+  box.addEventListener('keydown', e=>{
+    if(e.key === 'Escape'){ box.value = ''; applySearchHighlight(false); box.blur(); }
+  });
+})();
 
 /* ================= 交互：工具栏 ================= */
 $('#prevMonth').onclick = ()=>{ shiftMonth(-1); };
