@@ -97,7 +97,7 @@ const IMPORT_MS = 900;
     await pw.confirmImport(page);
     await page.waitForTimeout(200);
     const a1 = await readState();
-    ok('A1. 本工具 CSV 导出 → 导入', a1.people.length === sampleN && a1.months.includes('2026-09'),
+    ok('A1. 本工具 CSV 导出 → 导入', a1.people.length === sampleN && a1.months.includes('2026-11'),
       '人员 ' + sampleN + '→' + a1.people.length + '，月份 ' + a1.months.join(','));
 
     /* ---------- A2. 真实业务表形态（双行表头 + 工号列 + 序列日期） ---------- */
@@ -186,11 +186,11 @@ const IMPORT_MS = 900;
       await loadSample();
       const rt = await page.evaluate(async (f) => {
         const bytes = (f === 'xls')
-          ? xlsBuild([{ name: '排班表 2026-09', rows: scheduleMatrix(true) }])
-          : xlsxBuild([{ name: '排班表 2026-09', rows: scheduleMatrix(true) }]);
+          ? xlsBuild([{ name: '排班表 2026-11', rows: scheduleMatrix(true) }])
+          : xlsxBuild([{ name: '排班表 2026-11', rows: scheduleMatrix(true) }]);
         /* 记录导出前的人工排班（按姓名）；导出写的是「实际排班文本」，回读应逐格等价 */
         const orig = {}, names = [];
-        for (const p of state.people) { names.push(p.name); orig[p.name] = (state.manual['2026-09'] || {})[p.id] || ''; }
+        for (const p of state.people) { names.push(p.name); orig[p.name] = (state.manual['2026-11'] || {})[p.id] || ''; }
         const len = bytes.length;
         state.people = []; state.manual = {}; state.monthShift = {}; state.leave = {}; state.rowOrder = [];
         saveState(); renderAll();
@@ -198,8 +198,8 @@ const IMPORT_MS = 900;
         await new Promise(r => setTimeout(r, 800));
         { const m = document.getElementById('importPreviewModal'); if (m && m.classList.contains('show')) document.getElementById('ipOk').click(); }
         await new Promise(r => setTimeout(r, 1000));
-        const back = state.manual['2026-09'] || {};
-        const lv = state.leave['2026-09'] || {};
+        const back = state.manual['2026-11'] || {};
+        const lv = state.leave['2026-11'] || {};
         let withCells = 0, mismatch = 0; const bad = [];
         for (const p of state.people) {
           const got = back[p.id] || '';
@@ -241,7 +241,7 @@ const IMPORT_MS = 900;
       await new Promise(r => setTimeout(r, 900));
       { const m = document.getElementById('importPreviewModal'); if (m && m.classList.contains('show')) document.getElementById('ipOk').click(); }
       await new Promise(r => setTimeout(r, 900));
-      const back = state.manual['2026-09'] || {};
+      const back = state.manual['2026-11'] || {};
       let okN = 0;
       for (const p of state.people) { const s = back[p.id] || ''; if (s && /[^_]/.test(s)) okN++; }
       return { bytes: bytes.length, want: names.length, got: state.people.length, okN };
@@ -265,11 +265,11 @@ const IMPORT_MS = 900;
       return d;
     };
     for (const [act, re, label] of [
-      ['csv', /^排班表_2026-09\.csv$/, 'C1. 导出 排班表 CSV'],
-      ['xlsx', /^排班表_2026-09\.xlsx$/, 'C2. 导出 排班表 .xlsx'],
-      ['xls', /^排班表_2026-09\.xls$/, 'C3. 导出 排班表 .xls'],
-      ['stats-xlsx', /^月度统计_2026-09\.xlsx$/, 'C4. 导出 月度统计 .xlsx'],
-      ['stats-xls', /^月度统计_2026-09\.xls$/, 'C5. 导出 月度统计 .xls']
+      ['csv', /^排班表_2026-11\.csv$/, 'C1. 导出 排班表 CSV'],
+      ['xlsx', /^排班表_2026-11\.xlsx$/, 'C2. 导出 排班表 .xlsx'],
+      ['xls', /^排班表_2026-11\.xls$/, 'C3. 导出 排班表 .xls'],
+      ['stats-xlsx', /^月度统计_2026-11\.xlsx$/, 'C4. 导出 月度统计 .xlsx'],
+      ['stats-xls', /^月度统计_2026-11\.xls$/, 'C5. 导出 月度统计 .xls']
     ]) {
       const d = await dl(act);
       const fn = d ? d.suggestedFilename() : '';

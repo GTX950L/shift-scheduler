@@ -30,19 +30,26 @@ const { chromium } = pw;
     await page.evaluate(() => { const b = document.getElementById('wSampleSmall'); if (b) b.click(); });
     await page.waitForTimeout(800);
     const pCount = await page.evaluate(() => document.querySelectorAll('.p-card').length);
-    ok('2. 示例数据 23 人', pCount === 23, '实际 ' + pCount + ' 人');
+    ok('2. 示例数据 22 人', pCount === 22, '实际 ' + pCount + ' 人');
 
-    // 2b. v1.39 模板回归：周洪发 9/7 白班→夜班（9/1-5白 · 9/6休缓冲 · 9/7起夜 · 9/30夜）+ 徽标=固定夜班
+    // 2b. v1.39 模板回归：周洪发 9/7 白班→夜班（9/1-5白 · 9/6休缓冲 · 9/7起夜 · 9/30夜）+ 徽标=固定白班
+    //     示例主展示月已是 2026-11，先回翻到 9 月验证这段历史模板
+    await page.click('#prevMonth'); await page.waitForTimeout(350);
+    await page.click('#prevMonth'); await page.waitForTimeout(350);
     const zhou = await page.evaluate(() => {
       const tr = document.querySelector('#sheet tbody tr[data-pid="p1"]');
       const cls = d => { const td = tr.querySelector(`td.cell[data-m="2026-09"][data-d="${d}"]`); return td ? td.className : ''; };
       const card = [...document.querySelectorAll('.p-card')].find(c => c.textContent.includes('周洪发'));
-      const bn = card && card.querySelector('.badge.b-night');
+      const bn = card && card.querySelector('.pmeta .badge');
       return { d5: cls(5), d6: cls(6), d7: cls(7), d13: cls(13), d30: cls(30), badge: bn ? bn.textContent.trim() : '' };
     });
     ok('2b. 周洪发 9/7 转夜班模板', zhou.d5.includes('day') && zhou.d6.includes('rest') && zhou.d7.includes('night') && zhou.d13.includes('rest') && zhou.d30.includes('night'),
       '9/5=' + (zhou.d5.includes('day') ? '白' : zhou.d5) + ' 9/6=' + (zhou.d6.includes('rest') ? '休' : zhou.d6) + ' 9/7=' + (zhou.d7.includes('night') ? '夜' : zhou.d7) + ' 9/30=' + (zhou.d30.includes('night') ? '夜' : zhou.d30));
-    ok('2c. 周洪发徽标=固定夜班', zhou.badge === '固定夜班', '实际: ' + zhou.badge);
+    ok('2c. 周洪发徽标=固定白班', zhou.badge === '固定白班', '实际: ' + zhou.badge);
+
+    // 回到示例主展示月 2026-11（后续体检 / 渲染 / 自动排班都在 11 月起算）
+    await page.click('#nextMonth'); await page.waitForTimeout(350);
+    await page.click('#nextMonth'); await page.waitForTimeout(350);
 
     // 2d. v1.39 模板回归：9月示例体检零违规（8/31→9/1 跨月衔接已由 8 月锁表修复）
     await page.click('#checkBtn');
@@ -52,7 +59,7 @@ const { chromium } = pw;
       return { open: m.classList.contains('show'), txt: document.getElementById('checkList').textContent };
     });
     if (zCheck.open) await page.click('#checkClose').catch(() => {});
-    ok('2d. 9月示例体检零违规', zCheck.open && !/发现\s*\d+\s*个违规/.test(zCheck.txt), zCheck.txt.slice(0, 60));
+    ok('2d. 11月示例体检零违规', zCheck.open && !/发现\s*\d+\s*个违规/.test(zCheck.txt), zCheck.txt.slice(0, 60));
 
     // 2e. v1.48 口径一致性：提示条 / 导出拦阻（countViolations）与体检弹窗（computeChecks）结论必须一致
     //     此前两套实现分叉，出现「提示条报 1 处、体检却通过」；现统一走 computeChecks
@@ -63,18 +70,18 @@ const { chromium } = pw;
     }));
     ok('2e. 提示条与体检口径一致（示例零违规）', v2e.viol === 0 && v2e.flowHidden, 'countViolations=' + v2e.viol + ' 提示条隐藏=' + v2e.flowHidden);
 
-    // 3. 排班表行数（23 人 + 合计行 = 24）
+    // 3. 排班表行数（22 人）
     const rowN = await page.evaluate(() => document.querySelectorAll('#sheet tbody tr[data-pid]').length);
     const colN = await page.evaluate(() => document.querySelectorAll('#sheet thead tr:nth-child(2) th:not(.corner)').length);
-    ok('3. 排班表渲染', rowN === 23 && colN >= 30, rowN + ' 行 × ' + colN + ' 列（9月示例31天）');
+    ok('3. 排班表渲染', rowN === 22 && colN >= 30, rowN + ' 行 × ' + colN + ' 列（11月示例30天）');
 
     // 4. 统计表 + KPI + 图表
     const statsRows = await page.evaluate(() => document.querySelectorAll('#statsTable tbody tr').length);
     const kpis = await page.evaluate(() => document.querySelectorAll('#kpiRow .kpi').length);
     const hasSvg = await page.evaluate(() => !!document.querySelector('#chartBox svg'));
-    ok('4. 统计/KPI/图表', statsRows >= 22 && kpis === 5 && hasSvg, '统计行 ' + statsRows + ' · KPI ' + kpis + ' · SVG ' + hasSvg);
+    ok('4. 统计/KPI/图表', statsRows >= 21 && kpis === 5 && hasSvg, '统计行 ' + statsRows + ' · KPI ' + kpis + ' · SVG ' + hasSvg);
 
-    // 5. 切到 10 月（未排班）→ 自动排班 → 无违规
+    // 5. 切到下月 12 月（未排班）→ 自动排班 → 无违规
     await page.click('#nextMonth');
     await page.waitForTimeout(600);
     await page.click('#genBtn');
@@ -82,7 +89,7 @@ const { chromium } = pw;
     const checkModalOpen = await page.evaluate(() => document.getElementById('checkModal').classList.contains('show'));
     if (checkModalOpen) await page.click('#checkClose');
     const sheet10 = await page.evaluate(() => document.querySelectorAll('#sheet tbody tr[data-pid]').length);
-    ok('5. 10月自动排班', sheet10 === 23, '10 月排班表 ' + sheet10 + ' 行，体检弹窗=' + checkModalOpen);
+    ok('5. 12月自动排班', sheet10 === 22, '12 月排班表 ' + sheet10 + ' 行，体检弹窗=' + checkModalOpen);
 
     // 6. 点击格子 → 手动蓝点（画笔切「休」强制写入，避免 cycle 被连班防呆拦截）
     const tdSel = '#sheet tbody tr[data-pid] td.cell';
@@ -118,23 +125,24 @@ const { chromium } = pw;
     }).then(txt => txt === '假').catch(() => false);
     ok('9. 请假随「到下月」复制', leaveCopied, '11 月首格=' + (leaveCopied ? '假' : '非假'));
 
-    // 10. 清下月同步清除请假：中心月 11 月 → 先复制 11月到12月（含请假），再清下月（=12月）
+    // 10. 清下月同步清除请假：中心月（示例 11 月起算后的当前月）→ 复制到次月（含请假），再清下月
     await pw.moreAction(page, 'copyMonth', 500);
-    const leave12Before = await page.evaluate(() => {
-      const td = document.querySelector('#sheet tbody tr[data-pid] td.cell[data-m="2026-12"][data-d="1"]');
-      return td && td.querySelector('.c-txt') && td.querySelector('.c-txt').textContent === '假';
+    const mk = await page.evaluate(() => {
+      const f = (y, m) => y + '-' + String(m).padStart(2, '0');
+      const nx = state.curMonth === 12 ? [state.curYear + 1, 1] : [state.curYear, state.curMonth + 1];
+      return { cur: f(state.curYear, state.curMonth), next: f(nx[0], nx[1]) };
     });
-    await pw.moreAction(page, 'clearNext', 500); // 中心月 11 月 → 清除对象为 12 月
-    const leave12After = await page.evaluate(() => {
-      const td = document.querySelector('#sheet tbody tr[data-pid] td.cell[data-m="2026-12"][data-d="1"]');
-      return td && td.querySelector('.c-txt') && td.querySelector('.c-txt').textContent === '假';
-    });
-    const leave11Keep = await page.evaluate(() => {
-      const td = document.querySelector('#sheet tbody tr[data-pid] td.cell[data-m="2026-11"][data-d="1"]');
-      return td && td.querySelector('.c-txt') && td.querySelector('.c-txt').textContent === '假';
-    });
-    ok('10. 清下月同步清除请假', leave12Before && !leave12After && leave11Keep,
-      '12月清除前=' + leave12Before + ' 清除后=' + leave12After + ' 11月保留=' + leave11Keep);
+    const readLeave = (nm) => page.evaluate((m) => {
+      const td = document.querySelector('#sheet tbody tr[data-pid] td.cell[data-m="' + m + '"][data-d="1"]');
+      return !!(td && td.querySelector('.c-txt') && td.querySelector('.c-txt').textContent === '假');
+    }, nm);
+    const leaveNextBefore = await readLeave(mk.next);
+    await pw.moreAction(page, 'clearNext', 500);
+    const leaveNextAfter = await readLeave(mk.next);
+    const leaveCurKeep = await readLeave(mk.cur);
+    ok('10. 清下月同步清除请假', leaveNextBefore && !leaveNextAfter && leaveCurKeep,
+      mk.next + ' 清除前=' + leaveNextBefore + ' 清除后=' + leaveNextAfter + ' ' + mk.cur + ' 保留=' + leaveCurKeep);
+
 
     // 11. 视图切换（本月+下月 → 本月）
     await page.selectOption('#viewMode', 'month');
