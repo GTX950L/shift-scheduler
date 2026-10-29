@@ -120,7 +120,7 @@
   input[type=text],input[type=month],input[type=number]{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text)}
   input[type=number]{padding:6px 8px}
   input:disabled{opacity:.45;background:var(--tag-bg);cursor:not-allowed}
-  .wrap{display:flex;flex-wrap:wrap;gap:18px;padding:18px 30px;align-items:flex-start;max-width:1500px;margin:0 auto}
+  .wrap{display:flex;flex-wrap:wrap;gap:18px;padding:12px 30px 18px;align-items:flex-start;max-width:1500px;margin:0 auto}
   .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow-sm)}
   .panel h2{margin:0 0 12px;font-size:15px;font-weight:700;color:var(--heading);display:flex;align-items:center;gap:8px;justify-content:space-between}
   .panel h2 .t{display:flex;align-items:center;gap:7px}
@@ -183,8 +183,10 @@
   tr.tot-row .t-total{display:block;font-size:13px;font-weight:800;color:var(--heading);line-height:1.15}
   tr.tot-row .t-sub{display:block;font-size:9px;font-style:normal;color:var(--muted);line-height:1.15}
   tr.tot-row td.t-zero .t-total{color:#c0392b}
+  tr.tot-row .t-bar.low{background:#e08214;opacity:.40}
+  tr.tot-row td.t-low .t-total{color:#b45309}
   tr.tot-row td{overflow:hidden}
-  tr.tot-row .t-bar{position:absolute;left:3px;right:3px;bottom:0;background:var(--brand,#3f7fc4);opacity:.16;
+  tr.tot-row .t-bar{position:absolute;left:3px;right:3px;bottom:0;background:var(--brand,#3f7fc4);opacity:.26;
     border-radius:3px 3px 0 0;pointer-events:none}
   tr.tot-row .t-total,tr.tot-row .t-sub{position:relative;z-index:1}
   .t-day{color:var(--c-day-t)} .t-night{color:var(--c-night-t)} .t-rest{color:var(--c-rest-t)}
@@ -198,11 +200,12 @@
   .people-list.dense{max-height:max(420px,calc(100vh - 205px));gap:4px}   /* v1.50：紧凑模式放开高度，22 人一屏看全 */
   .p-card{border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:var(--p-card-bg)}
   .p-card .row1{display:flex;align-items:center;justify-content:space-between;gap:6px}
-  .p-card .pname{font-weight:700;font-size:13px}
+  .p-card .pname{font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;min-width:0}
+  .p-card .pname .badge{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .p-card .pmeta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap}
-  .p-card .ops{display:flex;gap:4px;opacity:.55;transition:opacity .15s}
+  .p-card .ops{display:flex;gap:4px;opacity:.72;transition:opacity .15s}
   .p-card:hover .ops{opacity:1}
-  .p-card .ops button{background:none;color:var(--sec-fg);padding:2px 5px;font-size:11px;border-radius:6px}
+  .p-card .ops button{background:none;color:var(--sec-fg);padding:2px 5px;font-size:12px;border-radius:6px}
   .p-card .ops button:hover{background:var(--tag-bg);color:#1e4d8c}
   .p-card.src-hl{border-color:var(--brand);box-shadow:0 0 0 2px rgba(47,109,181,.35);cursor:pointer;background:var(--p-card-src)}
   .cell-pick{position:absolute;z-index:400;display:flex;gap:4px;background:var(--p-card-bg,#fff);
@@ -211,6 +214,8 @@
   .cell-pick button{padding:5px 10px;font-size:12.5px;border-radius:7px;border:1px solid var(--border);
     background:transparent;color:var(--fg);cursor:pointer;white-space:nowrap}
   .cell-pick button:hover{background:var(--tag-bg,#eef4fb);border-color:var(--brand,#3f7fc4)}
+  table.sheet tbody tr>th{transition:background .1s}
+  table.sheet tbody tr:hover>th{background:var(--tag-bg,#eef4fb)}
   tr.search-hit>th{background:#ffe9a8 !important;color:#7a4a00 !important;box-shadow:inset 3px 0 0 #e8a33d}
   .side h2 .t{white-space:nowrap}
   #densityBtn.on{background:var(--brand,#3f7fc4);color:#fff;border-color:var(--brand,#3f7fc4)}
@@ -465,19 +470,24 @@
   .tb-set .sep{width:1px;height:18px;background:var(--border);margin:0 2px}
   .tb-set label{font-size:11.5px}
   .tb-set select{padding:5px 8px;font-size:12.5px}
+  #nameSearch{width:104px;padding:5px 8px;font-size:12.5px;border-radius:8px;border:1px solid var(--border);
+    background:var(--p-card-bg,#fff);color:var(--fg);font-family:inherit}
+  #nameSearch::placeholder{color:var(--muted)}
   .tb-right{margin-left:auto;gap:6px}
   /* 主操作按钮：品牌蓝渐变，视觉上第一眼就看见 */
   .toolbar button.pri{background:linear-gradient(180deg,var(--brand),var(--brand-dark));color:#fff;border-color:transparent;
     font-weight:700;padding:9px 16px;font-size:13.5px;box-shadow:0 3px 10px rgba(47,109,181,.32)}
   .toolbar button.pri:hover{filter:brightness(1.07)}
   html[data-theme=dark] .toolbar button.pri{background:linear-gradient(180deg,#3f7fc4,#2a5c96)}
-  .toolbar button.ico{padding:6px 10px;font-size:14px;line-height:1;min-width:34px;justify-content:center}
+  .toolbar button.ico{padding:6px 10px;font-size:15px;line-height:1;min-width:36px;justify-content:center;opacity:.72}
+  .toolbar button.ico:hover{opacity:1}
   /* ---- 流程提示条 ---- */
   .flow-bar{display:flex;align-items:center;gap:12px;max-width:1500px;margin:0 auto 14px;
     background:linear-gradient(90deg,#eaf3ff,#f6faff);border:1px solid #c5dcf7;border-radius:12px;
     padding:11px 16px;box-shadow:var(--shadow-sm)}
   html[data-theme=dark] .flow-bar{background:linear-gradient(90deg,#22334c,#1d2b40);border-color:#33507a}
   .flow-bar[hidden]{display:none}   /* v1.50：.flow-bar 的 display:flex 会覆盖 [hidden] 的 display:none，需显式还原 */
+  #resetRowBtn[hidden],#rotateDay[hidden]{display:none}
   .flow-bar .fb-ico{font-size:18px;line-height:1}
   .flow-bar .fb-txt{font-size:13px;color:var(--fg);line-height:1.6;flex:1;min-width:0}
   .flow-bar .fb-txt b{color:var(--brand-dark)}
@@ -546,8 +556,8 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.50</span></h1>
-    <p>两班倒（白班 08:00–20:00 · 夜班 20:00–08:00）· 除气 / 转码 · 跨月连续视图 · 月末周末转班 · 周末负荷调节</p>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.51</span></h1>
+    <p>除气 / 转码 · 白班 08:00–20:00 · 夜班 20:00–08:00 · 月末周末转班</p>
   </div>
   <div class="hd-right">
     <button class="sec sm" id="themeBtn" title="切换浅色/深色主题">🌙 深色</button>
@@ -972,6 +982,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.51</b> · 界面打磨：可读性与视觉层次（2026-10-29）：① <b>「部门排序」按钮在没有自定义排序时仍显示</b>——改用 <code>hidden</code> 属性判定（内联 <code>display</code> 会被其它规则覆盖，同 v1.50 提示条那类问题）；② <b>转班日输入框只在「固定日期」模式出现</b>，不再留一个灰色「1」常驻误导；③ <b>撤销 / 重做按钮</b>透明度 .4→.72、图标 14→15px，不再几乎看不见；④ <b>人员卡片操作图标</b>透明度 .55→.72、字号 11→12px；⑤ <b>note 徽标超长省略</b>（上限 96px），示例中周洪发备注由 27 字精简为 12 字；⑥ <b>人员卡片第二行</b>：休息规则仅在非「上六休一」时显示，避免工号 / 班次 / 本月班次 / 休息规则四项挤成一行；⑦ <b>合计行柱条</b>透明度 .16→.26，且<b>低于当月均值 10% 的日子柱条与数字转橙</b>，人力低谷一眼可见；⑧ <b>副标题精简</b>（53 → 33 字，去掉与界面控件重复的功能罗列）；⑨ <b>姓名搜索框</b>与下拉框统一高度与圆角；⑩ <b>表格行悬停高亮姓名列</b>，横向追踪不迷路；⑪ 主容器上方间距 18→12px，工具栏与表格不再松散。</div>
       <div class="log-ver"><b>v1.50</b> · 交互升级：合计行抬头可见 + 首屏还给表格（2026-10-29）：① <b>修复提示条撤不掉的样式 bug</b>——<code>.flow-bar</code> 的 <code>display:flex</code> 覆盖了 <code>[hidden]</code> 的 <code>display:none</code>，JS 里置 hidden 无效，导致 22 人已排班、体检通过时页面顶部仍常驻「还没有技术员」，白占 69px（VBS 测试只查了属性、没查 computedStyle，所以一直没暴露）；② <b>合计行重做</b>——原来是 33px 宽格子里塞「白10 夜10 休2」三行 10px 字，现在主数字=在岗人数（13px 加粗）、副行=白/夜，格内嵌一条按当月峰值归一的高度条（等于把每日人力柱状图压进合计行），整行 sticky 粘在表格底部，滚到哪都看得见；③ <b>表格改为定高内部滚动</b>（<code>max(380px, 100vh-300px)</code>），页面不再被 22 行撑长；④ <b>删掉表格卡片标题栏</b>（与 header 月份重复），「部门排序」迁到 header、操作提示挪进表头 tooltip，表格起始位置上移 124px；⑤ <b>人员卡片加「紧凑」切换</b>（标题栏 📐 按钮）——一行一人（姓名 + 班次规则 + 出勤），22 人列表 2074px → 784px，一屏看全；⑥ <b>双击格子弹「白/夜/休/加」选择器</b>一步到位，<b>Shift + 点行首/列首</b>按当前画笔批量填充整行/整列（连班与六休一防呆拦截的自动跳过）；⑦ <b>工具栏新增姓名搜索</b>，输入即高亮并滚动定位，表格重建后自动重放。</div>
       <div class="log-ver"><b>v1.49</b> · 示例数据更新为 11 月版（2026-10-29）：① <b>依据《X8222&amp;9610&amp;7077中段11月排班表.xlsx》重建内置示例</b>（资材部-11月-6休1排班表），人员 <b>23→22 人</b>——程尊/陈红浩/蒋豪/龙欢 已不在名单，新增 周文龙/吴超群/王万宇，王琦 由 A 班调入 B 班；② <b>锁定月份由 8~9 月扩到 8~11 月</b>（四个月全量锁定），载入示例后视图直接落在 2026 年 11 月；③ <b>郑高鑫/孙子恒 班次规则由「固定白班」改为「月轮转」</b>——10 月起随 A/B 组整体对倒，与真实排班一致；④ <b>新增 10 月国庆节假日标记</b>（10/1~10/3 全员休），消除体检「无人上班」误报；⑤ 示例版本升至 21，旧范例用户打开页面自动升级。</div>
       <div class="log-ver"><b>v1.48</b> · 检查口径统一 + 两处修复（2026-09-22）：① <b>体检检查统一为一套实现</b>——此前「提示条 / 导出拦阻」用轻量版 countViolations（连班 + 无人上班）、「🔍 体检」用完整版，两套逻辑各写一遍；v1.47 为停线日豁免修改了完整版，轻量版未同步，导致「提示条报 1 处、点开体检却通过」的口径分叉。现 countViolations 改为 computeChecks 的薄包装（<code>computeChecks(false)</code> 只取数量、不更新红框标记），删除整套重复检查代码，今后检查规则只需维护一处。<br>② <b>「复制到下月」请假按天数截断</b>——班次复制会按下月天数截断（31 日→30 天月），请假记录此前按原样搬移，残留 31 日越界脏数据（不显示但不清除）；现与班次同口径过滤，超出下月天数的请假日不再搬移。<br>③ 修正 genMonth 内留守字符（x/y）的过时注释（该功能 v1.33 已移除，代码仅作旧数据兼容）。<br>④ 回归补齐：新增 smoke 断言「示例载入后提示条与体检口径一致」，防止两套口径问题复发。</div>
@@ -1434,9 +1445,11 @@ function renderAll(){
   $('#deptFilter').value = state.deptFilter || 'all';
   $('#rotateMode').value = state.rotateMode || 'lastWeekend';
   $('#rotateDay').value = state.rotateDay || 1;
-  $('#rotateDay').disabled = (state.rotateMode||'lastWeekend') !== 'fixed';
+  const _fixed = (state.rotateMode||'lastWeekend') === 'fixed';
+  $('#rotateDay').disabled = !_fixed;
+  $('#rotateDay').hidden = !_fixed;        // v1.51：非固定日期模式下隐藏，避免灰色「1」常驻误导
   const rb = $('#resetRowBtn');
-  if(rb) rb.style.display = (state.rowOrder && state.rowOrder.length) ? '' : 'none';
+  if(rb) rb.hidden = !(state.rowOrder && state.rowOrder.length);
   updateHistBtns();
   renderSheet(); renderPeople(); renderStats(); renderChart(); renderKpis(); renderLegend();
   renderFlowBar(); renderEmptyState();   // v1.46：流程提示条 + 空状态引导
@@ -1558,11 +1571,14 @@ function renderSheet(){
     return { on, day, night, tip };
   });
   const maxOn = Math.max(1, ...totArr.map(t=>t.on));
+  const avgOn = totArr.reduce((a, t)=>a + t.on, 0) / Math.max(1, totArr.length);
+  const lowLine = avgOn * 0.9;   // 低于均值 10% 视为人力低谷
   h += '<tr class="tot-row"><th>在岗</th>';
   for(const t of totArr){
     const pct = t.on ? Math.max(8, Math.round(t.on / maxOn * 100)) : 0;
-    h += '<td' + (t.on===0 ? ' class="t-zero"' : '') + ' title="' + t.tip + '">'
-      + '<i class="t-bar" style="height:' + pct + '%"></i>'
+    const low = t.on > 0 && t.on < lowLine;
+    h += '<td' + (t.on===0 ? ' class="t-zero"' : (low ? ' class="t-low"' : '')) + ' title="' + t.tip + '">'
+      + '<i class="t-bar' + (low ? ' low' : '') + '" style="height:' + pct + '%"></i>'
       + '<b class="t-total">' + t.on + '</b><i class="t-sub">' + t.day + '/' + t.night + '</i></td>';
   }
   h += '</tr></tbody>';
@@ -1646,7 +1662,8 @@ function renderPeople(){
           + '<div class="pmeta">'
           + (p.workId ? '<span class="pm">工号 ' + esc(p.workId) + '</span>' : '')
           + '<span class="badge ' + badgeCls + '">' + shTxt + '</span>'
-          + '<span class="pm">本月 ' + shNow + '</span><span class="pm">' + restTxt + '</span></div>'
+          + '<span class="pm">本月 ' + shNow + '</span>'
+          + (p.restRule === 'sixOne' ? '' : '<span class="pm">' + restTxt + '</span>') + '</div>'
           + '<div class="p-att" title="本月出勤 ' + workDays + ' 天（不含请假），当月共 ' + CUR.dim + ' 天">'
           + '<div class="p-att-bar"><i style="width:' + Math.min(100, Math.round(workDays / CUR.dim * 100)) + '%"></i></div>'
           + '<span class="p-att-t">出勤 ' + workDays + '/' + CUR.dim + '</span></div></div>';
@@ -1859,7 +1876,7 @@ document.addEventListener('drop', e=>{
     order.splice(to,0,dragPid);
     state.rowOrder = order;
     saveState();
-    const rb2 = $('#resetRowBtn'); if(rb2) rb2.style.display = '';
+    const rb2 = $('#resetRowBtn'); if(rb2) rb2.hidden = false;
     renderSheet();
     toast('↕️ 已调整行顺序（可继续拖动，或点「🔄 部门排序」恢复）');
   }
@@ -2890,6 +2907,7 @@ $('#viewMode').onchange = ()=>{
 $('#rotateMode').onchange = ()=>{
   state.rotateMode = $('#rotateMode').value;
   $('#rotateDay').disabled = state.rotateMode !== 'fixed';
+  $('#rotateDay').hidden = state.rotateMode !== 'fixed';
   if(state.rotateMode === 'lastWeekend') state.rotateDay = 1;
   saveState(); renderAll();
   toast(state.rotateMode==='lastWeekend' ? '🔁 转班：每月最后一个周末（周六起）' : '🔁 转班：每月固定日期');
@@ -5096,7 +5114,7 @@ function samplePeople(){
   // 负责人：姜雄（不参与排班）；班组并入 note 显示（A班/B班）
   // 与 9.20 版相比：程尊/陈红浩/蒋豪/龙欢 已不在名单，新增 周文龙/吴超群/王万宇，王琦 由 A 班调入 B 班
   return [
-    {id:'p1', workId:'2413324', name:'周洪发', dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', restOffset:0, note:'A班 · 9/7-9/30转夜，10月起白班'},
+    {id:'p1', workId:'2413324', name:'周洪发', dept:'除气', shiftRule:'fixed-day', initialShift:'day', restRule:'sixOne', restOffset:0, note:'A班 · 9/7转夜，10月复白'},
     {id:'p2', workId:'2603373', name:'段高翔', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:6, note:'A班'},
     {id:'p3', workId:'2617230', name:'吴兆哲', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:1, note:'A班'},
     {id:'p4', workId:'2626890', name:'金凡', dept:'除气', shiftRule:'rotate', initialShift:'day', restRule:'sixOne', restOffset:2, note:'A班'},
