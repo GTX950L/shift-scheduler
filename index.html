@@ -574,7 +574,7 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.52</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.53</span></h1>
     <p>除气 / 转码 · 白班 08:00–20:00 · 夜班 20:00–08:00 · 月末周末转班</p>
   </div>
   <div class="hd-right">
@@ -619,6 +619,7 @@
           <div class="dd-title">排班表（当前中心月）</div>
           <button data-act="csv">📄 CSV（含日期与星期行）</button>
           <button data-act="xlsx">🟩 Excel .xlsx（日期为真日期）</button>
+          <button data-act="xlsx-styled" title="与手排表同版式：标题行 + 负责人/组别/岗位/工号/姓名 + 休班绿底 + 周末黄标 + 边框合并">📐 Excel .xlsx（资材部版式 · 含工号与班组）</button>
           <button data-act="xls">🟩 Excel 97-2003 .xls</button>
           <div class="dd-sep"></div>
           <div class="dd-title">月度统计（月底报工）</div>
@@ -662,6 +663,7 @@
           <div class="dd-sep"></div>
           <div class="dd-title">记录与标记</div>
           <button data-act="snapshot" title="删除人员 / 导入 / 示例覆盖等操作前会自动快照，可一键恢复">⏪ 操作前快照（最近 5 份）</button>
+          <button data-act="leader" title="导出「资材部版式」时，A 列「负责人」填的名字">👤 负责人姓名（导出用）…</button>
           <button data-act="holiday">🏮 节假日 / 停线日</button>
           <button data-act="sample" title="用 22 人 11 月排班范例覆盖当前内容">🧪 载入示例数据</button>
           <div class="dd-sep"></div>
@@ -1012,6 +1014,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.53</b> · 导出「资材部版式」xlsx（2026-10-30）：① <b>新增导出项「📐 Excel .xlsx（资材部版式 · 含工号与班组）」</b>——对齐手排原表：标题行「资材部-N月-6休1排班表」+ 负责人/组别/岗位/工号/姓名 五列 + 单字班次（白/夜/休）+ 休班绿底 #A9CE91 + 周末列头黄底 #FFE699 + 表头浅灰底 + 全表细边框 + 组别岗位连续相同自动合并 + 负责人整列合并 + 冻结前 5 列前 3 行 + 横向一页宽打印，日期为真日期（格式 <code>m"月"d"日"</code>）；② <b>人员顺序对齐原表</b>——未拖过行序时按「A班除气 → A班转码 → B班除气 → B班转码」排，拖过则尊重自定义；③ <b>「⋯ 更多」新增「👤 负责人姓名（导出用）」</b>；④ <b>xlsxBuild 扩展</b>：内部支持 styles / merges / cols / rowHeights / freeze / print，不传这些字段时行为与旧版完全一致（原有 CSV / xlsx / xls 导出与导入 round-trip 不受影响）。实测 22 人 × 30 天，内容与工号逐格与原表一致。</div>
       <div class="log-ver"><b>v1.52</b> · 筛选视图 + 横向滚动抖动修复（2026-10-30）：① <b>新增「班次」筛选</b>（只看白班 / 只看夜班）——非目标班次的格子淡化到 22% 并降饱和，一眼扫出当天谁上白班、谁上夜班，统计与导出不受影响；② <b>新增「在排班表中隐藏某人」</b>——人员卡片操作区加 👁 按钮（隐藏后变 🙈），被隐藏者的卡片变虚框、姓名加删除线，排班表与合计行同步剔除，但<b>统计 / 导出 / 体检仍按全部人员</b>；③ <b>筛选横幅</b>——班次 / 部门 / 隐藏人数任一生效时，表格上方出现橙边提示条，逐项点名「已隐藏 2 人（周洪发、金凡）」，右侧「清除全部筛选」一键复原；④ <b>修复左右拖动排班表时画面抖动</b>——根因是顶部横向滚动条的 inner 宽度停留在旧值（1835px 而表格实宽 2162px），两边可滚范围不一致，拖到超出部分会被另一侧回写截断，表现为内容来回跳；现改为宽度随表格自动跟随（ResizeObserver）、双向 scroll 同步加互斥锁与同位置短路，两头逐帧一致。</div>
       <div class="log-ver"><b>v1.51</b> · 界面打磨：可读性与视觉层次（2026-10-29）：① <b>「部门排序」按钮在没有自定义排序时仍显示</b>——改用 <code>hidden</code> 属性判定（内联 <code>display</code> 会被其它规则覆盖，同 v1.50 提示条那类问题）；② <b>转班日输入框只在「固定日期」模式出现</b>，不再留一个灰色「1」常驻误导；③ <b>撤销 / 重做按钮</b>透明度 .4→.72、图标 14→15px，不再几乎看不见；④ <b>人员卡片操作图标</b>透明度 .55→.72、字号 11→12px；⑤ <b>note 徽标超长省略</b>（上限 96px），示例中周洪发备注由 27 字精简为 12 字；⑥ <b>人员卡片第二行</b>：休息规则仅在非「上六休一」时显示，避免工号 / 班次 / 本月班次 / 休息规则四项挤成一行；⑦ <b>合计行柱条</b>透明度 .16→.26，且<b>低于当月均值 10% 的日子柱条与数字转橙</b>，人力低谷一眼可见；⑧ <b>副标题精简</b>（53 → 33 字，去掉与界面控件重复的功能罗列）；⑨ <b>姓名搜索框</b>与下拉框统一高度与圆角；⑩ <b>表格行悬停高亮姓名列</b>，横向追踪不迷路；⑪ 主容器上方间距 18→12px，工具栏与表格不再松散。</div>
       <div class="log-ver"><b>v1.50</b> · 交互升级：合计行抬头可见 + 首屏还给表格（2026-10-29）：① <b>修复提示条撤不掉的样式 bug</b>——<code>.flow-bar</code> 的 <code>display:flex</code> 覆盖了 <code>[hidden]</code> 的 <code>display:none</code>，JS 里置 hidden 无效，导致 22 人已排班、体检通过时页面顶部仍常驻「还没有技术员」，白占 69px（VBS 测试只查了属性、没查 computedStyle，所以一直没暴露）；② <b>合计行重做</b>——原来是 33px 宽格子里塞「白10 夜10 休2」三行 10px 字，现在主数字=在岗人数（13px 加粗）、副行=白/夜，格内嵌一条按当月峰值归一的高度条（等于把每日人力柱状图压进合计行），整行 sticky 粘在表格底部，滚到哪都看得见；③ <b>表格改为定高内部滚动</b>（<code>max(380px, 100vh-300px)</code>），页面不再被 22 行撑长；④ <b>删掉表格卡片标题栏</b>（与 header 月份重复），「部门排序」迁到 header、操作提示挪进表头 tooltip，表格起始位置上移 124px；⑤ <b>人员卡片加「紧凑」切换</b>（标题栏 📐 按钮）——一行一人（姓名 + 班次规则 + 出勤），22 人列表 2074px → 784px，一屏看全；⑥ <b>双击格子弹「白/夜/休/加」选择器</b>一步到位，<b>Shift + 点行首/列首</b>按当前画笔批量填充整行/整列（连班与六休一防呆拦截的自动跳过）；⑦ <b>工具栏新增姓名搜索</b>，输入即高亮并滚动定位，表格重建后自动重放。</div>
@@ -1237,6 +1240,7 @@ const defaultState = () => ({
   deptFilter: 'all',    // all=全部 | 除气 | 转码（排班表显示筛选）
   shiftFilter: 'all',   // v1.52：all=全部 | day=只看白班 | night=只看夜班（排班表淡化显示）
   hiddenPeople: [],     // v1.52：在排班表中隐藏的人员 id（只影响排班表显示，不影响统计/导出/体检）
+  leader: undefined,    // v1.53：导出「资材部版式」时 A 列的负责人姓名（undefined=还没问过）
   rotateMode: 'lastWeekend', // lastWeekend=每月最后周末转班 | fixed=固定日期
   rotateDay: 1,         // 固定转班日（rotateMode='fixed' 时用，1~31）
   curYear: null, curMonth: null
@@ -3392,6 +3396,112 @@ function downloadExcelBytes(fmt, sheets, baseName){
   a.download = baseName + '.' + fmt;
   a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
 }
+/* ===== v1.53：按「资材部版式」导出排班表 =====
+   对齐用户手排的那张 Excel：标题行 + 负责人/组别/岗位/工号/姓名 五列 + 单字班次（白/夜/休）
+   + 休班绿底 + 周末列头黄标 + 全表细边框 + 组别岗位合并 + 冻结前 5 列 + 横向一页宽打印。 */
+function buildShiftSheetXlsx(){
+  const dim = CUR.dim, grid = CUR.grid;
+  const leader = (state.leader || '').trim();
+  const lastCol = colName(4 + dim);
+  const rows = [], styles = [], merges = [];
+  const isWeekend = d => { const w = dowOf(CUR.y, CUR.m, d); return w === 0 || w === 6; };
+  const groupOf = p => (/^\s*([AB])\s*班/.exec(p.note || '') || [])[1] || '';
+  // 人员顺序：用户没拖过行序时，按「A班除气 → A班转码 → B班除气 → B班转码」排，与手排原表一致；
+  // 拖过行序则尊重用户的自定义顺序
+  let people = rowOrderPeople(true);            // 忽略部门筛选：导出始终为全部人员
+  if(!(state.rowOrder && state.rowOrder.length)){
+    people = people.slice().sort((a, b)=>{
+      const ga = groupOf(a) || 'Z', gb = groupOf(b) || 'Z';
+      if(ga !== gb) return ga < gb ? -1 : 1;
+      return ((deptOrder[a.dept] ?? 9) - (deptOrder[b.dept] ?? 9));
+    });
+  }
+
+  // 第 1 行：标题
+  rows.push(['资材部-' + CUR.m + '月-6休1排班表']);
+  styles.push(['title']);
+
+  // 第 2 行：日期表头（真日期 + 中文格式）
+  const r2 = ['负责人', '组别', '岗位', '工号', '姓名'];
+  const s2 = ['hdr', 'hdr', 'hdr', 'hdr', 'hdr'];
+  for(let d = 1; d <= dim; d++){
+    r2.push({ d: CUR.y + '-' + pad2(CUR.m) + '-' + pad2(d) });
+    s2.push(isWeekend(d) ? 'wkend' : 'dhdr');
+  }
+  rows.push(r2); styles.push(s2);
+
+  // 第 3 行：星期
+  const r3 = ['', '', '', '', ''];
+  const s3 = ['hdr', 'hdr', 'hdr', 'hdr', 'hdr'];
+  for(let d = 1; d <= dim; d++){ r3.push('周' + WEEK[dowOf(CUR.y, CUR.m, d)]); s3.push('dow'); }
+  rows.push(r3); styles.push(s3);
+
+  // 数据行
+  for(const p of people){
+    const arr = grid[p.id] || [];
+    const r = [leader, groupOf(p), p.dept, p.workId || '', p.name];
+    const st = ['cell', 'cell', 'cell', 'cell', 'cell'];
+    for(let d = 1; d <= dim; d++){
+      const c = arr[d - 1] || '.';
+      if(getLeave(p.id, CUR.key, d)){ r.push('假'); st.push('rest'); }
+      else if(c === '.'){ r.push('休'); st.push('rest'); }
+      else { r.push((c === 'd' || c === 'D') ? '白' : '夜'); st.push('work'); }
+    }
+    rows.push(r); styles.push(st);
+  }
+
+  // 合并：标题跨全宽；人员列表头纵向合并；负责人整列；组别 / 岗位连续相同值合并
+  merges.push('A1:' + lastCol + '1');
+  ['A', 'B', 'C', 'D', 'E'].forEach(col => merges.push(col + '2:' + col + '3'));
+  const n = people.length;
+  if(n){
+    merges.push('A4:A' + (3 + n));
+    const mergeSame = (colIdx, keyFn) => {
+      let st = 0;
+      for(let i = 1; i <= n; i++){
+        const curK = (i < n) ? keyFn(people[i]) : '\u0000';
+        if(curK !== keyFn(people[st])){
+          if(i - st > 1) merges.push(colName(colIdx) + (4 + st) + ':' + colName(colIdx) + (3 + i));
+          st = i;
+        }
+      }
+    };
+    mergeSame(1, groupOf);
+    mergeSame(2, p => p.dept);
+  }
+
+  // 列宽：人员列按内容，日期列统一收窄（原表一格只放一个「白」字）
+  const cols = [8, 5.5, 6, 10, 9.5];
+  for(let d = 0; d < dim; d++) cols.push(4.2);
+  const rowH = { 1: 26, 2: 20, 3: 18 };
+  for(let i = 0; i < n; i++) rowH[4 + i] = 18;
+
+  return xlsxBuild([{
+    name: CUR.m + '月排班',
+    rows, styles, merges, cols, rowH,
+    freeze: { x: 5, y: 3, cell: 'F4' },
+    print: true
+  }]);
+}
+/* 导出「资材部版式」xlsx（负责人没设置过会问一次并记住） */
+function exportShiftSheetStyled(){
+  if(!state.people.length){ toast('👷 还没有技术员，先添加人员再导出'); return; }
+  if(state.leader === undefined || state.leader === null){
+    const v = window.prompt('导出表的「负责人」列填谁？（留空则不填，之后可在「⋯ 更多」里改）', '');
+    if(v !== null){ state.leader = v.trim(); saveState(); }
+  }
+  try{
+    const bytes = buildShiftSheetXlsx();
+    const blob = new Blob([bytes], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '排班表_' + CUR.y + '-' + pad2(CUR.m) + '_资材部版式.xlsx';
+    a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+    toast('⬇ 已导出「资材部版式」Excel：' + CUR.y + '年' + CUR.m + '月，' + state.people.length + ' 人 × ' + CUR.dim + ' 天');
+  }catch(err){
+    toast('⚠️ 生成失败：' + (err && err.message ? err.message : err));
+  }
+}
 function exportExcel(fmt, kind){
   if(!exportGuard(fmt === 'xls' ? '（.xls）' : '（.xlsx）')) return;
   const isSched = kind === 'sched';
@@ -3436,7 +3546,7 @@ function exportJSON(){
     state:{ people:state.people, monthShift:state.monthShift, spRot:state.spRot, manual:state.manual, leave:state.leave, holidays:state.holidays, rowOrder:state.rowOrder,
       satLoad:state.satLoad, sunLoad:state.sunLoad,
       rotateMode:state.rotateMode, rotateDay:state.rotateDay,
-      viewMode:state.viewMode, deptFilter:state.deptFilter, shiftFilter:state.shiftFilter, hiddenPeople:state.hiddenPeople, sampleVer:state.sampleVer,
+      viewMode:state.viewMode, deptFilter:state.deptFilter, shiftFilter:state.shiftFilter, hiddenPeople:state.hiddenPeople, leader:state.leader, sampleVer:state.sampleVer,
       schedMarks:state.schedMarks,
       curYear:state.curYear, curMonth:state.curMonth } };
   downloadBlob(JSON.stringify(data,null,2), 'application/json', '排班备份_' + CUR.key + '.json');
@@ -4200,39 +4310,94 @@ function zipStore(files){
 const NS_MAIN = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 const NS_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const NS_PKG = 'http://schemas.openxmlformats.org/package/2006/relationships';
-function xlsxCellXml(ref, v){
-  if(v === null || v === undefined || v === '') return '';
+function xlsxCellXml(ref, v, s){
+  const sAttr = (s === undefined || s === null) ? '' : ' s="' + s + '"';
+  if(v === null || v === undefined || v === ''){
+    return sAttr ? '<c r="' + ref + '"' + sAttr + '/>' : '';   // 空值但有样式：仍写空格，保住底色与边框
+  }
   if(typeof v === 'object' && v.d){
     const p = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(v.d));
-    if(p) return '<c r="' + ref + '" s="1"><v>' + dateToSerial(+p[1], +p[2], +p[3]) + '</v></c>';
+    const st = (s === undefined || s === null) ? 1 : s;
+    if(p) return '<c r="' + ref + '" s="' + st + '"><v>' + dateToSerial(+p[1], +p[2], +p[3]) + '</v></c>';
   }
-  if(typeof v === 'number' && Number.isFinite(v)) return '<c r="' + ref + '"><v>' + v + '</v></c>';
-  return '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEsc(String(v)) + '</t></is></c>';
+  if(typeof v === 'number' && Number.isFinite(v)) return '<c r="' + ref + '"' + sAttr + '><v>' + v + '</v></c>';
+  return '<c r="' + ref + '"' + sAttr + ' t="inlineStr"><is><t xml:space="preserve">' + xmlEsc(String(v)) + '</t></is></c>';
 }
-/* sheets: [{name, rows:[[...]]}]；单元格可为 字符串 / 数字 / {d:'YYYY-MM-DD'}（真日期） */
+/* v1.53 样式名 -> cellXfs 索引（与 xlsxBuild 里生成的 styles.xml 一一对应） */
+const XLSX_STYLE = { none:0, date:1, title:2, hdr:3, cell:4, rest:5, work:6, wkend:7, dhdr:8, dow:9, datecn:10 };
+/* sheets: [{name, rows:[[...]], styles?:[[styleName]], merges?:['A1:C1'], cols?:[w1,w2...], rowH?:{1:24}, freeze?:{x,y,cell}, print?:true}]
+   单元格可为 字符串 / 数字 / {d:'YYYY-MM-DD'}（真日期）；不传 styles/merges/cols 时行为与旧版完全一致 */
 function xlsxBuild(sheets){
   const files = [], ct = [], wbSheets = [], rels = [];
   const decl = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n';
   sheets.forEach((sh, i) => {
     const rows = sh.rows || [];
+    const sty  = sh.styles || null;
     const rowXml = rows.map((r, ri) => {
-      const cells = r.map((v, ci) => xlsxCellXml(colName(ci) + (ri + 1), v)).join('');
-      return cells ? '<row r="' + (ri + 1) + '">' + cells + '</row>' : '';
+      const cells = r.map((v, ci) => {
+        const sName = (sty && sty[ri]) ? sty[ri][ci] : null;
+        const sIdx = sName ? XLSX_STYLE[sName] : undefined;
+        return xlsxCellXml(colName(ci) + (ri + 1), v, sIdx);
+      }).join('');
+      const h = (sh.rowH && sh.rowH[ri + 1]) ? ' ht="' + sh.rowH[ri + 1] + '" customHeight="1"' : '';
+      return cells ? '<row r="' + (ri + 1) + '"' + h + '>' + cells + '</row>' : '';
     }).join('');
+    const colsXml = (sh.cols && sh.cols.length)
+      ? '<cols>' + sh.cols.map((w, ci) => w ? '<col min="' + (ci + 1) + '" max="' + (ci + 1) + '" width="' + w + '" customWidth="1"/>' : '').join('') + '</cols>'
+      : '';
+    const mergesXml = (sh.merges && sh.merges.length)
+      ? '<mergeCells count="' + sh.merges.length + '">' + sh.merges.map(m => '<mergeCell ref="' + m + '"/>').join('') + '</mergeCells>'
+      : '';
+    const viewXml = sh.freeze
+      ? '<sheetViews><sheetView workbookViewId="0"><pane xSplit="' + sh.freeze.x + '" ySplit="' + sh.freeze.y
+        + '" topLeftCell="' + sh.freeze.cell + '" activePane="bottomRight" state="frozen"/>'
+        + '<selection pane="bottomRight" activeCell="' + sh.freeze.cell + '" sqref="' + sh.freeze.cell + '"/></sheetView></sheetViews>'
+      : '';
+    const prXml = sh.print ? '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' : '';
+    const tailXml = sh.print
+      ? '<pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/>'
+        + '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>'
+      : '';
     files.push({ name:'xl/worksheets/sheet' + (i + 1) + '.xml',
-      data:decl + '<worksheet xmlns="' + NS_MAIN + '"><sheetData>' + rowXml + '</sheetData></worksheet>' });
+      data: decl + '<worksheet xmlns="' + NS_MAIN + '">' + prXml + viewXml + colsXml
+        + '<sheetData>' + rowXml + '</sheetData>' + mergesXml + tailXml + '</worksheet>' });
     ct.push('<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>');
     wbSheets.push('<sheet name="' + xmlEsc(safeSheetName(sh.name, i)) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>');
     rels.push('<Relationship Id="rId' + (i + 1) + '" Type="' + NS_REL + '/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>');
   });
+  const B = '<left style="thin"><color rgb="FF9AA5B1"/></left><right style="thin"><color rgb="FF9AA5B1"/></right>'
+    + '<top style="thin"><color rgb="FF9AA5B1"/></top><bottom style="thin"><color rgb="FF9AA5B1"/></bottom><diagonal/>';
+  const CTR = ' applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>';
   files.push({ name:'xl/styles.xml', data:decl + '<styleSheet xmlns="' + NS_MAIN + '">'
-    + '<numFmts count="1"><numFmt numFmtId="164" formatCode="m/d"/></numFmts>'
-    + '<fonts count="1"><font><sz val="11"/><name val="宋体"/></font></fonts>'
-    + '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>'
-    + '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+    + '<numFmts count="2"><numFmt numFmtId="164" formatCode="m/d"/><numFmt numFmtId="165" formatCode="m&quot;月&quot;d&quot;日&quot;"/></numFmts>'
+    + '<fonts count="4">'
+    +   '<font><sz val="11"/><name val="宋体"/></font>'
+    +   '<font><b/><sz val="11"/><name val="宋体"/></font>'
+    +   '<font><b/><sz val="14"/><name val="宋体"/></font>'
+    +   '<font><sz val="10"/><name val="宋体"/></font>'
+    + '</fonts>'
+    + '<fills count="5">'
+    +   '<fill><patternFill patternType="none"/></fill>'
+    +   '<fill><patternFill patternType="gray125"/></fill>'
+    +   '<fill><patternFill patternType="solid"><fgColor rgb="FFA9CE91"/><bgColor indexed="64"/></patternFill></fill>'
+    +   '<fill><patternFill patternType="solid"><fgColor rgb="FFFFE699"/><bgColor indexed="64"/></patternFill></fill>'
+    +   '<fill><patternFill patternType="solid"><fgColor rgb="FFF2F5F9"/><bgColor indexed="64"/></patternFill></fill>'
+    + '</fills>'
+    + '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border>' + B + '</border></borders>'
     + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-    + '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
-    + '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>'
+    + '<cellXfs count="11">'
+    +   '<xf numFmtId="0"   fontId="0" fillId="0" borderId="0" xfId="0"/>' + CTR.replace(' applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>', '/>')
+    +   '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+    +   '<xf numFmtId="0"   fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"' + CTR
+    +   '<xf numFmtId="0"   fontId="1" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"' + CTR
+    +   '<xf numFmtId="0"   fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"' + CTR
+    +   '<xf numFmtId="0"   fontId="0" fillId="2" borderId="1" xfId="0" applyFill="1" applyBorder="1"' + CTR
+    +   '<xf numFmtId="0"   fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"' + CTR
+    +   '<xf numFmtId="165" fontId="1" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1"' + CTR
+    +   '<xf numFmtId="165" fontId="1" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1"' + CTR
+    +   '<xf numFmtId="0"   fontId="3" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"' + CTR
+    +   '<xf numFmtId="165" fontId="1" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1"' + CTR
+    + '</cellXfs>'
     + '<cellStyles count="1"><cellStyle name="常规" xfId="0" builtinId="0"/></cellStyles>'
     + '</styleSheet>' });
   files.push({ name:'xl/workbook.xml', data:decl + '<workbook xmlns="' + NS_MAIN + '" xmlns:r="' + NS_REL + '"><sheets>' + wbSheets.join('') + '</sheets></workbook>' });
@@ -5039,6 +5204,7 @@ function sanitizeBackup(s){
     deptFilter: (s.deptFilter==='除气'||s.deptFilter==='转码') ? s.deptFilter : 'all',
     shiftFilter: (s.shiftFilter==='day'||s.shiftFilter==='night') ? s.shiftFilter : 'all',
     hiddenPeople: Array.isArray(s.hiddenPeople) ? s.hiddenPeople.filter(id=>seen.has(id)) : [],
+    leader: (typeof s.leader === 'string') ? s.leader : undefined,
     sampleVer: Number.isFinite(+s.sampleVer) ? +s.sampleVer : 0,
     schedMarks: (() => {
       const o = {}; const src = (s.schedMarks && typeof s.schedMarks === 'object') ? s.schedMarks : {};
@@ -5074,6 +5240,7 @@ function importJSONData(data){
   state.deptFilter = s.deptFilter;
   state.shiftFilter = s.shiftFilter;
   state.hiddenPeople = s.hiddenPeople;
+  state.leader = s.leader;
   state.sampleVer = s.sampleVer;
   state.schedMarks = s.schedMarks || {};
   state.curYear = s.curYear; state.curMonth = s.curMonth;
@@ -5115,6 +5282,7 @@ $$('#exportMenu button').forEach(b=>b.onclick = ()=>{
   if(act === 'csv') exportCSV();
   else if(act === 'stats') exportStatsCSV();
   else if(act === 'xlsx') exportExcel('xlsx', 'sched');
+  else if(act === 'xlsx-styled') exportShiftSheetStyled();
   else if(act === 'xls') exportExcel('xls', 'sched');
   else if(act === 'stats-xlsx') exportExcel('xlsx', 'stats');
   else if(act === 'stats-xls') exportExcel('xls', 'stats');
@@ -5392,6 +5560,7 @@ function loadSample(){
   state.holidays = state.holidays || {};
   state.holidays['2026-09'] = Object.assign(state.holidays['2026-09'] || {}, {'25':'停线日'}); // 9/25 全员休（停线），标记消除「无人上班」体检提示
   state.holidays['2026-10'] = Object.assign(state.holidays['2026-10'] || {}, {'1':'国庆', '2':'国庆', '3':'国庆'}); // 10/1~10/3 国庆全员休
+  state.leader = '姜雄';   // v1.53：示例的负责人，导出「资材部版式」时直接可用
   state.sampleVer = SAMPLE_VER; // 示例版本标记（供旧示例自动升级判定）
   state.schedMarks = state.schedMarks || {};
   Object.keys(state.manual).forEach(k => { state.schedMarks[k] = true; });   // 示例锁定的月份视为已排班
@@ -5457,6 +5626,12 @@ const MORE_ACTIONS = {
   rotatePerson: openSpRotModal,
   snapshot: openSnapModal,
   holiday: openHolidayModal,
+  leader: ()=>{
+    const v = window.prompt('导出「资材部版式」时，第 A 列「负责人」填谁？（留空则不填）', state.leader || '');
+    if(v === null) return;
+    state.leader = v.trim(); saveState();
+    toast('👤 负责人已设为「' + (state.leader || '（空）') + '」（下次导出「资材部版式」生效）');
+  },
   sample: doLoadSample,
   reset: doResetAll
 };

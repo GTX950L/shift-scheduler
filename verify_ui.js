@@ -199,6 +199,18 @@ const ok = (name, pass, extra) => {
       && clr.sf === 'all' && clr.df === 'all' && clr.hid === 0,
       '行数=' + clr.rows + ' 淡化=' + clr.dim + ' 横幅隐藏=' + clr.barHidden);
 
+    /* 5j. v1.53 「资材部版式」导出的 xlsx 可生成且菜单有入口 */
+    const stx = await page.evaluate(() => {
+      const bytes = buildShiftSheetXlsx();
+      const u8 = new Uint8Array(bytes);
+      return { size: bytes.length, isZip: u8[0] === 0x50 && u8[1] === 0x4B,
+        hasMenu: !!document.querySelector('#exportMenu button[data-act="xlsx-styled"]'),
+        leader: state.leader };
+    });
+    ok('5j. 资材部版式导出可生成（zip 头 + 菜单入口）',
+      stx.isZip && stx.size > 5000 && stx.hasMenu,
+      stx.size + ' 字节，zip=' + stx.isZip + ' 菜单=' + stx.hasMenu + ' 负责人=' + stx.leader);
+
     /* 6. 流程提示条：切到未排班月份 → 提示自动排班 */
     const f1 = await page.evaluate(async () => {
       state.schedMarks = {}; state.monthShift = {}; state.manual = {};   // 模拟「这个月还没排班」
@@ -235,7 +247,10 @@ const ok = (name, pass, extra) => {
     });
     ok('8. 工具栏两行 + 主操作按钮齐全', tb.missing.length === 0 && tb.rows === 2 && tb.pri === 1,
       '缺按钮=' + JSON.stringify(tb.missing) + ' 行数=' + tb.rows + ' 主按钮=' + tb.pri);
-    ok('9. 「⋯ 更多」菜单完整且无重复', tb.more.length === 9 && !tb.moreDup,
+    // 必需项 + 无重复（v1.53 起多了「负责人」，改为按必需项校验，避免每加一项就要改数字）
+    const MORE_NEED = ['copyMonth','clearNext','clearMan','rotateAll','rotatePerson','snapshot','leader','holiday','sample','reset'];
+    ok('9. 「⋯ 更多」菜单完整且无重复',
+      MORE_NEED.every(x => tb.more.includes(x)) && tb.more.length === MORE_NEED.length && !tb.moreDup,
       tb.more.join(', '));
     ok('10. 帮助菜单四项', tb.help.join(',') === 'help,guide,keys,log', tb.help.join(','));
     ok('11. 导出菜单含空白待填表', tb.exp.includes('blank-xlsx') && tb.exp.includes('json'),
