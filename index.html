@@ -486,7 +486,25 @@
     background:linear-gradient(90deg,#eaf3ff,#f6faff);border:1px solid #c5dcf7;border-radius:12px;
     padding:11px 16px;box-shadow:var(--shadow-sm)}
   html[data-theme=dark] .flow-bar{background:linear-gradient(90deg,#22334c,#1d2b40);border-color:#33507a}
-  .flow-bar[hidden]{display:none}   /* v1.50：.flow-bar 的 display:flex 会覆盖 [hidden] 的 display:none，需显式还原 */
+  .flow-bar[hidden]{display:none}
+  /* v1.52：筛选提示横幅——用暖色区别于主色蓝，确保「有东西被隐藏了」一眼可见 */
+  .filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 auto 10px;max-width:1500px;
+    background:linear-gradient(90deg,#fff7e8,#fffdf8);border:1px solid #efc78d;border-left:4px solid #e08214;
+    border-radius:10px;padding:8px 14px;font-size:13px;color:#8a4a00;box-shadow:0 1px 4px rgba(224,130,20,.10)}
+  .filter-bar[hidden]{display:none}
+  .filter-bar .fb-i{font-size:15px;line-height:1}
+  .filter-bar .fb-t{flex:1;min-width:0;line-height:1.7}
+  .filter-bar .fb-chip{display:inline-block;background:#fff;border:1px solid #efc78d;border-radius:6px;
+    padding:0 7px;margin:0 2px;font-size:12px;font-weight:600;white-space:nowrap}
+  .filter-bar .fb-hid{font-weight:700;color:#a2500a}
+  .filter-bar button{background:#fff;border:1px solid #e0a25e;color:#8a4a00;border-radius:8px;
+    padding:4px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .filter-bar button:hover{background:#fff3e0;border-color:#c97f2e}
+  /* 班次筛选：非目标班次的格子淡化 */
+  table.sheet td.cell.sf-dim{opacity:.22;filter:saturate(.4)}
+  /* 被隐藏的人员卡片 */
+  .p-card.is-hidden{opacity:.55;border-style:dashed}
+  .p-card.is-hidden .pname{text-decoration:line-through;text-decoration-color:#c0392b}   /* v1.50：.flow-bar 的 display:flex 会覆盖 [hidden] 的 display:none，需显式还原 */
   #resetRowBtn[hidden],#rotateDay[hidden]{display:none}
   .flow-bar .fb-ico{font-size:18px;line-height:1}
   .flow-bar .fb-txt{font-size:13px;color:var(--fg);line-height:1.6;flex:1;min-width:0}
@@ -556,7 +574,7 @@
 <body>
 <header>
   <div>
-    <h1>🗓️ 技术员排班助手<span class="ver">v1.51</span></h1>
+    <h1>🗓️ 技术员排班助手<span class="ver">v1.52</span></h1>
     <p>除气 / 转码 · 白班 08:00–20:00 · 夜班 20:00–08:00 · 月末周末转班</p>
   </div>
   <div class="hd-right">
@@ -677,6 +695,12 @@
         <option value="除气">除气</option>
         <option value="转码">转码</option>
       </select>
+      <label title="只看某个班次：其余格子淡化，方便一眼扫出当天谁上白班 / 谁上夜班（统计与导出不受影响）">班次</label>
+      <select id="shiftFilter" title="只看某个班次：其余格子淡化，方便一眼扫出当天谁上白班 / 谁上夜班（统计与导出不受影响）">
+        <option value="all">全部</option>
+        <option value="day">只看白班</option>
+        <option value="night">只看夜班</option>
+      </select>
       <span class="sep"></span>
       <label title="周末任务量：繁忙时自动把双休人员叫回上班（标记加班）">周末</label>
       <select id="satLoad" title="周六任务量：繁忙时自动把双休人员叫回上班（标记加班）">
@@ -715,6 +739,12 @@
     <span class="fb-txt" id="fbTxt"></span>
     <span class="fb-ops" id="fbOps"></span>
     <button class="fb-x" id="fbClose" title="本次不再提示">✕</button>
+  </div>
+  <!-- v1.52：筛选生效时的醒目提示（班次 / 部门 / 隐藏人员） -->
+  <div class="filter-bar" id="filterBar" hidden>
+    <span class="fb-i">🔎</span>
+    <span class="fb-t" id="filterTxt"></span>
+    <button id="filterClear" title="一次性清除班次筛选、部门筛选与全部隐藏人员">清除全部筛选</button>
   </div>
   <section class="panel sheet-panel">
     <h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">📋 排班表</h2>
@@ -982,6 +1012,7 @@
   <div class="modal" style="max-width:560px">
     <h3>📜 更新记录</h3>
     <div class="help-sec" style="max-height:420px;overflow-y:auto">
+      <div class="log-ver"><b>v1.52</b> · 筛选视图 + 横向滚动抖动修复（2026-10-30）：① <b>新增「班次」筛选</b>（只看白班 / 只看夜班）——非目标班次的格子淡化到 22% 并降饱和，一眼扫出当天谁上白班、谁上夜班，统计与导出不受影响；② <b>新增「在排班表中隐藏某人」</b>——人员卡片操作区加 👁 按钮（隐藏后变 🙈），被隐藏者的卡片变虚框、姓名加删除线，排班表与合计行同步剔除，但<b>统计 / 导出 / 体检仍按全部人员</b>；③ <b>筛选横幅</b>——班次 / 部门 / 隐藏人数任一生效时，表格上方出现橙边提示条，逐项点名「已隐藏 2 人（周洪发、金凡）」，右侧「清除全部筛选」一键复原；④ <b>修复左右拖动排班表时画面抖动</b>——根因是顶部横向滚动条的 inner 宽度停留在旧值（1835px 而表格实宽 2162px），两边可滚范围不一致，拖到超出部分会被另一侧回写截断，表现为内容来回跳；现改为宽度随表格自动跟随（ResizeObserver）、双向 scroll 同步加互斥锁与同位置短路，两头逐帧一致。</div>
       <div class="log-ver"><b>v1.51</b> · 界面打磨：可读性与视觉层次（2026-10-29）：① <b>「部门排序」按钮在没有自定义排序时仍显示</b>——改用 <code>hidden</code> 属性判定（内联 <code>display</code> 会被其它规则覆盖，同 v1.50 提示条那类问题）；② <b>转班日输入框只在「固定日期」模式出现</b>，不再留一个灰色「1」常驻误导；③ <b>撤销 / 重做按钮</b>透明度 .4→.72、图标 14→15px，不再几乎看不见；④ <b>人员卡片操作图标</b>透明度 .55→.72、字号 11→12px；⑤ <b>note 徽标超长省略</b>（上限 96px），示例中周洪发备注由 27 字精简为 12 字；⑥ <b>人员卡片第二行</b>：休息规则仅在非「上六休一」时显示，避免工号 / 班次 / 本月班次 / 休息规则四项挤成一行；⑦ <b>合计行柱条</b>透明度 .16→.26，且<b>低于当月均值 10% 的日子柱条与数字转橙</b>，人力低谷一眼可见；⑧ <b>副标题精简</b>（53 → 33 字，去掉与界面控件重复的功能罗列）；⑨ <b>姓名搜索框</b>与下拉框统一高度与圆角；⑩ <b>表格行悬停高亮姓名列</b>，横向追踪不迷路；⑪ 主容器上方间距 18→12px，工具栏与表格不再松散。</div>
       <div class="log-ver"><b>v1.50</b> · 交互升级：合计行抬头可见 + 首屏还给表格（2026-10-29）：① <b>修复提示条撤不掉的样式 bug</b>——<code>.flow-bar</code> 的 <code>display:flex</code> 覆盖了 <code>[hidden]</code> 的 <code>display:none</code>，JS 里置 hidden 无效，导致 22 人已排班、体检通过时页面顶部仍常驻「还没有技术员」，白占 69px（VBS 测试只查了属性、没查 computedStyle，所以一直没暴露）；② <b>合计行重做</b>——原来是 33px 宽格子里塞「白10 夜10 休2」三行 10px 字，现在主数字=在岗人数（13px 加粗）、副行=白/夜，格内嵌一条按当月峰值归一的高度条（等于把每日人力柱状图压进合计行），整行 sticky 粘在表格底部，滚到哪都看得见；③ <b>表格改为定高内部滚动</b>（<code>max(380px, 100vh-300px)</code>），页面不再被 22 行撑长；④ <b>删掉表格卡片标题栏</b>（与 header 月份重复），「部门排序」迁到 header、操作提示挪进表头 tooltip，表格起始位置上移 124px；⑤ <b>人员卡片加「紧凑」切换</b>（标题栏 📐 按钮）——一行一人（姓名 + 班次规则 + 出勤），22 人列表 2074px → 784px，一屏看全；⑥ <b>双击格子弹「白/夜/休/加」选择器</b>一步到位，<b>Shift + 点行首/列首</b>按当前画笔批量填充整行/整列（连班与六休一防呆拦截的自动跳过）；⑦ <b>工具栏新增姓名搜索</b>，输入即高亮并滚动定位，表格重建后自动重放。</div>
       <div class="log-ver"><b>v1.49</b> · 示例数据更新为 11 月版（2026-10-29）：① <b>依据《X8222&amp;9610&amp;7077中段11月排班表.xlsx》重建内置示例</b>（资材部-11月-6休1排班表），人员 <b>23→22 人</b>——程尊/陈红浩/蒋豪/龙欢 已不在名单，新增 周文龙/吴超群/王万宇，王琦 由 A 班调入 B 班；② <b>锁定月份由 8~9 月扩到 8~11 月</b>（四个月全量锁定），载入示例后视图直接落在 2026 年 11 月；③ <b>郑高鑫/孙子恒 班次规则由「固定白班」改为「月轮转」</b>——10 月起随 A/B 组整体对倒，与真实排班一致；④ <b>新增 10 月国庆节假日标记</b>（10/1~10/3 全员休），消除体检「无人上班」误报；⑤ 示例版本升至 21，旧范例用户打开页面自动升级。</div>
@@ -1204,6 +1235,8 @@ const defaultState = () => ({
   satLoad: 'normal', sunLoad: 'normal',
   viewMode: 'cn',       // month=本月 | cn=本月+下月(默认) | pc=上月+本月 | pcn=上月+本月+下月
   deptFilter: 'all',    // all=全部 | 除气 | 转码（排班表显示筛选）
+  shiftFilter: 'all',   // v1.52：all=全部 | day=只看白班 | night=只看夜班（排班表淡化显示）
+  hiddenPeople: [],     // v1.52：在排班表中隐藏的人员 id（只影响排班表显示，不影响统计/导出/体检）
   rotateMode: 'lastWeekend', // lastWeekend=每月最后周末转班 | fixed=固定日期
   rotateDay: 1,         // 固定转班日（rotateMode='fixed' 时用，1~31）
   curYear: null, curMonth: null
@@ -1443,6 +1476,7 @@ function renderAll(){
   $('#satLoad').value = state.satLoad; $('#sunLoad').value = state.sunLoad;
   $('#viewMode').value = state.viewMode || 'cn';
   $('#deptFilter').value = state.deptFilter || 'all';
+  $('#shiftFilter').value = state.shiftFilter || 'all';
   $('#rotateMode').value = state.rotateMode || 'lastWeekend';
   $('#rotateDay').value = state.rotateDay || 1;
   const _fixed = (state.rotateMode||'lastWeekend') === 'fixed';
@@ -1452,14 +1486,14 @@ function renderAll(){
   if(rb) rb.hidden = !(state.rowOrder && state.rowOrder.length);
   updateHistBtns();
   renderSheet(); renderPeople(); renderStats(); renderChart(); renderKpis(); renderLegend();
-  renderFlowBar(); renderEmptyState();   // v1.46：流程提示条 + 空状态引导
+  renderFlowBar(); renderEmptyState(); renderFilterBar();   // v1.52：新增筛选横幅
 }
 function cellInfo(c){
   const map = { '.':['rest',''], 'd':['day','白'], 'n':['night','夜'],
     'D':['ot','白'], 'N':['ot','夜'] };
   return map[c] || ['rest',''];
 }
-function cellHTML(c, pid, mkey, d, manual, isToday, extra){
+function cellHTML(c, pid, mkey, d, manual, isToday, extra, dim){
   const [cls,txt] = cellInfo(c);
   const p = state.people.find(x=>x.id===pid);
   const lv = getLeave(pid, mkey, d);
@@ -1468,7 +1502,7 @@ function cellHTML(c, pid, mkey, d, manual, isToday, extra){
   const txtF = lv ? '假' : txt;
   const desc = lv ? ('请假·' + lv) : (c==='d'?'白班 08:00–20:00':c==='n'?'夜班 20:00–08:00':c==='D'?'白班·加班':c==='N'?'夜班·加班':'休息');
   const badge = (c==='D'||c==='N') ? '<span class="c-badge">加</span>' : '';
-  return '<td class="cell ' + clsF + (extra?' '+extra:'') + (manual?' man':'') + (isToday?' today':'') + (viol?' viol':'') + '" data-p="' + pid + '" data-m="' + mkey + '" data-d="' + d + '" title="' + esc(p?p.name:'') + ' · ' + mkey.replace('-','年') + '月' + d + '日 · ' + desc + (viol?' ⚠️违规':'') + '">'
+  return '<td class="cell ' + clsF + (extra?' '+extra:'') + (manual?' man':'') + (isToday?' today':'') + (viol?' viol':'') + (dim?' sf-dim':'') + '" data-p="' + pid + '" data-m="' + mkey + '" data-d="' + d + '" title="' + esc(p?p.name:'') + ' · ' + mkey.replace('-','年') + '月' + d + '日 · ' + desc + (viol?' ⚠️违规':'') + '">'
     + '<span class="c-txt">' + txtF + '</span>' + badge + '</td>';
 }
 function loadClass(dow, load){
@@ -1538,7 +1572,10 @@ function renderSheet(){
   h += '</tr></thead><tbody>';
   // 每人一行：默认按部门分组（除气在上、转码在下，组内保持录入顺序）；用户拖拽后按自定义顺序
   let lastDept = null;
-  for(const p of rowOrderPeople()){
+  const _hid = new Set(state.hiddenPeople || []);
+  const _sf = state.shiftFilter || 'all';
+  const _rows = rowOrderPeople().filter(p=>!_hid.has(p.id));   // v1.52：隐藏人员不渲染（合计行同步）
+  for(const p of _rows){
     const deptFirst = (p.dept !== lastDept); lastDept = p.dept;
     h += '<tr data-pid="' + p.id + '"' + (deptFirst ? ' class="dept-first"' : '') + ' draggable="true" title="按住拖动可调整行顺序"><th><span class="nm"><span class="dept-tag tag-' + p.dept + '">' + p.dept + '</span><span>' + esc(p.name) + '</span></span></th>';
     for(const c of cols){
@@ -1550,7 +1587,9 @@ function renderSheet(){
       const isMan = !!(ms[c.d-1] && ms[c.d-1] !== '_' && !lockBase(p.id, c.key, c.d));
       const hol2 = (state.holidays[c.key] || {})[c.d];
       const extra = (c.dow===0||c.dow===6) ? (c.load==='busy'?'dow-busy':'dow-sat') : '';
-      h += cellHTML(cell, p.id, c.key, c.d, isMan, c.isToday, extra + (hol2?' dow-hol':''));
+      const _keep = _sf === 'all' ? true
+        : (_sf === 'day' ? (cell === 'd' || cell === 'D') : (cell === 'n' || cell === 'N'));
+      h += cellHTML(cell, p.id, c.key, c.d, isMan, c.isToday, extra + (hol2?' dow-hol':''), !_keep);
     }
     h += '</tr>';
   }
@@ -1559,7 +1598,7 @@ function renderSheet(){
   const totArr = cols.map(c=>{
     const grid = CUR.grids[c.key];
     let day=0,night=0,rest=0,ot=0,leaveN=0;
-    if(grid) for(const p of rowOrderPeople()){
+    if(grid) for(const p of _rows){
       const cc = (grid[p.id]||[])[c.d-1] || '.';
       if(getLeave(p.id, c.key, c.d)){ leaveN++; continue; }
       if(cc==='d') day++; else if(cc==='n') night++; else if(cc==='.') rest++;
@@ -1582,6 +1621,10 @@ function renderSheet(){
       + '<b class="t-total">' + t.on + '</b><i class="t-sub">' + t.day + '/' + t.night + '</i></td>';
   }
   h += '</tr></tbody>';
+  if(!_rows.length){
+    h = h.replace('</tbody>', '<tr><td colspan="' + (cols.length + 1) + '" style="padding:26px 12px;text-align:center;color:var(--muted);font-size:13px">'
+      + '当前筛选下没有可显示的人员 —— 可在右侧「技术员」列表点 🙈 恢复，或点页面顶部的「清除全部筛选」</td></tr></tbody>');
+  }
   tb.innerHTML = h;
   applySearchHighlight(false);
   syncHSBar();
@@ -1596,19 +1639,37 @@ function renderSheet(){
 }
 /* 表上部横向滚动条：内容超宽时显示，与主表容器双向同步滚动 */
 const hsb = $('#hScrollBar'), hsi = $('#hScrollBar .h-scroll-inner'), hss = $('#sheetScroll');
+/* v1.52：顶部横向滚动条与表格的双向同步
+   原实现两个问题：① 宽度只在 renderSheet 时写一次，表格重建后容器的 scrollWidth 变了、
+   顶部条的 inner 宽度还是旧值，两边可滚范围不一致；② 双向 scroll 监听没有互斥，
+   超出一方可滚范围时会被另一方回写截断 —— 表现为左右拖动时画面来回跳。 */
 function syncHSBar(){
-  const sheet = $('#sheet');
-  if(sheet && sheet.scrollWidth > hss.clientWidth){
-    hsi.style.width = sheet.scrollWidth + 'px';
-    hsb.classList.add('has');
-    hsb.scrollLeft = hss.scrollLeft;
-  } else {
-    hsb.classList.remove('has');
-  }
+  const sheet = $('#sheet'); if(!sheet) return;
+  const w = sheet.scrollWidth;
+  if(!w) return;
+  if(hsi.style.width !== w + 'px') hsi.style.width = w + 'px';
+  const need = w > hss.clientWidth + 1;
+  hsb.classList.toggle('has', need);
+  if(need && Math.abs(hsb.scrollLeft - hss.scrollLeft) > 1) hsb.scrollLeft = hss.scrollLeft;
 }
-hss.addEventListener('scroll', ()=>{ hsb.scrollLeft = hss.scrollLeft; });
-hsb.addEventListener('scroll', ()=>{ hss.scrollLeft = hsb.scrollLeft; });
+let _hsLock = 0;
+function _hsLink(src, dst){
+  src.addEventListener('scroll', ()=>{
+    if(_hsLock) return;
+    if(Math.abs(dst.scrollLeft - src.scrollLeft) < 1) return;   // 已经在同一位，不再回写（打断回环）
+    _hsLock = 1;
+    dst.scrollLeft = src.scrollLeft;
+    requestAnimationFrame(()=>{ _hsLock = 0; });
+  }, { passive: true });
+}
+_hsLink(hss, hsb);
+_hsLink(hsb, hss);
 window.addEventListener('resize', ()=>{ syncHSBar(); });
+// 表格宽度会随筛选 / 月份 / 视图变化，用 ResizeObserver 兜住，不必每次手动调
+try{
+  const sheetEl = $('#sheet');
+  if(sheetEl && window.ResizeObserver) new ResizeObserver(()=> syncHSBar()).observe(sheetEl);
+}catch(e){}
 /* v1.50：人员卡片密度开关（紧凑 = 一行一人；持久化到 localStorage） */
 let compactPeople = (function(){ try{ return localStorage.getItem('shift-compact') === '1'; }catch(e){ return false; } })();
 function syncDensityBtn(){
@@ -1644,19 +1705,22 @@ function renderPeople(){
         if(c!=='.') workDays++;
       }
       const badgeCls = p.shiftRule==='rotate'?'b-rot':p.shiftRule==='fixed-night'?'b-night':'b-yellow';
-      const opsHtml = '<span class="ops"><button class="op-copy" data-id="' + p.id + '" title="复制当月排班到其他技术员">📋</button>'
+      const isHid = (state.hiddenPeople || []).indexOf(p.id) >= 0;
+      const opsHtml = '<span class="ops">'
+        + '<button class="op-hide" data-id="' + p.id + '" title="' + (isHid ? '恢复在排班表中显示' : '在排班表中隐藏此人（只影响显示，不影响统计）') + '">' + (isHid ? '🙈' : '👁') + '</button>'
+        + '<button class="op-copy" data-id="' + p.id + '" title="复制当月排班到其他技术员">📋</button>'
         + '<button class="op-edit" data-id="' + p.id + '" title="编辑">✏️</button>'
         + '<button class="op-del" data-id="' + p.id + '" title="删除">🗑</button></span>';
       // v1.50：紧凑模式——一行一人（姓名 / 班次规则 / 出勤），22 人一屏看全；hover 出操作按钮
       if(compactPeople){
-        html += '<div class="p-card compact' + (copySrc===p.id ? ' src-hl' : '') + '" data-id="' + p.id
+        html += '<div class="p-card compact' + (copySrc===p.id ? ' src-hl' : '') + (isHid ? ' is-hidden' : '') + '" data-id="' + p.id
           + '" title="' + esc(p.name) + (p.workId ? ' · 工号 ' + esc(p.workId) : '') + (p.note ? ' · ' + esc(p.note) : '')
           + ' · ' + shTxt + ' · ' + restTxt + ' · 出勤 ' + workDays + '/' + CUR.dim + '">'
           + '<div class="row1"><span class="pname">' + esc(p.name) + '</span>'
           + '<span class="pmeta"><span class="badge ' + badgeCls + '">' + shTxt + '</span>'
           + '<span class="pm">' + workDays + '/' + CUR.dim + '</span></span>' + opsHtml + '</div></div>';
       } else {
-        html += '<div class="p-card' + (copySrc===p.id ? ' src-hl' : '') + '" data-id="' + p.id + '"><div class="row1"><span class="pname">' + esc(p.name)
+        html += '<div class="p-card' + (copySrc===p.id ? ' src-hl' : '') + (isHid ? ' is-hidden' : '') + '" data-id="' + p.id + '"><div class="row1"><span class="pname">' + esc(p.name)
           + (p.note ? '<span class="badge b-yellow">' + esc(p.note) + '</span>' : '') + '</span>'
           + opsHtml + '</div>'
           + '<div class="pmeta">'
@@ -1671,6 +1735,7 @@ function renderPeople(){
     }
   }
   box.innerHTML = html;
+  box.querySelectorAll('.op-hide').forEach(b=>b.onclick = e=>{ e.stopPropagation(); toggleHidePerson(b.dataset.id); });
   box.querySelectorAll('.op-copy').forEach(b=>b.onclick = e=>{ e.stopPropagation(); startCopy(b.dataset.id); });
   box.querySelectorAll('.op-edit').forEach(b=>b.onclick = ()=>openPersonModal(b.dataset.id));
   box.querySelectorAll('.op-del').forEach(b=>b.onclick = ()=>delPerson(b.dataset.id));
@@ -2892,9 +2957,55 @@ function doClearMan(){
   histCommit('清除本月手动修改');
   saveState(); renderAll(); toast('🧹 已清除本月手工修改，恢复自动排班（可 Ctrl+Z 撤销）');
 }
+/* v1.52：筛选横幅——把「班次 / 部门 / 隐藏人员」当前状态汇总成一条醒目提示 */
+function renderFilterBar(){
+  const bar = $('#filterBar'), txt = $('#filterTxt');
+  if(!bar || !txt) return;
+  const parts = [];
+  const sf = state.shiftFilter || 'all';
+  const df = state.deptFilter || 'all';
+  const hid = state.hiddenPeople || [];
+  if(sf !== 'all') parts.push('班次 <span class="fb-chip">' + (sf === 'day' ? '只看白班' : '只看夜班') + '</span>');
+  if(df !== 'all') parts.push('部门 <span class="fb-chip">' + esc(df) + '</span>');
+  if(hid.length){
+    const names = hid.map(id=>{ const p = state.people.find(x=>x.id === id); return p ? p.name : '?'; });
+    const shown = names.slice(0, 6).join('、') + (names.length > 6 ? ' 等' : '');
+    parts.push('已隐藏 <span class="fb-hid">' + hid.length + '</span> 人（' + esc(shown) + '）');
+  }
+  if(!parts.length){ bar.hidden = true; return; }
+  txt.innerHTML = '当前筛选：' + parts.join(' · ');
+  bar.hidden = false;
+}
+/* 在排班表中隐藏 / 恢复某人（只影响排班表显示） */
+function toggleHidePerson(pid){
+  if(!Array.isArray(state.hiddenPeople)) state.hiddenPeople = [];
+  const i = state.hiddenPeople.indexOf(pid);
+  const p = state.people.find(x=>x.id === pid);
+  if(i >= 0){
+    state.hiddenPeople.splice(i, 1);
+    toast('👁 已恢复显示「' + (p ? p.name : '') + '」');
+  } else {
+    state.hiddenPeople.push(pid);
+    toast('🙈 已在排班表中隐藏「' + (p ? p.name : '') + '」（页面顶部有提示，可一键恢复）');
+  }
+  saveState(); renderAll();
+}
+$('#filterClear').onclick = ()=>{
+  state.shiftFilter = 'all'; state.deptFilter = 'all'; state.hiddenPeople = [];
+  $('#shiftFilter').value = 'all'; $('#deptFilter').value = 'all';
+  saveState(); renderAll();
+  toast('✅ 已清除全部筛选，恢复显示所有人员');
+};
+$('#shiftFilter').onchange = ()=>{
+  state.shiftFilter = $('#shiftFilter').value;
+  saveState(); renderSheet(); renderFilterBar();
+  const v = state.shiftFilter;
+  toast(v === 'all' ? '已取消班次筛选（全部格子恢复正常显示）'
+    : '🔎 只看' + (v === 'day' ? '白班' : '夜班') + '：其余格子已淡化，统计与导出不受影响');
+};
 $('#deptFilter').onchange = ()=>{
   state.deptFilter = $('#deptFilter').value;
-  saveState(); renderSheet();
+  saveState(); renderSheet(); renderFilterBar();
   toast('排班表已筛选为「' + ({all:'全部',除气:'除气',转码:'转码'})[state.deptFilter] + '」（统计/导出仍为全部）');
 };
 $('#satLoad').onchange = ()=>{ state.satLoad = $('#satLoad').value; saveState(); renderAll(); toast('周六负荷已设为「' + loadTxt(state.satLoad) + '」'); };
@@ -3325,7 +3436,7 @@ function exportJSON(){
     state:{ people:state.people, monthShift:state.monthShift, spRot:state.spRot, manual:state.manual, leave:state.leave, holidays:state.holidays, rowOrder:state.rowOrder,
       satLoad:state.satLoad, sunLoad:state.sunLoad,
       rotateMode:state.rotateMode, rotateDay:state.rotateDay,
-      viewMode:state.viewMode, deptFilter:state.deptFilter, sampleVer:state.sampleVer,
+      viewMode:state.viewMode, deptFilter:state.deptFilter, shiftFilter:state.shiftFilter, hiddenPeople:state.hiddenPeople, sampleVer:state.sampleVer,
       schedMarks:state.schedMarks,
       curYear:state.curYear, curMonth:state.curMonth } };
   downloadBlob(JSON.stringify(data,null,2), 'application/json', '排班备份_' + CUR.key + '.json');
@@ -4926,6 +5037,8 @@ function sanitizeBackup(s){
     rotateDay: num01(s.rotateDay, 31, 1),
     viewMode: (s.viewMode==='month'||s.viewMode==='cn'||s.viewMode==='pc'||s.viewMode==='pcn') ? s.viewMode : 'cn',
     deptFilter: (s.deptFilter==='除气'||s.deptFilter==='转码') ? s.deptFilter : 'all',
+    shiftFilter: (s.shiftFilter==='day'||s.shiftFilter==='night') ? s.shiftFilter : 'all',
+    hiddenPeople: Array.isArray(s.hiddenPeople) ? s.hiddenPeople.filter(id=>seen.has(id)) : [],
     sampleVer: Number.isFinite(+s.sampleVer) ? +s.sampleVer : 0,
     schedMarks: (() => {
       const o = {}; const src = (s.schedMarks && typeof s.schedMarks === 'object') ? s.schedMarks : {};
@@ -4959,6 +5072,8 @@ function importJSONData(data){
   state.rotateDay = (state.rotateMode==='fixed') ? s.rotateDay : 1;
   state.viewMode = s.viewMode;
   state.deptFilter = s.deptFilter;
+  state.shiftFilter = s.shiftFilter;
+  state.hiddenPeople = s.hiddenPeople;
   state.sampleVer = s.sampleVer;
   state.schedMarks = s.schedMarks || {};
   state.curYear = s.curYear; state.curMonth = s.curMonth;

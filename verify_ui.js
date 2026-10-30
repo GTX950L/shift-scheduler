@@ -146,6 +146,59 @@ const ok = (name, pass, extra) => {
     ok('5e. 姓名搜索高亮并定位', srch.names.length === 2 && srch.names.every(n => n && n.indexOf('王') >= 0)
       && srch.cleared === 0, '命中=' + srch.names.join('/') + ' 清空后高亮=' + srch.cleared);
 
+    /* 5f. v1.52 班次筛选：只看白班 → 非白班格子淡化 + 横幅提示 */
+    const sf = await page.evaluate(async () => {
+      const sel = document.getElementById('shiftFilter');
+      sel.value = 'day'; sel.dispatchEvent(new Event('change'));
+      await new Promise(r => setTimeout(r, 280));
+      return { total: document.querySelectorAll('#sheet td.cell').length,
+        dim: document.querySelectorAll('#sheet td.cell.sf-dim').length,
+        barShown: !document.getElementById('filterBar').hidden,
+        txt: document.getElementById('filterTxt').textContent };
+    });
+    ok('5f. 只看白班 → 其余淡化 + 横幅提示', sf.dim > 0 && sf.dim < sf.total && sf.barShown
+      && /只看白班/.test(sf.txt),
+      '淡化 ' + sf.dim + '/' + sf.total + ' 格；横幅="' + sf.txt + '"');
+
+    /* 5g. v1.52 部门筛选：只显示该部门人员 */
+    const dp = await page.evaluate(async () => {
+      const sel = document.getElementById('deptFilter');
+      sel.value = '除气'; sel.dispatchEvent(new Event('change'));
+      await new Promise(r => setTimeout(r, 280));
+      return { rows: document.querySelectorAll('#sheet tbody tr[data-pid]').length,
+        expect: state.people.filter(p => p.dept === '除气').length,
+        txt: document.getElementById('filterTxt').textContent };
+    });
+    ok('5g. 部门筛选只显示该部门', dp.rows === dp.expect && /除气/.test(dp.txt),
+      '行数 ' + dp.rows + '（应 ' + dp.expect + '）；横幅="' + dp.txt + '"');
+
+    /* 5h. v1.52 隐藏人员：表格少一行 + 横幅点名 + 卡片标记 */
+    const hp2 = await page.evaluate(async () => {
+      const before = document.querySelectorAll('#sheet tbody tr[data-pid]').length;
+      toggleHidePerson('p1');
+      await new Promise(r => setTimeout(r, 280));
+      return { before, after: document.querySelectorAll('#sheet tbody tr[data-pid]').length,
+        hidN: state.hiddenPeople.length,
+        txt: document.getElementById('filterTxt').textContent,
+        cardMarked: document.querySelectorAll('.p-card.is-hidden').length };
+    });
+    ok('5h. 隐藏人员生效且横幅点名', hp2.after === hp2.before - 1 && hp2.hidN === 1
+      && /已隐藏/.test(hp2.txt) && hp2.cardMarked === 1,
+      hp2.before + '→' + hp2.after + ' 行；横幅="' + hp2.txt + '"');
+
+    /* 5i. v1.52 一键清除全部筛选 */
+    const clr = await page.evaluate(async () => {
+      document.getElementById('filterClear').click();
+      await new Promise(r => setTimeout(r, 340));
+      return { rows: document.querySelectorAll('#sheet tbody tr[data-pid]').length,
+        dim: document.querySelectorAll('#sheet td.cell.sf-dim').length,
+        barHidden: document.getElementById('filterBar').hidden,
+        sf: state.shiftFilter, df: state.deptFilter, hid: state.hiddenPeople.length };
+    });
+    ok('5i. 一键清除全部筛选', clr.rows === 22 && clr.dim === 0 && clr.barHidden
+      && clr.sf === 'all' && clr.df === 'all' && clr.hid === 0,
+      '行数=' + clr.rows + ' 淡化=' + clr.dim + ' 横幅隐藏=' + clr.barHidden);
+
     /* 6. 流程提示条：切到未排班月份 → 提示自动排班 */
     const f1 = await page.evaluate(async () => {
       state.schedMarks = {}; state.monthShift = {}; state.manual = {};   // 模拟「这个月还没排班」
